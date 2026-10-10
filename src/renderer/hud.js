@@ -79,9 +79,63 @@
     }, 1000);
   }
 
-  // Capsule pill click toggles mode
-  capsulePill.addEventListener("click", () => {
+  // Smooth mouse drag on floating capsule and HUD header
+  let isPointerDown = false;
+  let hasDragged = false;
+  let lastScreenX = 0;
+  let lastScreenY = 0;
+
+  function bindDraggable(element) {
+    if (!element) return;
+    element.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return;
+      isPointerDown = true;
+      hasDragged = false;
+      lastScreenX = e.screenX;
+      lastScreenY = e.screenY;
+      document.body.classList.add("dragging");
+    });
+  }
+
+  window.addEventListener("mousemove", (e) => {
+    if (!isPointerDown) return;
+    const dx = e.screenX - lastScreenX;
+    const dy = e.screenY - lastScreenY;
+    if (Math.hypot(dx, dy) > 2) {
+      hasDragged = true;
+      window.lingualAPI?.dragMove(dx, dy);
+      lastScreenX = e.screenX;
+      lastScreenY = e.screenY;
+    }
+  });
+
+  window.addEventListener("mouseup", () => {
+    if (!isPointerDown) return;
+    isPointerDown = false;
+    document.body.classList.remove("dragging");
+    if (hasDragged) {
+      window.lingualAPI?.saveCapsulePos();
+    }
+  });
+
+  bindDraggable(capsulePill);
+  const hudHeader = document.querySelector(".hud-header");
+  bindDraggable(hudHeader);
+
+  // Capsule pill: distinguish clean click from drag
+  capsulePill.addEventListener("click", (e) => {
+    if (hasDragged) {
+      e.stopPropagation();
+      return;
+    }
     window.lingualAPI?.toggleMode();
+  });
+
+  // Right-click opens Settings
+  capsulePill.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.lingualAPI?.openSettings();
   });
 
   // Listen for mode changes

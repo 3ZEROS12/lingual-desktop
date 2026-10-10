@@ -38,19 +38,23 @@ body {
   border: 1px solid #d3cfc9;
   border-radius: 999px;
   padding: 2px 9px;
-  cursor: pointer;
+  cursor: grab;
   box-shadow: 0 2px 8px rgba(28, 25, 23, 0.12);
-  transition: all 0.12s ease;
+  transition: transform 0.1s ease, background 0.12s ease;
+}
+
+body.dragging, body.dragging * {
+  cursor: grabbing !important;
+  user-select: none !important;
 }
 
 .capsule-pill:hover {
   background: #ffffff;
   border-color: #a8a29e;
-  transform: translateY(-1px);
 }
 
 .capsule-pill:active {
-  transform: scale(0.97);
+  cursor: grabbing;
 }
 
 .capsule-totem {
@@ -111,6 +115,11 @@ body {
   align-items: center;
   padding-bottom: 6px;
   border-bottom: 1px solid #e7e5e1;
+  cursor: grab;
+}
+
+.hud-header:active {
+  cursor: grabbing;
 }
 
 .totem {

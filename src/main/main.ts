@@ -34,17 +34,38 @@ let activeTargetHwnd = "0";
 let activeBackupText = "";
 let currentTranslationResponse: any = null;
 let viewState: "capsule" | "hud" | "spotlight" = "capsule";
-let caretPollInterval: NodeJS.Timeout | null = null;
 
 const CAPSULE_WIDTH = 84;
 const CAPSULE_HEIGHT = 30;
 const HUD_WIDTH = 540;
 const HUD_HEIGHT = 280;
 
+let currentCapsulePos = { x: 0, y: 0 };
+
+function getInitialCapsulePos(config: LingualDesktopConfig): { x: number; y: number } {
+  if (config.capsulePos && typeof config.capsulePos.x === "number" && typeof config.capsulePos.y === "number") {
+    return { x: Math.round(config.capsulePos.x), y: Math.round(config.capsulePos.y) };
+  }
+  try {
+    const primary = screen.getPrimaryDisplay();
+    return {
+      x: Math.round(primary.workArea.x + primary.workArea.width - CAPSULE_WIDTH - 24),
+      y: Math.round(primary.workArea.y + 40),
+    };
+  } catch {
+    return { x: 100, y: 100 };
+  }
+}
+
 function createCompanionWindow(): BrowserWindow {
+  const config = loadDesktopConfig();
+  currentCapsulePos = getInitialCapsulePos(config);
+
   const win = new BrowserWindow({
     width: CAPSULE_WIDTH,
     height: CAPSULE_HEIGHT,
+    x: currentCapsulePos.x,
+    y: currentCapsulePos.y,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -71,6 +92,12 @@ function createCompanionWindow(): BrowserWindow {
     }
   });
 
+  win.once("ready-to-show", () => {
+    if (config.showCapsule !== false && currentMode !== "off") {
+      win.showInactive();
+    }
+  });
+
   return win;
 }
 
@@ -79,7 +106,13 @@ function switchToCapsuleView(): void {
   viewState = "capsule";
   companionWindow.setFocusable(false);
   companionWindow.setSize(CAPSULE_WIDTH, CAPSULE_HEIGHT);
+  companionWindow.setPosition(currentCapsulePos.x, currentCapsulePos.y);
   companionWindow.webContents.send("lingual:view-state", "capsule");
+  if (currentMode !== "off") {
+    companionWindow.showInactive();
+  } else {
+    companionWindow.hide();
+  }
 }
 
 function getClampedPosition(targetPhysicalX: number, targetPhysicalY: number, winWidth: number, winHeight: number, preferAbove = true): { x: number; y: number } {
@@ -117,11 +150,7 @@ let lastAnchorPos = { x: 0, y: 0 };
 function switchToHudView(targetX: number, targetY: number, autoSent = true): void {
   if (!companionWindow) return;
   viewState = "hud";
-  lastAnchorPos = { x: targetX, y: targetY };
 
-  // Focus Policy:
-  // If autoSent is true, window is purely ambient read-only, DO NOT steal focus (WS_EX_NOACTIVATE)!
-  // If autoSent is false (confirm mode), user needs to press 1/2/Esc, so make it focusable.
   if (autoSent) {
     companionWindow.setFocusable(false);
   } else {
@@ -131,8 +160,12 @@ function switchToHudView(targetX: number, targetY: number, autoSent = true): voi
   const initialHeight = 180;
   companionWindow.setSize(HUD_WIDTH, initialHeight);
 
-  // Roof-docking: default preferAbove = true so it NEVER collides with IME candidate box
-  const pos = getClampedPosition(targetX, targetY, HUD_WIDTH, initialHeight, true);
+  // If a valid caret coordinate was captured, dock near caret; otherwise anchor from current draggable capsule position
+  const anchorX = targetX > 0 ? targetX : currentCapsulePos.x;
+  const anchorY = targetY > 0 ? targetY : currentCapsulePos.y;
+  lastAnchorPos = { x: anchorX, y: anchorY };
+
+  const pos = getClampedPosition(anchorX, anchorY, HUD_WIDTH, initialHeight, true);
   companionWindow.setPosition(pos.x, pos.y);
 
   if (autoSent) {
@@ -693,6 +726,25 @@ function setupIpc(): void {
     restoreFocus(activeTargetHwnd);
   });
 
+  ipcMain.on("lingual:drag-move", (_event, { dx, dy }) => {
+    if (!companionWindow) return;
+    const [x, y] = companionWindow.getPosition();
+    const nextX = Math.round(x + dx);
+    const nextY = Math.round(y + dy);
+    companionWindow.setPosition(nextX, nextY);
+    currentCapsulePos = { x: nextX, y: nextY };
+  });
+
+  ipcMain.on("lingual:save-capsule-pos", () => {
+    if (currentCapsulePos.x > 0 || currentCapsulePos.y > 0) {
+      saveDesktopConfig({ capsulePos: currentCapsulePos });
+    }
+  });
+
+  ipcMain.on("lingual:open-settings", () => {
+    openSettingsWindow();
+  });
+
   ipcMain.on("lingual:submit-spotlight", async (_event, input: string) => {
     try {
       const res = await executeTranslation(input);
@@ -738,7 +790,6 @@ if (!gotTheLock) {
     registerShortcuts(config);
     setupTray();
     setupIpc();
-    startCaretTracking();
 
     // Enable Windows autostart on boot (silent mode)
     try {
@@ -763,7 +814,6 @@ if (!gotTheLock) {
   });
 
   app.on("will-quit", () => {
-    if (caretPollInterval) clearInterval(caretPollInterval);
     globalShortcut.unregisterAll();
   });
 

@@ -29,6 +29,15 @@ contextBridge.exposeInMainWorld("lingualAPI", {
   submitSpotlightInput: (text: string) => {
     ipcRenderer.send("lingual:submit-spotlight", text);
   },
+  dragMove: (dx: number, dy: number) => {
+    ipcRenderer.send("lingual:drag-move", { dx, dy });
+  },
+  saveCapsulePos: () => {
+    ipcRenderer.send("lingual:save-capsule-pos");
+  },
+  openSettings: () => {
+    ipcRenderer.send("lingual:open-settings");
+  },
 });
 
 // 2. Gabriel-Style Settings Window API

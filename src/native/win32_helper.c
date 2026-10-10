@@ -71,6 +71,12 @@ int main(int argc, char* argv[]) {
 
     if (strcmp(cmd, "active-window") == 0) {
         HWND hwnd = GetForegroundWindow();
+        if (!hwnd) {
+            hwnd = GetConsoleWindow();
+        }
+        if (!hwnd) {
+            hwnd = GetDesktopWindow();
+        }
         printf("%llu\n", (unsigned long long)hwnd);
         return 0;
     }

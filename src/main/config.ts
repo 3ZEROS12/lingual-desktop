@@ -24,6 +24,7 @@ export interface LingualDesktopConfig {
   hotkeySubmit: string;
   hotkeyRewrite: string;
   hotkeySpotlight: string;
+  capsulePos?: { x: number; y: number } | null;
   piModelInfo?: { endpoint: string; model: string } | null;
 }
 
@@ -44,6 +45,7 @@ export const DEFAULT_DESKTOP_CONFIG: LingualDesktopConfig = {
   hotkeySubmit: "Enter",
   hotkeyRewrite: "Alt+E",
   hotkeySpotlight: "Alt+Space",
+  capsulePos: null,
 };
 
 function isTestEnvironment(): boolean {
