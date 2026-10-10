@@ -24,14 +24,14 @@ export interface LingualDesktopConfig {
 }
 
 export const DEFAULT_DESKTOP_CONFIG: LingualDesktopConfig = {
-  endpoint: "http://127.0.0.1:11434/v1/chat/completions",
-  apiKey: "ollama",
-  model: "qwen2.5:3b",
+  endpoint: "",
+  apiKey: "",
+  model: "",
   sourceLang: "zh",
   targetLang: "en",
   mode: "english",
   slotPreset: "developer",
-  slots: getDefaultSlots("zh"),
+  slots: getDefaultSlots("en"),
   autoSend: true,
   showCapsule: true,
   hotkeyToggleMode: "Alt+Q",
@@ -132,38 +132,49 @@ export function loadDesktopConfig(): LingualDesktopConfig {
       ? sharedRaw.slots
       : Array.isArray(desktopRaw.slots) && desktopRaw.slots.length > 0
       ? desktopRaw.slots
-      : getDefaultSlots(effectiveSourceLang);
+      : getDefaultSlots("en");
 
   const piDiscovered = !isTestEnvironment() ? discoverPiModelConfig() : null;
 
   const rawSubmitKey = desktopRaw.hotkeySubmit || DEFAULT_DESKTOP_CONFIG.hotkeySubmit;
-  // Never allow hijacking standard Enter or Ctrl+Enter (which users need for normal typing & newlines!)
   const safeHotkeySubmit =
     rawSubmitKey.toLowerCase() === "enter" || rawSubmitKey.toLowerCase() === "ctrl+enter"
       ? "Alt+E"
       : rawSubmitKey;
 
+  const cleanDesktopEndpoint =
+    desktopRaw.endpoint && !desktopRaw.endpoint.includes("11434")
+      ? desktopRaw.endpoint
+      : "";
+  const cleanDesktopApiKey =
+    desktopRaw.apiKey && desktopRaw.apiKey !== "ollama"
+      ? desktopRaw.apiKey
+      : "";
+  const cleanDesktopModel =
+    desktopRaw.model && desktopRaw.model !== "qwen2.5:3b"
+      ? desktopRaw.model
+      : "";
+
   return {
     ...DEFAULT_DESKTOP_CONFIG,
     ...desktopRaw,
     hotkeySubmit: safeHotkeySubmit,
-    // 共享核心键对齐（若未手动指定外部模型，优先自动继承本机 Pi 的可用模型配置！）
     endpoint:
       sharedRaw.endpoint ||
-      (desktopRaw.endpoint && desktopRaw.endpoint !== "http://127.0.0.1:11434/v1/chat/completions"
-        ? desktopRaw.endpoint
-        : piDiscovered?.endpoint || desktopRaw.endpoint || DEFAULT_DESKTOP_CONFIG.endpoint),
+      cleanDesktopEndpoint ||
+      piDiscovered?.endpoint ||
+      DEFAULT_DESKTOP_CONFIG.endpoint,
     apiKey:
       sharedRaw.apiKey ||
-      (desktopRaw.apiKey && desktopRaw.apiKey !== "ollama"
-        ? desktopRaw.apiKey
-        : piDiscovered?.apiKey || desktopRaw.apiKey || DEFAULT_DESKTOP_CONFIG.apiKey),
+      cleanDesktopApiKey ||
+      piDiscovered?.apiKey ||
+      DEFAULT_DESKTOP_CONFIG.apiKey,
     model:
       sharedRaw.selectedModel ||
       sharedRaw.model ||
-      (desktopRaw.model && desktopRaw.model !== "qwen2.5:3b"
-        ? desktopRaw.model
-        : piDiscovered?.model || desktopRaw.model || DEFAULT_DESKTOP_CONFIG.model),
+      cleanDesktopModel ||
+      piDiscovered?.model ||
+      DEFAULT_DESKTOP_CONFIG.model,
     sourceLang: effectiveSourceLang,
     targetLang: effectiveTargetLang,
     mode: effectiveMode,

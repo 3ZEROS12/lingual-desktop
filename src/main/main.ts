@@ -424,27 +424,18 @@ function openSettingsWindow(): void {
     return;
   }
 
-  const config = loadDesktopConfig();
-  const isZh = config.sourceLang === "zh" || config.sourceLang === "tw";
-  const isJa = config.sourceLang === "ja";
-  const winTitle = isZh
-    ? "Lingual 伴侣设置"
-    : isJa
-    ? "Lingual 伴走設定"
-    : "Lingual Companion Settings";
-
   settingsWindow = new BrowserWindow({
     width: 680,
-    height: 720,
+    height: 700,
     minWidth: 620,
-    minHeight: 600,
-    title: winTitle,
+    minHeight: 580,
+    title: "Lingual Settings",
     resizable: true,
     minimizable: true,
     maximizable: false,
     autoHideMenuBar: true,
     show: false,
-    backgroundColor: "#f6f9fc",
+    backgroundColor: "#fbfaf8",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -469,26 +460,24 @@ function updateTrayMenu(): void {
   if (!tray) return;
 
   const config = loadDesktopConfig();
-  const labels = resolveLabelsForLang(config.sourceLang || "zh", undefined, config.targetLang);
-  const isZh = config.sourceLang === "zh" || config.sourceLang === "tw";
-  const isJa = config.sourceLang === "ja";
+  const modeDisplay = currentMode === "english" ? "TRANSLATE" : currentMode === "original" ? "LEARN" : "OFF";
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: `⇄ [${labels.hudTitle}] ${labels.statusReportMode || "Mode"}: [${currentMode.toUpperCase()}]`,
+      label: `Lingual · Mode: [${modeDisplay}]`,
       enabled: false,
     },
     {
-      label: isZh ? "循环切换模式 (Alt+Q)" : isJa ? "モード切替 (Alt+Q)" : "Cycle Mode (Alt+Q)",
+      label: "Cycle Mode (Alt+Q)",
       click: () => cycleCompanionMode(),
     },
     {
-      label: isZh ? "⚙️ 设置 (Settings)..." : isJa ? "⚙️ 設定 (Settings)..." : "⚙️ Settings...",
+      label: "Settings...",
       click: () => openSettingsWindow(),
     },
     { type: "separator" },
     {
-      label: `${labels.statusEnglish}: ${labels.modeDescEnglish || "English (Auto-translate & Submit)"}`,
+      label: "Translate (Replace text + Card)",
       type: "radio",
       checked: currentMode === "english",
       click: () => {
@@ -499,7 +488,7 @@ function updateTrayMenu(): void {
       },
     },
     {
-      label: `${labels.statusOriginal}: ${labels.modeDescOriginal || "Original (Send original + Learn)"}`,
+      label: "Learn (Keep original + Card)",
       type: "radio",
       checked: currentMode === "original",
       click: () => {
@@ -510,7 +499,7 @@ function updateTrayMenu(): void {
       },
     },
     {
-      label: labels.statusOff || (isZh ? "关闭伴学" : isJa ? "オフ" : "Off"),
+      label: "Off",
       type: "radio",
       checked: currentMode === "off",
       click: () => {
@@ -522,7 +511,7 @@ function updateTrayMenu(): void {
     },
     { type: "separator" },
     {
-      label: isZh ? "翻译后自动发送" : isJa ? "翻訳後に自動送信" : "Auto-Send after Translation",
+      label: "Replace Directly",
       type: "checkbox",
       checked: config.autoSend,
       click: (item) => {
@@ -530,7 +519,7 @@ function updateTrayMenu(): void {
       },
     },
     {
-      label: isZh ? "显示光标悬浮胶囊" : isJa ? "カーソルカプセルを表示" : "Show Ambient Caret Capsule",
+      label: "Show Caret Capsule",
       type: "checkbox",
       checked: config.showCapsule,
       click: (item) => {
@@ -539,7 +528,7 @@ function updateTrayMenu(): void {
     },
     { type: "separator" },
     {
-      label: isZh ? "退出" : isJa ? "終了" : "Quit",
+      label: "Quit",
       click: () => app.quit(),
     },
   ]);
@@ -549,19 +538,9 @@ function updateTrayMenu(): void {
 
 function setupTray(): void {
   tray = new Tray(path.join(__dirname, "../../assets/tray-icon.png"));
-  const config = loadDesktopConfig();
-  const isZh = config.sourceLang === "zh" || config.sourceLang === "tw";
-  const isJa = config.sourceLang === "ja";
-  tray.setToolTip(
-    isZh
-      ? "Lingual 语言伴侣 · 点击打开设置"
-      : isJa
-      ? "Lingual 伴走 · クリックして設定を開く"
-      : "Lingual Companion · Click to open settings"
-  );
+  tray.setToolTip("Lingual · Click to open settings");
   updateTrayMenu();
 
-  // Left click or double click on tray icon opens the Gabriel settings control center immediately!
   tray.on("click", () => openSettingsWindow());
   tray.on("double-click", () => openSettingsWindow());
 }
@@ -731,19 +710,11 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on("second-instance", () => {
-    // If user double-clicks Lingual.exe while already running, immediately bring Settings window to foreground!
     openSettingsWindow();
     if (tray) {
-      const cfg = loadDesktopConfig();
-      const isZh = cfg.sourceLang === "zh" || cfg.sourceLang === "tw";
-      const isJa = cfg.sourceLang === "ja";
       tray.displayBalloon({
-        title: isZh ? "Lingual 语言伴侣" : isJa ? "Lingual 伴走" : "Lingual Companion",
-        content: isZh
-          ? "设置控制中心已激活。快捷键：Alt+Q 切换模式，Ctrl+Enter 翻译并发送。"
-          : isJa
-          ? "設定画面がアクティブです。Alt+Q モード切替、Ctrl+Enter 送信。"
-          : "Settings window activated. Hotkeys: Alt+Q to cycle mode, Ctrl+Enter to submit.",
+        title: "Lingual",
+        content: "Settings window activated. Shortcuts: Alt+Q to cycle mode, Alt+E to translate.",
       });
     }
   });
@@ -775,15 +746,9 @@ if (!gotTheLock) {
     if (!isSilent) {
       openSettingsWindow();
     } else if (tray) {
-      const isZh = config.sourceLang === "zh" || config.sourceLang === "tw";
-      const isJa = config.sourceLang === "ja";
       tray.displayBalloon({
-        title: isZh ? "Lingual 伴侣已启动" : isJa ? "Lingual 伴走 起動完了" : "Lingual Started",
-        content: isZh
-          ? `模式：[${currentMode.toUpperCase()}]。快捷键：Alt+Q 切模式，Ctrl+Enter 发送。`
-          : isJa
-          ? `モード：[${currentMode.toUpperCase()}]。Alt+Q モード切替、Ctrl+Enter 送信。`
-          : `Mode: [${currentMode.toUpperCase()}]. Alt+Q to cycle mode, Ctrl+Enter to submit.`,
+        title: "Lingual Started",
+        content: `Mode: [${currentMode.toUpperCase()}]. Alt+Q to cycle mode, Alt+E to translate.`,
       });
     }
 

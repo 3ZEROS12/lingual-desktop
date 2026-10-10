@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Lingual Settings</title>
@@ -7,329 +7,280 @@
 </head>
 <body>
   <div class="app-shell">
-    <!-- Top Navigation Bar -->
+    <!-- Header Navbar -->
     <header class="navbar">
       <div class="nav-brand">
-        <div class="brand-spark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#533afd"/>
-          </svg>
-        </div>
+        <div class="brand-symbol">L</div>
         <span class="brand-name">Lingual</span>
       </div>
 
-      <!-- Plain-Language Navigation Tabs -->
+      <!-- Navigation Tabs -->
       <nav class="nav-tabs">
-        <button class="nav-pill active" data-tab="tab-flow" data-i18n="nav_flow">⌨️ 模式与打字</button>
-        <button class="nav-pill" data-tab="tab-slots" data-i18n="nav_slots">💬 卡片样式与 AI 定制</button>
-        <button class="nav-pill" data-tab="tab-model" data-i18n="nav_model">⚡ 翻译引擎 (免配置)</button>
+        <button class="nav-pill active" data-tab="tab-general">General</button>
+        <button class="nav-pill" data-tab="tab-cards">Cards</button>
+        <button class="nav-pill" data-tab="tab-engine">Engine</button>
       </nav>
 
       <div class="nav-actions">
-        <div class="lang-dropdown-wrapper">
-          <button id="btn-lang-trigger" class="btn-lang-pill" title="Interface & Native Language">
-            <span id="lang-current-short" class="lang-current-short">🌐 简体中文</span>
-          </button>
-          <div id="lang-popover" class="lang-popover hidden">
-            <button class="lang-option active" data-lang="zh" data-short="🌐 简体中文">
-              <span class="opt-code">ZH</span>
-              <span class="opt-name">简体中文</span>
-              <span class="opt-dot">•</span>
-            </button>
-            <button class="lang-option" data-lang="zh-TW" data-short="🌐 繁體中文">
-              <span class="opt-code">TW</span>
-              <span class="opt-name">繁體中文</span>
-              <span class="opt-dot"></span>
-            </button>
-            <button class="lang-option" data-lang="en" data-short="🌐 English">
-              <span class="opt-code">EN</span>
-              <span class="opt-name">English</span>
-              <span class="opt-dot"></span>
-            </button>
-            <button class="lang-option" data-lang="ja" data-short="🌐 日本語">
-              <span class="opt-code">JA</span>
-              <span class="opt-name">日本語</span>
-              <span class="opt-dot"></span>
-            </button>
-          </div>
-        </div>
-        <button id="btn-window-close" class="btn-close-pill" title="Close">✕</button>
+        <button id="btn-window-close" class="btn-icon-subtle" title="Close window">✕</button>
       </div>
     </header>
 
     <main class="main-body">
-      <!-- ==================== TAB 1: 模式与怎么打字 ==================== -->
-      <section id="tab-flow" class="tab-pane active">
-        <!-- 1. 三大核心运行模式 (译文模式 / 原文伴学 / 关闭) -->
+      <!-- ==================== TAB 1: GENERAL ==================== -->
+      <section id="tab-general" class="tab-pane active">
+        <!-- 1. Operating Mode -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title" data-i18n="sec_mode_title">1. 当前运行模式（随时按 Alt + Q 也可快速切换）</h2>
-            <p class="card-desc" data-i18n="sec_mode_desc">点击即可立即切换工作状态，完全无需重启：</p>
+            <h2 class="card-title">Operating Mode</h2>
+            <p class="card-desc">Cycle modes anytime with Alt + Q:</p>
           </div>
 
           <div class="segmented-control" id="companion-mode-segmented">
             <button type="button" class="seg-btn active" data-mode="english">
-              <span class="seg-title" data-i18n="mode_en_title">🟢 译文模式 (Translate)</span>
-              <span class="seg-sub" data-i18n="mode_en_sub">打母语 ➔ 按快捷键直接变外语，并展开卡片对照</span>
+              <span class="seg-title">Translate</span>
+              <span class="seg-sub">Replaces text in target input and displays card</span>
             </button>
             <button type="button" class="seg-btn" data-mode="original">
-              <span class="seg-title" data-i18n="mode_orig_title">🔵 原文模式 (Original)</span>
-              <span class="seg-sub" data-i18n="mode_orig_sub">输入框保留母语不替换，仅弹窗教你这句话外语怎么说</span>
+              <span class="seg-title">Learn</span>
+              <span class="seg-sub">Keeps original text intact; pops up card only</span>
             </button>
             <button type="button" class="seg-btn" data-mode="off">
-              <span class="seg-title" data-i18n="mode_off_title">⚪ 暂停关闭 (Off)</span>
-              <span class="seg-sub" data-i18n="mode_off_sub">完全静默，不触发任何翻译或弹窗</span>
+              <span class="seg-title">Off</span>
+              <span class="seg-sub">Inactive; no translation or popup</span>
             </button>
           </div>
         </div>
 
-        <!-- 2. 想翻成什么外语 -->
+        <!-- 2. Target Language -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title" data-i18n="sec_tlang_title">2. 你想翻成什么目标语言？</h2>
-            <p class="card-desc" data-i18n="sec_tlang_desc">在任何聊天软件、浏览器或编辑器里打字，都会帮你翻成下面选中的语言。</p>
+            <h2 class="card-title">Target Language</h2>
+            <p class="card-desc">Translates your drafts into the selected language:</p>
           </div>
-          <div class="preset-chips" id="target-lang-chips">
-            <button type="button" class="chip active" data-tlang="en" data-i18n="tlang_en">🇺🇸 英语 (English)</button>
-            <button type="button" class="chip" data-tlang="ja" data-i18n="tlang_ja">🇯🇵 日语 (日本語)</button>
-            <button type="button" class="chip" data-tlang="ko" data-i18n="tlang_ko">🇰🇷 韩语 (한국어)</button>
-            <button type="button" class="chip" data-tlang="fr" data-i18n="tlang_fr">🇫🇷 法语 (Français)</button>
-            <button type="button" class="chip" data-tlang="de" data-i18n="tlang_de">🇩🇪 德语 (Deutsch)</button>
-            <button type="button" class="chip" data-tlang="es" data-i18n="tlang_es">🇪🇸 西语 (Español)</button>
-            <button type="button" class="chip" data-tlang="zh" data-i18n="tlang_zh">🇨🇳 中文 (Chinese)</button>
+          <div class="chip-row" id="target-lang-chips">
+            <button type="button" class="chip active" data-tlang="en">EN</button>
+            <button type="button" class="chip" data-tlang="ja">JA</button>
+            <button type="button" class="chip" data-tlang="zh">ZH</button>
+            <button type="button" class="chip" data-tlang="es">ES</button>
+            <button type="button" class="chip" data-tlang="de">DE</button>
+            <button type="button" class="chip" data-tlang="fr">FR</button>
+            <button type="button" class="chip" data-tlang="ko">KO</button>
           </div>
         </div>
 
-        <!-- 3. 触发翻译的专属快捷键（绝不抢占 Enter / Ctrl+Enter 换行键！） -->
+        <!-- 3. Trigger Shortcut -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title" data-i18n="sec_hotkey_title">3. 按哪个快捷键触发翻译？（绝不抢占你的回车和 Ctrl+Enter 换行）</h2>
-            <p class="card-desc" data-i18n="sec_hotkey_desc">平时打字按 Enter 发送、按 Ctrl+Enter 换行完全不受影响；想把输入框里的草稿翻成外语时，按下方专属组合键：</p>
+            <h2 class="card-title">Trigger Shortcut</h2>
+            <p class="card-desc">Press this key when you want to translate your draft (Enter and Ctrl+Enter remain untouched):</p>
           </div>
 
           <div class="segmented-control" id="trigger-segmented">
             <button type="button" class="seg-btn active" data-val="Alt+E">
               <span class="seg-title">Alt + E</span>
-              <span class="seg-sub" data-i18n="hk_alte_sub">默认推荐 · 顺手且绝不干扰打字换行</span>
+              <span class="seg-sub">Recommended (ergonomic, zero typing conflict)</span>
             </button>
             <button type="button" class="seg-btn" data-val="Alt+S">
               <span class="seg-title">Alt + S</span>
-              <span class="seg-sub" data-i18n="hk_alts_sub">左手一键触发 · 适合高频快聊</span>
+              <span class="seg-sub">Left-hand single stroke for quick chat</span>
             </button>
             <button type="button" class="seg-btn" data-val="Alt+Enter">
               <span class="seg-title">Alt + Enter</span>
-              <span class="seg-sub" data-i18n="hk_altenter_sub">保留普通回车与 Ctrl+Enter 换行</span>
+              <span class="seg-sub">Leaves normal Enter and Ctrl+Enter untouched</span>
             </button>
           </div>
         </div>
 
-        <!-- 4. 翻译出来之后怎么处理（大白话二选一卡片） -->
+        <!-- 4. Replacement Action -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title" data-i18n="sec_dispatch_title">4. 译文模式下，翻译出来后怎么替你填进输入框？</h2>
+            <h2 class="card-title">Replacement Action</h2>
+            <p class="card-desc">How translations are committed into your active input field in Translate mode:</p>
           </div>
 
-          <div class="mode-choice-grid" id="autosend-choice-grid">
-            <div class="mode-choice-card active" data-autosend="true">
-              <div class="mode-choice-top">
-                <span class="mode-radio-dot"></span>
-                <span class="mode-choice-title" data-i18n="dispatch_auto_title">直接替我换好外语（省心直换）</span>
-                <span class="mode-badge-rec" data-i18n="dispatch_auto_badge">最省事</span>
+          <div class="choice-grid" id="autosend-choice-grid">
+            <div class="choice-card active" data-autosend="true">
+              <div class="choice-top">
+                <span class="radio-dot"></span>
+                <span class="choice-title">Replace Directly</span>
+                <span class="badge-subtle">Fastest</span>
               </div>
-              <div class="mode-choice-flow" data-i18n="dispatch_auto_flow">
-                打完草稿 ➔ 按 Alt+E ➔ <strong>输入框直接变成地道外语</strong>
+              <div class="choice-flow">
+                Draft ➔ Alt+E ➔ <strong>In-place text replacement</strong>
               </div>
-              <p class="mode-choice-desc" data-i18n="dispatch_auto_desc">
-                无需多按任何键，直接把输入框里的文字换成外语！同时旁边浮出 3 秒小卡片供你核对；万一想重改，<strong>3 秒内按 Esc 键立刻撤回恢复原草稿</strong>。
+              <p class="choice-desc">
+                Replaces input text immediately and shows a 3-second HUD card. Press <strong>Esc within 3 seconds</strong> to undo and recover original text.
               </p>
             </div>
 
-            <div class="mode-choice-card" data-autosend="false">
-              <div class="mode-choice-top">
-                <span class="mode-radio-dot"></span>
-                <span class="mode-choice-title" data-i18n="dispatch_pick_title">先弹出小卡片，让我挑一句再上屏（先看后换）</span>
+            <div class="choice-card" data-autosend="false">
+              <div class="choice-top">
+                <span class="radio-dot"></span>
+                <span class="choice-title">Preview First</span>
               </div>
-              <div class="mode-choice-flow" data-i18n="dispatch_pick_flow">
-                打完草稿 ➔ 按 Alt+E 弹出卡片 ➔ <strong>按数字 1 或 2 挑中上屏</strong>
+              <div class="choice-flow">
+                Draft ➔ Alt+E ➔ <strong>Press 1 or 2 to commit</strong>
               </div>
-              <p class="mode-choice-desc" data-i18n="dispatch_pick_desc">
-                按完快捷键后先不改输入框，而是在旁边弹出小卡片列出几种语气（如日常口语 vs 正式书面），你按键盘数字键挑中哪句才填进去。
+              <p class="choice-desc">
+                Pops up the card first. Select between Casual and Formal phrasing by pressing number keys 1 or 2.
               </p>
             </div>
           </div>
 
           <input type="checkbox" id="check-auto-send" class="hidden" checked />
-          <input type="checkbox" id="check-recall-buffer" class="hidden" checked />
-          <input type="checkbox" id="check-autostart" class="hidden" checked />
         </div>
       </section>
 
-      <!-- ==================== TAB 2: 卡片样式与 AI 定制 ==================== -->
-      <section id="tab-slots" class="tab-pane">
-        <!-- 1. 实时效果预览窗 (所见即所得) -->
+      <!-- ==================== TAB 2: CARDS ==================== -->
+      <section id="tab-cards" class="tab-pane">
+        <!-- 1. Live Preview -->
         <div class="preview-stage">
           <div class="preview-stage-header">
-            <span class="preview-stage-label" data-i18n="preview_title">👀 实时效果预览（弹出来的小卡片会长这样）：</span>
-            <span class="preview-stage-hint" data-i18n="preview_hint">示例输入：「这个功能明天能上线吗？」</span>
+            <span class="preview-stage-label">Live Preview</span>
+            <span>Sample: "Can we release this feature tomorrow?"</span>
           </div>
-          <div class="live-hud-box" id="live-hud-preview"></div>
+          <div class="live-card-box" id="live-hud-preview"></div>
         </div>
 
-        <!-- 2. 一句话让 AI 帮我配好 -->
+        <!-- 2. Conversational Intent Tuner -->
         <div class="card ai-tuner-card">
           <div class="card-header">
-            <h2 class="card-title" data-i18n="ai_tuner_title">🤖 懒得自己调？直接用一句话告诉 AI 你平时打字用来干嘛</h2>
-            <p class="card-desc" data-i18n="ai_tuner_desc">像在终端里跟智能体说话一样，写出你的需求或点选下方气泡，AI 当场帮你配好上方卡片：</p>
+            <h2 class="card-title">Natural Language Preset</h2>
+            <p class="card-desc">Describe your preferred layout or click a preset chip:</p>
           </div>
 
           <div class="ai-input-row">
             <input
               type="text"
               id="input-ai-wish"
-              class="input-text ai-wish-input"
-              data-i18n-placeholder="ai_tuner_placeholder"
-              placeholder="例如：我只是为了打字，只要一行简单翻译，不要显示中文原话和单词..."
+              class="input-text"
+              placeholder="e.g. Single line only for fast chat, no source row or vocab..."
             />
-            <button type="button" id="btn-ai-tune" class="btn-ai-tune" data-i18n="ai_tuner_btn">✨ 让 AI 帮我配好</button>
+            <button type="button" id="btn-ai-tune" class="btn-action">Apply</button>
           </div>
 
-          <div class="wish-bubbles" id="wish-bubbles">
-            <button type="button" class="wish-chip" data-wish="我只是为了打字，只要一行最简单的翻译，不要原话也不要单词" data-i18n="wish_1">💬 纯粹打字：只要1行干净译文，别显示原话和单词</button>
-            <button type="button" class="wish-chip" data-wish="平时跟同事群聊和写正式文档，保留原话，给我两种语气对比" data-i18n="wish_2">💼 日常办公：同事群聊口语 + 正式文档书面语</button>
-            <button type="button" class="wish-chip" data-wish="我是做外贸客服的，想要客气礼貌回复和简短催单跟进，不要原话" data-i18n="wish_3">📦 外贸客服：客气礼貌回复 + 简短干脆催单</button>
-            <button type="button" class="wish-chip" data-wish="打游戏和外国队友开黑交流，要极简地道的游戏短句，不要原话和单词" data-i18n="wish_4">🎮 游戏开黑：简短队友报点 + 社区闲聊</button>
-            <button type="button" class="wish-chip" data-wish="发推特和逛外网社区，给我吸睛短句和深度讨论，顺便教我两个好词" data-i18n="wish_5">🐦 发推冲浪：吸睛短句 + 深度评论 + 顺便记词</button>
-            <button type="button" class="wish-chip" data-wish="学日语，想同时对比朋友随和口语和职场礼貌敬语，加上单词" data-i18n="wish_6">🌸 日语伴学：朋友口语 + 职场敬语 + 重点单词</button>
+          <div class="wish-chips" id="wish-bubbles">
+            <button type="button" class="wish-chip" data-wish="Single clean translation line, no source text or vocab">Single line only (Minimal)</button>
+            <button type="button" class="wish-chip" data-wish="Casual team chat and formal technical documentation with source text">Casual + Formal (Work)</button>
+            <button type="button" class="wish-chip" data-wish="Polite customer support reply and concise follow-up">Support & Outreach</button>
+            <button type="button" class="wish-chip" data-wish="Short punchy social hook and insightful community comment">Social & X/Twitter</button>
+            <button type="button" class="wish-chip" data-wish="Casual spoken and polite business honorifics with vocabulary notes">Japanese Immersion</button>
           </div>
 
-          <div id="ai-tune-feedback" class="ai-feedback hidden"></div>
+          <div id="ai-tune-feedback" class="ai-status-msg hidden"></div>
         </div>
 
-        <!-- 3. 大白话勾选项 -->
+        <!-- 3. Visible Rows Toggles -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title" data-i18n="manual_toggle_title">手动勾选：小卡片里你想看到哪几项？（勾选后实时改变上方预览）</h2>
+            <h2 class="card-title">Visible Rows</h2>
           </div>
 
-          <div class="simple-toggles-grid">
-            <label class="simple-toggle-item">
+          <div class="toggle-grid">
+            <label class="toggle-item">
               <input type="checkbox" id="toggle-show-source" checked />
-              <div class="simple-toggle-text">
-                <strong data-i18n="tog_source_title">第一行显示我打的原话</strong>
-                <span data-i18n="tog_source_desc">取消勾选后，卡片里只显示翻译出来的外语，更小巧干净</span>
+              <div class="toggle-text">
+                <strong>Source text row</strong>
+                <span>Displays your initial input on top</span>
               </div>
             </label>
 
-            <label class="simple-toggle-item">
+            <label class="toggle-item">
               <input type="checkbox" id="toggle-dual-style" checked />
-              <div class="simple-toggle-text">
-                <strong data-i18n="tog_dual_title">同时给 2 种语气让我对比（日常聊 vs 正式写）</strong>
-                <span data-i18n="tog_dual_desc">取消勾选后，每次只给你 1 句最直接的翻译，不用做选择</span>
+              <div class="toggle-text">
+                <strong>Dual tone comparison</strong>
+                <span>Compares Casual spoken vs. Formal written</span>
               </div>
             </label>
 
-            <label class="simple-toggle-item">
+            <label class="toggle-item">
               <input type="checkbox" id="toggle-show-meaning" checked />
-              <div class="simple-toggle-text">
-                <strong data-i18n="tog_meaning_title">每句外语下面用母语小字解释语气差别</strong>
-                <span data-i18n="tog_meaning_desc">帮你一眼看懂哪句更随意、哪句更礼貌；纯打字熟手可以关掉</span>
+              <div class="toggle-text">
+                <strong>Nuance annotations</strong>
+                <span>Displays brief tone explanations below phrases</span>
               </div>
             </label>
 
-            <label class="simple-toggle-item">
+            <label class="toggle-item">
               <input type="checkbox" id="toggle-show-vocab" checked />
-              <div class="simple-toggle-text">
-                <strong data-i18n="tog_vocab_title">在卡片最底下顺便挑 2 个实用好词教我</strong>
-                <span data-i18n="tog_vocab_desc">边打字边顺便记点好词；如果只想纯粹打字，取消勾选即可</span>
+              <div class="toggle-text">
+                <strong>Vocabulary highlights</strong>
+                <span>Extracts key collocations and idioms at the bottom</span>
               </div>
             </label>
           </div>
 
-          <details class="advanced-fold">
-            <summary data-i18n="adv_slots_summary">▸ 高级自定义：手动修改每一行的标签名称、增删行数或编写提示词</summary>
-            <div class="advanced-fold-body">
+          <details class="advanced-details">
+            <summary>Advanced slot configuration</summary>
+            <div class="advanced-body">
               <div class="slot-list-container" id="slot-card-list"></div>
-              <div class="slot-actions-bar">
-                <button type="button" class="btn-slot-action" id="btn-add-slot" data-i18n="btn_add_row">+ 新增一行</button>
-                <button type="button" class="btn-slot-action btn-secondary" id="btn-reset-slots" data-i18n="btn_reset_rows">恢复默认</button>
+              <div style="display: flex; gap: 8px; margin-top: 6px;">
+                <button type="button" class="btn-secondary" id="btn-add-slot">+ Add Row</button>
+                <button type="button" class="btn-secondary" id="btn-reset-slots">Reset Default</button>
               </div>
             </div>
           </details>
         </div>
       </section>
 
-      <!-- ==================== TAB 3: 翻译引擎 (免配置) ==================== -->
-      <section id="tab-model" class="tab-pane">
-        <div class="ready-banner">
-          <span class="ready-dot"></span>
-          <div class="ready-text">
-            <strong data-i18n="banner_ready_title">开箱即用已就绪：已自动接入本机 Pi 模型与国内直连免费翻译双通道！</strong>
-            <span data-i18n="banner_ready_desc">无需填写任何密钥，现在就可以直接按 Alt+E 打字翻译。下方也可随时切换其他引擎：</span>
-          </div>
+      <!-- ==================== TAB 3: ENGINE ==================== -->
+      <section id="tab-engine" class="tab-pane">
+        <div class="notice-banner">
+          <span>Fast cloud translation active. Zero configuration required.</span>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title" data-i18n="engine_choose_title">选择你的翻译驱动方式</h2>
+            <h2 class="card-title">Translation Provider</h2>
           </div>
 
-          <div class="engine-mode-list" id="engine-mode-list">
-            <div class="engine-mode-card" data-emode="free">
-              <div class="mode-choice-top">
-                <span class="mode-radio-dot"></span>
-                <span class="mode-choice-title" data-i18n="emode_free_title">🌱 直接用内置免费快速翻译（国内直连 · 零配置即用）</span>
+          <div style="display: flex; flex-direction: column; gap: 8px;" id="engine-mode-list">
+            <!-- Free Built-in -->
+            <div class="choice-card" data-emode="free">
+              <div class="choice-top">
+                <span class="radio-dot"></span>
+                <span class="choice-title">Built-in Fast Cloud (Default)</span>
               </div>
-              <p class="mode-choice-desc" data-i18n="emode_free_desc">
-                无需任何账号或密钥，国内网络直接秒连，适合日常直接把一句话翻成外语。
+              <p class="choice-desc">
+                Free zero-key translation. Instant out of the box with zero account setup.
               </p>
             </div>
 
-            <div class="engine-mode-card" data-emode="local">
-              <div class="mode-choice-top">
-                <span class="mode-radio-dot"></span>
-                <span class="mode-choice-title" data-i18n="emode_local_title">💻 用我电脑里装好的本地 AI (Ollama / LM Studio)</span>
-                <button type="button" id="btn-detect-local" class="btn-inline-action" data-i18n="btn_detect_local">🔍 一键自动检测连接</button>
+            <!-- Custom LLM API Key -->
+            <div class="choice-card active" data-emode="cloud">
+              <div class="choice-top">
+                <span class="radio-dot"></span>
+                <span class="choice-title">Custom LLM API Key</span>
               </div>
-              <p class="mode-choice-desc" data-i18n="emode_local_desc">
-                完全免费且保护隐私。如果你电脑上开着 Ollama，点右侧按钮就能自动连上，无需手填网址。
-              </p>
-              <div id="local-detect-status" class="local-detect-msg hidden"></div>
-            </div>
-
-            <div class="engine-mode-card active" data-emode="cloud">
-              <div class="mode-choice-top">
-                <span class="mode-radio-dot"></span>
-                <span class="mode-choice-title" data-i18n="emode_cloud_title">🚀 AI 大模型驱动（已自动继承本机 Pi 模型配置 / 可填自定义密钥）</span>
-              </div>
-              <p class="mode-choice-desc" data-i18n="emode_cloud_desc">
-                支持同时生成“日常口语 + 正式书面语”对比及重点词汇讲解：
+              <p class="choice-desc">
+                Enables dual tone comparisons (Casual + Formal) and vocabulary extraction:
               </p>
 
-              <div class="cloud-config-box" id="cloud-config-box">
-                <div class="preset-chips" id="model-preset-chips">
+              <div id="cloud-config-box" style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px;">
+                <div class="chip-row" id="model-preset-chips">
                   <button type="button" class="chip" data-preset="deepseek">DeepSeek</button>
                   <button type="button" class="chip" data-preset="siliconflow">SiliconFlow</button>
                   <button type="button" class="chip" data-preset="groq">Groq</button>
                   <button type="button" class="chip" data-preset="openai">OpenAI</button>
                 </div>
 
-                <div class="form-field" style="margin-top: 8px;">
-                  <label data-i18n="lbl_apikey">API Key (密钥)</label>
-                  <div class="input-password-group">
+                <div class="form-field">
+                  <label>API Key</label>
+                  <div class="input-group">
                     <input type="password" id="input-apikey" class="input-text" placeholder="sk-..." />
-                    <button type="button" id="btn-toggle-key" class="btn-subtle" data-i18n="btn_show_key">显示</button>
-                    <button type="button" id="btn-test-connection" class="btn-probe" data-i18n="btn_test_conn">⚡ 测试连接</button>
+                    <button type="button" id="btn-toggle-key" class="btn-secondary">Show</button>
+                    <button type="button" id="btn-test-connection" class="btn-secondary">Test</button>
                   </div>
                 </div>
 
-                <div id="test-status" class="probe-result hidden" style="margin-top: 8px;">
-                  <span class="probe-dot"></span>
-                  <span id="test-status-text">OK</span>
+                <div id="test-status" class="ai-status-msg hidden">
+                  <span id="test-status-text">Ready</span>
                 </div>
 
-                <details class="advanced-fold" style="margin-top: 8px;">
-                  <summary data-i18n="adv_endpoint_summary">▸ 高级：手动修改接口网址 (Endpoint) 与模型名称</summary>
-                  <div class="form-grid" style="margin-top: 8px;">
+                <details class="advanced-details">
+                  <summary>Endpoint URL & Model ID</summary>
+                  <div class="advanced-body">
                     <div class="form-field">
                       <label>Endpoint URL</label>
                       <input type="text" id="input-endpoint" class="input-text" placeholder="https://api.deepseek.com/v1/chat/completions" />
@@ -347,12 +298,12 @@
       </section>
     </main>
 
-    <!-- Bottom Footer Actions -->
+    <!-- Footer -->
     <footer class="bottom-bar">
-      <div id="save-status" class="save-status" data-i18n="footer_hint">✅ 所有选项点击即自动生效（无需手动保存）</div>
+      <div id="save-status" class="save-indicator">Changes save automatically</div>
       <div class="footer-actions">
-        <button id="btn-cancel" class="btn-secondary" data-i18n="btn_close">关闭窗口</button>
-        <button id="btn-save" class="btn-primary" data-i18n="btn_save">保存并关闭</button>
+        <button id="btn-cancel" class="btn-secondary">Close</button>
+        <button id="btn-save" class="btn-primary">Done</button>
       </div>
     </footer>
   </div>

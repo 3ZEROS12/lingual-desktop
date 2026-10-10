@@ -114,17 +114,16 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
   let requestFailed = false;
 
   const completer = async (prompt: string, systemPrompt: string, signal?: AbortSignal): Promise<string | null> => {
-    const endpoint = config.endpoint || "http://127.0.0.1:11434/v1/chat/completions";
-    if (endpoint.includes("127.0.0.1:0")) {
+    const endpoint = (config.endpoint || "").trim();
+    if (!endpoint || endpoint.includes("127.0.0.1:0") || endpoint.includes("11434")) {
       requestFailed = true;
       return null;
     }
-    const apiKey = config.apiKey || "ollama";
-    const model = config.model || "qwen2.5:3b";
+    const apiKey = (config.apiKey || "").trim();
+    const model = (config.model || "deepseek-chat").trim();
 
     const controller = new AbortController();
-    const isLocalOllama = endpoint.includes("127.0.0.1:11434") || endpoint.includes("localhost:11434");
-    const timeoutId = setTimeout(() => controller.abort(), isLocalOllama ? 1200 : 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
 
     const onAbort = () => controller.abort();
     if (signal) {
