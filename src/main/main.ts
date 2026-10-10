@@ -482,8 +482,12 @@ function updateTrayMenu(): void {
 
 function setupTray(): void {
   tray = new Tray(path.join(__dirname, "../../assets/tray-icon.png"));
-  tray.setToolTip("lingual-desktop · Ambient Language Companion");
+  tray.setToolTip("Lingual 伴侣 · 点击打开设置");
   updateTrayMenu();
+
+  // Left click or double click on tray icon opens the Gabriel settings control center immediately!
+  tray.on("click", () => openSettingsWindow());
+  tray.on("double-click", () => openSettingsWindow());
 }
 
 function setupIpc(): void {
@@ -633,16 +637,21 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on("second-instance", () => {
-    // If user double-clicks Lingual.exe while already running, wake the companion
+    // If user double-clicks Lingual.exe while already running, immediately bring Settings window to foreground!
+    openSettingsWindow();
     if (tray) {
       tray.displayBalloon({
-        title: "Lingual 语言伴侣已在运行",
-        content: "常驻于系统托盘。快捷键：Alt+Q 切换模式，Ctrl+Enter 翻译并发送，Alt+Space 灵感盒。",
+        title: "Lingual 语言伴侣",
+        content: "设置控制中心已激活。快捷键：Alt+Q 切换模式，Ctrl+Enter 翻译并发送。",
       });
     }
   });
 
   app.whenReady().then(() => {
+    try {
+      app.setAppUserModelId("dev.lingual.desktop");
+    } catch {}
+
     const config = loadDesktopConfig();
     currentMode = config.mode || "english";
 
@@ -658,12 +667,13 @@ if (!gotTheLock) {
         openAtLogin: true,
         args: ["--hidden"],
       });
-    } catch {
-      // Ignore login item setting errors on non-packaged runs
-    }
+    } catch {}
 
+    // First launch or manual double-click: OPEN SETTINGS WINDOW IMMEDIATELY so user gets immediate visual feedback!
     const isSilent = process.argv.includes("--hidden");
-    if (!isSilent && tray) {
+    if (!isSilent) {
+      openSettingsWindow();
+    } else if (tray) {
       tray.displayBalloon({
         title: "Lingual 伴侣已启动",
         content: "模式：[" + currentMode.toUpperCase() + "]。快捷键：Alt+Q 切模式，Ctrl+Enter 发送并翻译。",
