@@ -10,6 +10,14 @@
   const testStatus = document.getElementById("test-status");
   const testStatusText = document.getElementById("test-status-text");
 
+  // Dynamic Slot Arranger Elements
+  const checkSlot1 = document.getElementById("check-slot-1");
+  const inputSlot1Label = document.getElementById("input-slot-1-label");
+  const checkSlot2 = document.getElementById("check-slot-2");
+  const inputSlot2Label = document.getElementById("input-slot-2-label");
+  const checkSlotVocab = document.getElementById("check-slot-vocab");
+  const inputSlotVocabLabel = document.getElementById("input-slot-vocab-label");
+
   const selectTrigger = document.getElementById("select-trigger");
   const checkAutoSend = document.getElementById("check-auto-send");
   const checkRecallBuffer = document.getElementById("check-recall-buffer");
@@ -42,6 +50,48 @@
       model: "qwen2.5:3b",
     },
   };
+
+  // Preset slot configurations
+  const SLOT_TEMPLATES = {
+    developer: {
+      slot1: { enabled: true, label: "口语" },
+      slot2: { enabled: true, label: "写作" },
+      vocab: { enabled: true, label: "重点" },
+    },
+    social: {
+      slot1: { enabled: true, label: "Hook" },
+      slot2: { enabled: true, label: "Deep" },
+      vocab: { enabled: true, label: "重点" },
+    },
+    japanese: {
+      slot1: { enabled: true, label: "口語" },
+      slot2: { enabled: true, label: "敬語" },
+      vocab: { enabled: true, label: "単語" },
+    },
+    academic: {
+      slot1: { enabled: true, label: "Discussion" },
+      slot2: { enabled: true, label: "Paper" },
+      vocab: { enabled: true, label: "重点" },
+    },
+    compact2: {
+      slot1: { enabled: true, label: "译文" },
+      slot2: { enabled: false, label: "写作" },
+      vocab: { enabled: false, label: "重点" },
+    },
+  };
+
+  selectSlotPreset.addEventListener("change", () => {
+    const val = selectSlotPreset.value;
+    const tpl = SLOT_TEMPLATES[val];
+    if (tpl) {
+      checkSlot1.checked = tpl.slot1.enabled;
+      inputSlot1Label.value = tpl.slot1.label;
+      checkSlot2.checked = tpl.slot2.enabled;
+      inputSlot2Label.value = tpl.slot2.label;
+      checkSlotVocab.checked = tpl.vocab.enabled;
+      inputSlotVocabLabel.value = tpl.vocab.label;
+    }
+  });
 
   // 1. Preset change listener
   selectPreset.addEventListener("change", () => {
@@ -111,6 +161,26 @@
 
       selectTrigger.value = cfg.hotkeySubmit || "Ctrl+Enter";
       selectSlotPreset.value = cfg.slotPreset || "developer";
+
+      // Populate slot arranger controls from loaded config
+      if (Array.isArray(cfg.slots)) {
+        const s1 = cfg.slots.find((s) => s.id === "spoken");
+        if (s1) {
+          checkSlot1.checked = s1.enabled !== false;
+          inputSlot1Label.value = s1.label || "口语";
+        }
+        const s2 = cfg.slots.find((s) => s.id === "written");
+        if (s2) {
+          checkSlot2.checked = s2.enabled !== false;
+          inputSlot2Label.value = s2.label || "写作";
+        }
+        const sv = cfg.slots.find((s) => s.id === "vocab");
+        if (sv) {
+          checkSlotVocab.checked = sv.enabled !== false;
+          inputSlotVocabLabel.value = sv.label || "重点";
+        }
+      }
+
       checkAutoSend.checked = cfg.autoSend !== false;
       checkRecallBuffer.checked = true;
       checkAutostart.checked = true;
@@ -121,11 +191,45 @@
 
   // 5. Save config
   btnSave.addEventListener("click", async () => {
+    // Dynamically construct arbitrary slot array matching user's visual arranger
+    const dynamicSlots = [
+      {
+        id: "source",
+        label: "原文",
+        role: "source",
+        enabled: true,
+      },
+      {
+        id: "spoken",
+        label: inputSlot1Label.value.trim() || "口语",
+        role: "translation",
+        instruction: "Natural, fluent spoken flow (daily standup, Slack, agile collaboration, conversational banter).",
+        showMeaning: true,
+        enabled: checkSlot1.checked,
+      },
+      {
+        id: "written",
+        label: inputSlot2Label.value.trim() || "写作",
+        role: "translation",
+        instruction: "Clear, precise, modern technical written prose (RFCs, PR descriptions, documentation, deep insight).",
+        showMeaning: true,
+        enabled: checkSlot2.checked,
+      },
+      {
+        id: "vocab",
+        label: inputSlotVocabLabel.value.trim() || "重点",
+        role: "vocab",
+        instruction: "Adaptively extract key idiomatic collocations, phrasal verbs, or technical idioms.",
+        enabled: checkSlotVocab.checked,
+      },
+    ];
+
     const patch = {
       endpoint: inputEndpoint.value.trim(),
       apiKey: inputApiKey.value.trim(),
       model: inputModel.value.trim(),
       slotPreset: selectSlotPreset.value,
+      slots: dynamicSlots,
       hotkeySubmit: selectTrigger.value,
       autoSend: checkAutoSend.checked,
     };

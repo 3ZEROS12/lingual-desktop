@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { getDefaultSlots, type SlotConfig } from "pi-lingual/core";
 
 export type CompanionMode = "english" | "original" | "off";
 export type SlotPreset = "developer" | "social" | "japanese" | "academic" | "custom";
@@ -13,6 +14,7 @@ export interface LingualDesktopConfig {
   targetLang: string;
   mode: CompanionMode;
   slotPreset: SlotPreset;
+  slots: SlotConfig[];
   autoSend: boolean;
   showCapsule: boolean;
   hotkeyToggleMode: string;
@@ -29,6 +31,7 @@ export const DEFAULT_DESKTOP_CONFIG: LingualDesktopConfig = {
   targetLang: "en",
   mode: "english",
   slotPreset: "developer",
+  slots: getDefaultSlots("zh"),
   autoSend: true,
   showCapsule: true,
   hotkeyToggleMode: "Alt+Q",
@@ -55,7 +58,9 @@ export function loadDesktopConfig(): LingualDesktopConfig {
     try {
       const raw = fs.readFileSync(primaryPath, "utf8");
       const parsed = JSON.parse(raw);
-      return { ...DEFAULT_DESKTOP_CONFIG, ...parsed };
+      const sourceLang = parsed.sourceLang || DEFAULT_DESKTOP_CONFIG.sourceLang;
+      const slots = parsed.slots && Array.isArray(parsed.slots) ? parsed.slots : getDefaultSlots(sourceLang);
+      return { ...DEFAULT_DESKTOP_CONFIG, ...parsed, slots };
     } catch {
       // Fall through to secondary probes
     }

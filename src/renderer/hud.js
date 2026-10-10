@@ -142,23 +142,70 @@
       }
     }
 
-    // Populate card text & slot labels
-    textSource.textContent = payload.sourceText || payload.text || "";
-    if (tagSlot1) tagSlot1.textContent = payload.slot1Label ? `[${payload.slot1Label}]` : "[Spoken]";
-    textSpoken.textContent = payload.spoken || "";
-    meaningSpoken.textContent = payload.spokenMeaning ? `(${payload.spokenMeaning})` : "";
-    meaningSpoken.style.display = payload.spokenMeaning ? "block" : "none";
+    // If dynamic slots array is provided, render arbitrary multi-slot tree branches
+    if (Array.isArray(payload.slots) && payload.slots.length > 0) {
+      cardContent.innerHTML = "";
+      let translationCount = 0;
 
-    if (tagSlot2) tagSlot2.textContent = payload.slot2Label ? `[${payload.slot2Label}]` : "[Written]";
-    textWritten.textContent = payload.written || "";
-    meaningWritten.textContent = payload.writtenMeaning ? `(${payload.writtenMeaning})` : "";
-    meaningWritten.style.display = payload.writtenMeaning ? "block" : "none";
+      payload.slots.forEach((slot, idx) => {
+        const row = document.createElement("div");
+        row.className = "branch-row";
 
-    if (payload.vocab) {
-      textVocab.textContent = payload.vocab;
-      vocabRow.classList.remove("hidden");
+        if (slot.role === "source") {
+          row.classList.add("branch-source");
+          row.innerHTML = `
+            <span class="tree-bullet">·</span>
+            <span class="tag tag-source">[${slot.label || "Original"}]</span>
+            <span class="branch-text">${slot.content}</span>
+          `;
+        } else if (slot.role === "translation" || slot.role === "custom") {
+          translationCount++;
+          const num = translationCount;
+          row.classList.add("branch-slot", "interactive-slot");
+          const glyph = num === 1 ? "┌" : "├";
+          const tagClass = num === 1 ? "tag-spoken" : "tag-written";
+          row.innerHTML = `
+            <div class="key-badge">${num}</div>
+            <span class="tree-glyph">${glyph}</span>
+            <span class="tag ${tagClass}">[${slot.label || (num === 1 ? "Spoken" : "Written")}]</span>
+            <div class="text-group">
+              <div class="branch-text main-text">${slot.content}</div>
+              ${slot.meaning ? `<div class="sub-nuance">(${slot.meaning})</div>` : ""}
+            </div>
+          `;
+          row.addEventListener("click", () => {
+            if (countdownTimer) clearInterval(countdownTimer);
+            window.lingualAPI?.selectTranslation(num);
+          });
+        } else if (slot.role === "vocab") {
+          row.classList.add("branch-vocab");
+          row.innerHTML = `
+            <span class="tree-glyph indent-glyph">└</span>
+            <span class="tag tag-vocab">[${slot.label || "Vocab"}]</span>
+            <div class="branch-text vocab-stream">${slot.content}</div>
+          `;
+        }
+        cardContent.appendChild(row);
+      });
     } else {
-      vocabRow.classList.add("hidden");
+      // Fallback to legacy static slot elements
+      textSource.textContent = payload.sourceText || payload.text || "";
+      if (tagSlot1) tagSlot1.textContent = payload.slot1Label ? `[${payload.slot1Label}]` : "[Spoken]";
+      textSpoken.textContent = payload.spoken || "";
+      meaningSpoken.textContent = payload.spokenMeaning ? `(${payload.spokenMeaning})` : "";
+      meaningSpoken.style.display = payload.spokenMeaning ? "block" : "none";
+
+      if (tagSlot2) tagSlot2.textContent = payload.slot2Label ? `[${payload.slot2Label}]` : "[Written]";
+      textWritten.textContent = payload.written || "";
+      meaningWritten.textContent = payload.writtenMeaning ? `(${payload.writtenMeaning})` : "";
+      meaningWritten.style.display = payload.writtenMeaning ? "block" : "none";
+
+      if (payload.vocab) {
+        textVocab.textContent = payload.vocab;
+        vocabRow.classList.remove("hidden");
+      } else {
+        vocabRow.classList.add("hidden");
+      }
     }
 
     // Dynamic auto-height sensing: measure actual rendered height and report to main process

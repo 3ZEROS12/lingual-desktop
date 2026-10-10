@@ -69,18 +69,54 @@
         </div>
       </section>
 
-      <!-- 2. Dual-Register Slot Customization -->
+      <!-- 2. Dual-Register Slot Customization & Arranger -->
       <section class="card">
-        <h2 class="section-title">双槽位伴学语域定制 (Dual-Slot Architecture)</h2>
+        <h2 class="section-title">全动态槽位架构编排 (Slot Arranger)</h2>
         <div class="field">
-          <label for="select-slot-preset">场景语域预设</label>
+          <label for="select-slot-preset">预设语域方案</label>
           <select id="select-slot-preset" class="select-input">
-            <option value="developer">💻 开发者协同 (默认 · [Spoken] 硅谷口语 vs [Written] RFC规范)</option>
-            <option value="social">🐦 出海推特运营 (针对X推广 · [Hook] 爆款推文 vs [Deep] 深度干货)</option>
-            <option value="japanese">🌸 日语双轨伴学 (针对日语 · [口語] 朋友日常 vs [敬語] 商务谦逊)</option>
-            <option value="academic">🎓 学术科研论文 (针对论文 · [Discussion] 研讨口语 vs [Paper] 顶级期刊)</option>
+            <option value="developer">💻 开发者协同 (默认 4 槽 · 原文 + 硅谷口语 + RFC规范 + 重点)</option>
+            <option value="social">🐦 出海推特运营 (针对X推广 4 槽 · 原文 + 爆款Hook + 深度干货 + 重点)</option>
+            <option value="japanese">🌸 日语双轨伴学 (4 槽 · 原文 + 日常口语 + 商务敬语 + 重点)</option>
+            <option value="academic">🎓 学术科研论文 (4 槽 · 原文 + 研讨口语 + 顶级期刊 + 重点)</option>
+            <option value="compact2">⚡ 超紧凑极速 (2 槽 · 原文 + 译文)</option>
+            <option value="custom">🛠️ 自定义槽位编排</option>
           </select>
-          <span class="field-hint">解耦双槽位设计：针对你的实际角色与工作场景定制两个槽位的语域风格与 HUD 呈现。</span>
+          <span class="field-hint">将所有输出统一抽象为动态槽位：随意开关、随意增减、随心调整语域风格。</span>
+        </div>
+
+        <div id="slot-list-container" class="slot-list">
+          <div class="slot-item">
+            <label class="slot-checkbox-label">
+              <input type="checkbox" id="check-slot-source" checked disabled />
+              <span class="slot-title">槽位 0: 原文 [Original] (固定)</span>
+            </label>
+            <input type="text" id="input-slot-source-label" class="slot-label-input" value="原文" disabled />
+          </div>
+
+          <div class="slot-item">
+            <label class="slot-checkbox-label">
+              <input type="checkbox" id="check-slot-1" checked />
+              <span class="slot-title">槽位 1 (轻快 / 社交):</span>
+            </label>
+            <input type="text" id="input-slot-1-label" class="slot-label-input" value="口语" placeholder="标签名 (如: Hook)" />
+          </div>
+
+          <div class="slot-item">
+            <label class="slot-checkbox-label">
+              <input type="checkbox" id="check-slot-2" checked />
+              <span class="slot-title">槽位 2 (正式 / 严谨):</span>
+            </label>
+            <input type="text" id="input-slot-2-label" class="slot-label-input" value="写作" placeholder="标签名 (如: Deep)" />
+          </div>
+
+          <div class="slot-item">
+            <label class="slot-checkbox-label">
+              <input type="checkbox" id="check-slot-vocab" checked />
+              <span class="slot-title">槽位 3 (高光词汇流):</span>
+            </label>
+            <input type="text" id="input-slot-vocab-label" class="slot-label-input" value="重点" placeholder="标签名 (如: 重点)" />
+          </div>
         </div>
       </section>
 

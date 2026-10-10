@@ -239,8 +239,8 @@ async function handleSubmitInterception(): Promise<void> {
   const cursor = screen.getCursorScreenPoint();
   const pos = caret || cursor;
 
-  // Determine active dual-slot preset definitions
-  const activeSlots = SLOT_PRESETS[config.slotPreset || "developer"] || SLOT_PRESETS.developer;
+  // Determine active dynamic multi-slot configuration
+  const configuredSlots = config.slots && Array.isArray(config.slots) ? config.slots : getDefaultSlots(config.sourceLang || "zh");
 
   // Mode A: Original Mode (0ms pass-through, HUD explains in background without stealing focus)
   if (currentMode === "original") {
@@ -251,12 +251,10 @@ async function handleSubmitInterception(): Promise<void> {
         sourceText: captured.text,
         autoSent: true,
         modeLabel: "Original",
-        slot1Label: activeSlots.slot1.label,
-        slot2Label: activeSlots.slot2.label,
       });
     }
 
-    executeTranslation(captured.text, config, undefined, activeSlots)
+    executeTranslation(captured.text, config, undefined, configuredSlots)
       .then((res) => {
         currentTranslationResponse = res;
         if (companionWindow && companionWindow.isVisible()) {
@@ -265,8 +263,7 @@ async function handleSubmitInterception(): Promise<void> {
             sourceText: captured.text,
             autoSent: true,
             modeLabel: "Original",
-            slot1Label: activeSlots.slot1.label,
-            slot2Label: activeSlots.slot2.label,
+            slots: res.slots,
           });
         }
       })
@@ -282,13 +279,11 @@ async function handleSubmitInterception(): Promise<void> {
       sourceText: captured.text,
       autoSent: config.autoSend,
       modeLabel: "English",
-      slot1Label: activeSlots.slot1.label,
-      slot2Label: activeSlots.slot2.label,
     });
   }
 
   try {
-    const res = await executeTranslation(captured.text, config, undefined, activeSlots);
+    const res = await executeTranslation(captured.text, config, undefined, configuredSlots);
     currentTranslationResponse = res;
 
     // OFFLINE CIRCUIT BREAKER:
@@ -301,8 +296,7 @@ async function handleSubmitInterception(): Promise<void> {
           written: captured.text,
           autoSent: false,
           modeLabel: "Offline",
-          slot1Label: activeSlots.slot1.label,
-          slot2Label: activeSlots.slot2.label,
+          slots: res.slots,
         });
       }
       return;
@@ -322,8 +316,7 @@ async function handleSubmitInterception(): Promise<void> {
           sourceText: captured.text,
           autoSent: true,
           modeLabel: "Submitted",
-          slot1Label: activeSlots.slot1.label,
-          slot2Label: activeSlots.slot2.label,
+          slots: res.slots,
         });
       }
     } else {
@@ -334,8 +327,7 @@ async function handleSubmitInterception(): Promise<void> {
           sourceText: captured.text,
           autoSent: false,
           modeLabel: "Ready",
-          slot1Label: activeSlots.slot1.label,
-          slot2Label: activeSlots.slot2.label,
+          slots: res.slots,
         });
       }
     }
@@ -511,22 +503,34 @@ function setupIpc(): void {
     cycleCompanionMode();
   });
 
-  ipcMain.on("lingual:select", async (_event, slot: 1 | 2) => {
+  ipcMain.on("lingual:select", async (_event, slot: number) => {
     if (!currentTranslationResponse) {
       switchToCapsuleView();
       restoreFocus(activeTargetHwnd);
       return;
     }
 
-    const selectedText = slot === 1
-      ? currentTranslationResponse.spoken
-      : currentTranslationResponse.written;
+    let selectedText = "";
+    if (Array.isArray(currentTranslationResponse.slots)) {
+      const transSlots = currentTranslationResponse.slots.filter(
+        (s: any) => s.role === "translation" || s.role === "custom"
+      );
+      const chosen = transSlots[slot - 1];
+      if (chosen) {
+        selectedText = chosen.content;
+      }
+    }
+
+    if (!selectedText) {
+      selectedText = slot === 1
+        ? currentTranslationResponse.spoken
+        : currentTranslationResponse.written;
+    }
 
     switchToCapsuleView();
 
     if (selectedText) {
       await injectTextToTarget(selectedText, activeTargetHwnd, activeBackupText, clipboard);
-      setTimeout(() => triggerPaste(), 40);
     } else {
       restoreFocus(activeTargetHwnd);
     }

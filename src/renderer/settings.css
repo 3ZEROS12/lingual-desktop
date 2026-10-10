@@ -134,6 +134,56 @@ body {
   border-bottom: 1px solid var(--hairline);
 }
 
+/* Slot Arranger Styling */
+.slot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.slot-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--canvas-soft);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.slot-item:hover {
+  border-color: var(--hairline-strong);
+}
+
+.slot-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.slot-label-input {
+  background: var(--canvas);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--ink);
+  width: 90px;
+  text-align: center;
+  outline: none;
+}
+
+.slot-label-input:focus {
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 2px var(--indigo-soft);
+}
+
 /* Form Fields */
 .field {
   display: flex;
