@@ -22,6 +22,8 @@
 
   const slot1Row = document.getElementById("slot1-row");
   const slot2Row = document.getElementById("slot2-row");
+  const tagSlot1 = document.getElementById("tag-slot1");
+  const tagSlot2 = document.getElementById("tag-slot2");
   const btnClose = document.getElementById("btn-close");
   const badgeMode = document.getElementById("badge-mode");
 
@@ -138,6 +140,25 @@
         footerAutoHint.classList.add("hidden");
         footerConfirmHint.classList.remove("hidden");
       }
+    }
+
+    // Populate card text & slot labels
+    textSource.textContent = payload.sourceText || payload.text || "";
+    if (tagSlot1) tagSlot1.textContent = payload.slot1Label ? `[${payload.slot1Label}]` : "[Spoken]";
+    textSpoken.textContent = payload.spoken || "";
+    meaningSpoken.textContent = payload.spokenMeaning ? `(${payload.spokenMeaning})` : "";
+    meaningSpoken.style.display = payload.spokenMeaning ? "block" : "none";
+
+    if (tagSlot2) tagSlot2.textContent = payload.slot2Label ? `[${payload.slot2Label}]` : "[Written]";
+    textWritten.textContent = payload.written || "";
+    meaningWritten.textContent = payload.writtenMeaning ? `(${payload.writtenMeaning})` : "";
+    meaningWritten.style.display = payload.writtenMeaning ? "block" : "none";
+
+    if (payload.vocab) {
+      textVocab.textContent = payload.vocab;
+      vocabRow.classList.remove("hidden");
+    } else {
+      vocabRow.classList.add("hidden");
     }
 
     // Dynamic auto-height sensing: measure actual rendered height and report to main process

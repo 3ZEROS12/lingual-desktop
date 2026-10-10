@@ -13,6 +13,7 @@ import {
   isImeComposing,
 } from "./win32.js";
 import { executeTranslation, shouldTriggerTranslation } from "./engine.js";
+import { SLOT_PRESETS } from "pi-lingual/core";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -238,6 +239,9 @@ async function handleSubmitInterception(): Promise<void> {
   const cursor = screen.getCursorScreenPoint();
   const pos = caret || cursor;
 
+  // Determine active dual-slot preset definitions
+  const activeSlots = SLOT_PRESETS[config.slotPreset || "developer"] || SLOT_PRESETS.developer;
+
   // Mode A: Original Mode (0ms pass-through, HUD explains in background without stealing focus)
   if (currentMode === "original") {
     switchToHudView(pos.x, pos.y, true);
@@ -247,10 +251,12 @@ async function handleSubmitInterception(): Promise<void> {
         sourceText: captured.text,
         autoSent: true,
         modeLabel: "Original",
+        slot1Label: activeSlots.slot1.label,
+        slot2Label: activeSlots.slot2.label,
       });
     }
 
-    executeTranslation(captured.text, config)
+    executeTranslation(captured.text, config, undefined, activeSlots)
       .then((res) => {
         currentTranslationResponse = res;
         if (companionWindow && companionWindow.isVisible()) {
@@ -259,6 +265,8 @@ async function handleSubmitInterception(): Promise<void> {
             sourceText: captured.text,
             autoSent: true,
             modeLabel: "Original",
+            slot1Label: activeSlots.slot1.label,
+            slot2Label: activeSlots.slot2.label,
           });
         }
       })
@@ -274,11 +282,13 @@ async function handleSubmitInterception(): Promise<void> {
       sourceText: captured.text,
       autoSent: config.autoSend,
       modeLabel: "English",
+      slot1Label: activeSlots.slot1.label,
+      slot2Label: activeSlots.slot2.label,
     });
   }
 
   try {
-    const res = await executeTranslation(captured.text, config);
+    const res = await executeTranslation(captured.text, config, undefined, activeSlots);
     currentTranslationResponse = res;
 
     // OFFLINE CIRCUIT BREAKER:
@@ -291,6 +301,8 @@ async function handleSubmitInterception(): Promise<void> {
           written: captured.text,
           autoSent: false,
           modeLabel: "Offline",
+          slot1Label: activeSlots.slot1.label,
+          slot2Label: activeSlots.slot2.label,
         });
       }
       return;
@@ -310,6 +322,8 @@ async function handleSubmitInterception(): Promise<void> {
           sourceText: captured.text,
           autoSent: true,
           modeLabel: "Submitted",
+          slot1Label: activeSlots.slot1.label,
+          slot2Label: activeSlots.slot2.label,
         });
       }
     } else {
@@ -320,6 +334,8 @@ async function handleSubmitInterception(): Promise<void> {
           sourceText: captured.text,
           autoSent: false,
           modeLabel: "Ready",
+          slot1Label: activeSlots.slot1.label,
+          slot2Label: activeSlots.slot2.label,
         });
       }
     }

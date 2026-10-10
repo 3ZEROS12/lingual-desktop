@@ -67,6 +67,19 @@ The micro-capsule stays docked beside your active caret without stealing typing 
 ### 5. 0ms Code & CLI Shield
 Inherited from `@lingual/core`, 40+ terminal command prefixes (`git`, `npm`, `cargo`, `docker`, `curl`, etc.) and multi-language code snippets pass through in 0ms without burning tokens.
 
+### 6. Gabriel Design System v4 Settings Center (`⚙️ Settings`)
+Right-click the system tray icon to open the GUI settings center, styled with the **Gabriel Design System v4 "Light Indigo"** aesthetic (clean white canvas, deep navy ink, hairline borders, and pill-shaped controls):
+* **1-Click Provider Presets**: Instant configuration for DeepSeek, SiliconFlow, Groq (500 T/s), OpenAI, and local Ollama.
+* **⚡ Live Latency Probe**: Test your endpoint connectivity and view round-trip latency in milliseconds.
+* **3-Second Physical Recall Buffer**: When `autoSend` is enabled, press `Esc` within the 3-second countdown to instantly recall and restore your original native text.
+
+### 7. Dynamic Dual-Slot Architecture (Domain-Specific Customization)
+`[Spoken]` and `[Written]` are simply the defaults for **Slot 1** and **Slot 2**. Switch presets in the settings window to match your exact scenario:
+* **💻 Developer Collaboration (Default)**: `[Spoken]` Silicon Valley Standup / Slack vs. `[Written]` RFC / PR Review Plain English
+* **🐦 Twitter/X Social Growth (Targeted at Overseas Promotion)**: `[Hook]` Viral Social Hook vs. `[Deep]` Structured Technical Insight
+* **🌸 Japanese Immersion**: `[口語]` Casual Tameguchi vs. `[敬語]` Business Polite Keigo
+* **🎓 Academic Publishing**: `[Discussion]` Seminar / Lab Colloquy vs. `[Paper]` Peer-Reviewed Journal Prose
+
 ---
 
 ## Architecture

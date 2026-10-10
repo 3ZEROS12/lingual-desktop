@@ -1,4 +1,4 @@
-import { translateCore, type LingualRequest, type LingualResponse } from "pi-lingual/core";
+import { translateCore, type LingualRequest, type LingualResponse, type CustomSlotsConfig } from "pi-lingual/core";
 import { shouldTriggerTranslation } from "pi-lingual";
 import { loadDesktopConfig, type LingualDesktopConfig } from "./config.js";
 
@@ -85,7 +85,8 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
 export async function executeTranslation(
   text: string,
   configOverride?: Partial<LingualDesktopConfig>,
-  context?: string
+  context?: string,
+  slots?: CustomSlotsConfig
 ): Promise<DesktopTranslationResult> {
   const config = { ...loadDesktopConfig(), ...configOverride };
   const { completer, didFail } = createHttpCompleter(config);
@@ -96,6 +97,7 @@ export async function executeTranslation(
     targetLang: config.targetLang,
     context,
     tone: "general",
+    slots,
   };
 
   const res = await translateCore(req, { completer });

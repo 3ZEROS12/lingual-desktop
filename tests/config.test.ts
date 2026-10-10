@@ -14,6 +14,7 @@ test("config: loadDesktopConfig returns valid configuration object with companio
   assert.equal(typeof cfg.endpoint, "string");
   assert.equal(typeof cfg.model, "string");
   assert.equal(cfg.mode, "english");
+  assert.equal(cfg.slotPreset, "developer");
   assert.equal(cfg.autoSend, true);
   assert.equal(cfg.showCapsule, true);
   assert.equal(cfg.hotkeyToggleMode, "Alt+Q");
@@ -28,12 +29,14 @@ test("config: saveDesktopConfig writes mode and autoSend to user config and relo
   try {
     saveDesktopConfig({
       mode: "original",
+      slotPreset: "social",
       autoSend: false,
       hotkeyToggleMode: "Ctrl+Shift+L",
     });
 
     const updated = loadDesktopConfig();
     assert.equal(updated.mode, "original");
+    assert.equal(updated.slotPreset, "social");
     assert.equal(updated.autoSend, false);
     assert.equal(updated.hotkeyToggleMode, "Ctrl+Shift+L");
   } finally {

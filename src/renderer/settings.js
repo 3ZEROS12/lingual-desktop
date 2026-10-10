@@ -1,6 +1,7 @@
 // Settings Controller with Gabriel Design Language
 (function () {
   const selectPreset = document.getElementById("select-preset");
+  const selectSlotPreset = document.getElementById("select-slot-preset");
   const inputEndpoint = document.getElementById("input-endpoint");
   const inputApiKey = document.getElementById("input-apikey");
   const inputModel = document.getElementById("input-model");
@@ -109,6 +110,7 @@
       }
 
       selectTrigger.value = cfg.hotkeySubmit || "Ctrl+Enter";
+      selectSlotPreset.value = cfg.slotPreset || "developer";
       checkAutoSend.checked = cfg.autoSend !== false;
       checkRecallBuffer.checked = true;
       checkAutostart.checked = true;
@@ -123,6 +125,7 @@
       endpoint: inputEndpoint.value.trim(),
       apiKey: inputApiKey.value.trim(),
       model: inputModel.value.trim(),
+      slotPreset: selectSlotPreset.value,
       hotkeySubmit: selectTrigger.value,
       autoSend: checkAutoSend.checked,
     };

@@ -3,6 +3,7 @@ import path from "node:path";
 import os from "node:os";
 
 export type CompanionMode = "english" | "original" | "off";
+export type SlotPreset = "developer" | "social" | "japanese" | "academic" | "custom";
 
 export interface LingualDesktopConfig {
   endpoint: string;
@@ -11,6 +12,7 @@ export interface LingualDesktopConfig {
   sourceLang: string;
   targetLang: string;
   mode: CompanionMode;
+  slotPreset: SlotPreset;
   autoSend: boolean;
   showCapsule: boolean;
   hotkeyToggleMode: string;
@@ -26,6 +28,7 @@ export const DEFAULT_DESKTOP_CONFIG: LingualDesktopConfig = {
   sourceLang: "zh",
   targetLang: "en",
   mode: "english",
+  slotPreset: "developer",
   autoSend: true,
   showCapsule: true,
   hotkeyToggleMode: "Alt+Q",
