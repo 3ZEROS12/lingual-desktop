@@ -145,24 +145,46 @@
     // If dynamic slots array is provided, render arbitrary multi-slot tree branches
     if (Array.isArray(payload.slots) && payload.slots.length > 0) {
       cardContent.innerHTML = "";
+
+      // 1. 提取原文槽位与非原文分支列表
+      const sourceSlot = payload.slots.find((s) => s.role === "source");
+      const contentBranches = payload.slots.filter(
+        (s) => s.role !== "source" && s.content && s.content.trim()
+      );
+
+      // 2. 原文行渲染（支持用户完全关闭隐藏！）
+      if (sourceSlot && sourceSlot.content && sourceSlot.content.trim()) {
+        const sourceRow = document.createElement("div");
+        sourceRow.className = "branch-row branch-source";
+        sourceRow.innerHTML = `
+          <span class="tree-bullet">·</span>
+          <span class="tag tag-source">[${sourceSlot.label || "Original"}]</span>
+          <span class="branch-text">${sourceSlot.content}</span>
+        `;
+        cardContent.appendChild(sourceRow);
+      }
+
+      // 3. 动态计算树状分支图腾（严格执行 Trifecta 盒模型闭合，末行必须以 └ 闭合）
+      const totalBranches = contentBranches.length;
       let translationCount = 0;
 
-      payload.slots.forEach((slot, idx) => {
+      contentBranches.forEach((slot, i) => {
         const row = document.createElement("div");
         row.className = "branch-row";
 
-        if (slot.role === "source") {
-          row.classList.add("branch-source");
-          row.innerHTML = `
-            <span class="tree-bullet">·</span>
-            <span class="tag tag-source">[${slot.label || "Original"}]</span>
-            <span class="branch-text">${slot.content}</span>
-          `;
-        } else if (slot.role === "translation" || slot.role === "custom") {
+        let glyph = "├";
+        if (totalBranches === 1) {
+          glyph = "└";
+        } else if (i === 0) {
+          glyph = "┌";
+        } else if (i === totalBranches - 1) {
+          glyph = "└";
+        }
+
+        if (slot.role === "translation" || slot.role === "custom") {
           translationCount++;
           const num = translationCount;
           row.classList.add("branch-slot", "interactive-slot");
-          const glyph = num === 1 ? "┌" : "├";
           const tagClass = num === 1 ? "tag-spoken" : "tag-written";
           row.innerHTML = `
             <div class="key-badge">${num}</div>
@@ -180,7 +202,7 @@
         } else if (slot.role === "vocab") {
           row.classList.add("branch-vocab");
           row.innerHTML = `
-            <span class="tree-glyph indent-glyph">└</span>
+            <span class="tree-glyph indent-glyph">${glyph}</span>
             <span class="tag tag-vocab">[${slot.label || "Vocab"}]</span>
             <div class="branch-text vocab-stream">${slot.content}</div>
           `;

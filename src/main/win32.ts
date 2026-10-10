@@ -245,6 +245,7 @@ export async function injectTextToTarget(
 
 /**
  * Injects replacement text into target window and restores the original clipboard
+ * Uses an atomic clipboard sentinel check before rollback to guarantee zero clobbering of subsequent user copies!
  */
 export async function injectReplacementText(
   replacementText: string,
@@ -262,7 +263,13 @@ export async function injectReplacementText(
 
   setTimeout(() => {
     try {
-      clipboard.writeText(backup);
+      // 剪贴板安全哨兵 (Sentinel Guard):
+      // 仅当剪贴板内容依然为我们注入的 replacementText 时才执行延迟回滚，
+      // 若用户在 160ms 间隙内已主动复制了新文本，绝不盲目覆盖破坏用户的最新剪贴板！
+      const currentClip = clipboard.readText();
+      if (currentClip === replacementText) {
+        clipboard.writeText(backup);
+      }
     } catch {
       // Ignore background restore errors
     }

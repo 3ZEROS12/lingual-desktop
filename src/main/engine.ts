@@ -1,4 +1,10 @@
-import { translateCore, type LingualRequest, type LingualResponse, type CustomSlotsConfig } from "pi-lingual/core";
+import {
+  translateCore,
+  type LingualRequest,
+  type LingualResponse,
+  type CustomSlotsConfig,
+  type SlotConfig,
+} from "pi-lingual/core";
 import { shouldTriggerTranslation } from "pi-lingual";
 import { loadDesktopConfig, type LingualDesktopConfig } from "./config.js";
 
@@ -21,7 +27,7 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
     const model = config.model || "qwen2.5:3b";
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     const onAbort = () => controller.abort();
     if (signal) {
@@ -42,6 +48,7 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
             { role: "user", content: prompt },
           ],
           temperature: 0.2,
+          max_tokens: 1500,
           stream: false,
         }),
         signal: controller.signal,
@@ -86,10 +93,12 @@ export async function executeTranslation(
   text: string,
   configOverride?: Partial<LingualDesktopConfig>,
   context?: string,
-  slots?: CustomSlotsConfig
+  slots?: SlotConfig[] | CustomSlotsConfig
 ): Promise<DesktopTranslationResult> {
   const config = { ...loadDesktopConfig(), ...configOverride };
   const { completer, didFail } = createHttpCompleter(config);
+
+  const effectiveSlots = slots || (config.slots && Array.isArray(config.slots) ? config.slots : undefined);
 
   const req: LingualRequest = {
     text,
@@ -97,7 +106,7 @@ export async function executeTranslation(
     targetLang: config.targetLang,
     context,
     tone: "general",
-    slots,
+    slots: effectiveSlots,
   };
 
   const res = await translateCore(req, { completer });

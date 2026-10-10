@@ -102,6 +102,8 @@
 
   // 4. Tab 2: Slot Arranger & Presets
   const slotPresetChips = document.querySelectorAll("#slot-preset-chips .chip");
+  const checkSlotSource = document.getElementById("check-slot-source");
+  const slot0Label = document.getElementById("slot-0-label");
   const checkSlot1 = document.getElementById("check-slot-1");
   const slot1Label = document.getElementById("slot-1-label");
   const checkSlot2 = document.getElementById("check-slot-2");
@@ -160,13 +162,20 @@
 
   function updateSlotsForLanguage(lang) {
     if (lang === "ja") {
+      if (slot0Label) slot0Label.value = "原文";
       slot1Label.value = "口語";
       slot2Label.value = "敬語";
       slotVocabLabel.value = "単語";
     } else if (lang === "en") {
+      if (slot0Label) slot0Label.value = "Source";
       slot1Label.value = "Spoken";
       slot2Label.value = "Written";
       slotVocabLabel.value = "Vocab";
+    } else {
+      if (slot0Label) slot0Label.value = "原文";
+      slot1Label.value = "口语";
+      slot2Label.value = "写作";
+      slotVocabLabel.value = "重点";
     }
   }
 
@@ -289,6 +298,14 @@
       });
 
       if (Array.isArray(cfg.slots)) {
+        const s0 = cfg.slots.find((s) => s.id === "source" || s.role === "source");
+        if (s0) {
+          if (checkSlotSource) checkSlotSource.checked = s0.enabled !== false;
+          if (slot0Label) slot0Label.value = s0.label || (activeLangCode === "en" ? "Source" : "原文");
+        } else if (checkSlotSource) {
+          checkSlotSource.checked = false;
+        }
+
         const s1 = cfg.slots.find((s) => s.id === "spoken");
         if (s1) {
           checkSlot1.checked = s1.enabled !== false;
@@ -324,16 +341,22 @@
   }
 
   btnSave.addEventListener("click", async () => {
-    const dynamicSlots = [
-      {
+    const dynamicSlots = [];
+
+    // #0 原文槽位（支持用户完全关闭隐藏！）
+    if (checkSlotSource && checkSlotSource.checked) {
+      dynamicSlots.push({
         id: "source",
-        label: "原文",
+        label: (slot0Label?.value.trim()) || (activeLangCode === "en" ? "Source" : "原文"),
         role: "source",
         enabled: true,
-      },
+      });
+    }
+
+    dynamicSlots.push(
       {
         id: "spoken",
-        label: slot1Label.value.trim() || "口语",
+        label: slot1Label.value.trim() || (activeLangCode === "en" ? "Spoken" : activeLangCode === "ja" ? "口語" : "口语"),
         role: "translation",
         instruction: "Natural, fluent spoken flow (daily standup, Slack, agile collaboration, conversational banter).",
         showMeaning: true,
@@ -341,7 +364,7 @@
       },
       {
         id: "written",
-        label: slot2Label.value.trim() || "写作",
+        label: slot2Label.value.trim() || (activeLangCode === "en" ? "Written" : activeLangCode === "ja" ? "敬語" : "写作"),
         role: "translation",
         instruction: "Clear, precise, modern technical written prose (RFCs, PR descriptions, documentation, deep insight).",
         showMeaning: true,
@@ -349,12 +372,12 @@
       },
       {
         id: "vocab",
-        label: slotVocabLabel.value.trim() || "重点",
+        label: slotVocabLabel.value.trim() || (activeLangCode === "en" ? "Vocab" : activeLangCode === "ja" ? "単語" : "重点"),
         role: "vocab",
         instruction: "Adaptively extract key idiomatic collocations, phrasal verbs, or technical idioms.",
         enabled: checkSlotVocab.checked,
-      },
-    ];
+      }
+    );
 
     const patch = {
       sourceLang: activeLangCode,

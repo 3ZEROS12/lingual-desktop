@@ -13,7 +13,8 @@ import {
   isImeComposing,
 } from "./win32.js";
 import { executeTranslation, shouldTriggerTranslation } from "./engine.js";
-import { SLOT_PRESETS } from "pi-lingual/core";
+import { SLOT_PRESETS, getDefaultSlots } from "pi-lingual/core";
+import { resolveLabelsForLang } from "pi-lingual";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -373,10 +374,19 @@ function openSettingsWindow(): void {
     return;
   }
 
+  const config = loadDesktopConfig();
+  const isZh = config.sourceLang === "zh" || config.sourceLang === "tw";
+  const isJa = config.sourceLang === "ja";
+  const winTitle = isZh
+    ? "Lingual 伴侣设置"
+    : isJa
+    ? "Lingual 伴走設定"
+    : "Lingual Companion Settings";
+
   settingsWindow = new BrowserWindow({
     width: 520,
     height: 660,
-    title: "Lingual 伴侣设置",
+    title: winTitle,
     resizable: false,
     minimizable: false,
     maximizable: false,
@@ -406,22 +416,27 @@ function openSettingsWindow(): void {
 function updateTrayMenu(): void {
   if (!tray) return;
 
+  const config = loadDesktopConfig();
+  const labels = resolveLabelsForLang(config.sourceLang || "zh", undefined, config.targetLang);
+  const isZh = config.sourceLang === "zh" || config.sourceLang === "tw";
+  const isJa = config.sourceLang === "ja";
+
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: `⇄ Current Mode: [${currentMode.toUpperCase()}]`,
+      label: `⇄ [${labels.hudTitle}] ${labels.statusReportMode || "Mode"}: [${currentMode.toUpperCase()}]`,
       enabled: false,
     },
     {
-      label: "Cycle Mode (Alt+Q)",
+      label: isZh ? "循环切换模式 (Alt+Q)" : isJa ? "モード切替 (Alt+Q)" : "Cycle Mode (Alt+Q)",
       click: () => cycleCompanionMode(),
     },
     {
-      label: "⚙️ 设置 (Settings)...",
+      label: isZh ? "⚙️ 设置 (Settings)..." : isJa ? "⚙️ 設定 (Settings)..." : "⚙️ Settings...",
       click: () => openSettingsWindow(),
     },
     { type: "separator" },
     {
-      label: "Mode: English (Auto-translate & Submit)",
+      label: `${labels.statusEnglish}: ${labels.modeDescEnglish || "English (Auto-translate & Submit)"}`,
       type: "radio",
       checked: currentMode === "english",
       click: () => {
@@ -432,7 +447,7 @@ function updateTrayMenu(): void {
       },
     },
     {
-      label: "Mode: Original (Send original + Learn)",
+      label: `${labels.statusOriginal}: ${labels.modeDescOriginal || "Original (Send original + Learn)"}`,
       type: "radio",
       checked: currentMode === "original",
       click: () => {
@@ -443,7 +458,7 @@ function updateTrayMenu(): void {
       },
     },
     {
-      label: "Mode: Off",
+      label: labels.statusOff || (isZh ? "关闭伴学" : isJa ? "オフ" : "Off"),
       type: "radio",
       checked: currentMode === "off",
       click: () => {
@@ -455,24 +470,24 @@ function updateTrayMenu(): void {
     },
     { type: "separator" },
     {
-      label: "Auto-Send after Translation",
+      label: isZh ? "翻译后自动发送" : isJa ? "翻訳後に自動送信" : "Auto-Send after Translation",
       type: "checkbox",
-      checked: loadDesktopConfig().autoSend,
+      checked: config.autoSend,
       click: (item) => {
         saveDesktopConfig({ autoSend: item.checked });
       },
     },
     {
-      label: "Show Ambient Caret Capsule",
+      label: isZh ? "显示光标悬浮胶囊" : isJa ? "カーソルカプセルを表示" : "Show Ambient Caret Capsule",
       type: "checkbox",
-      checked: loadDesktopConfig().showCapsule,
+      checked: config.showCapsule,
       click: (item) => {
         saveDesktopConfig({ showCapsule: item.checked });
       },
     },
     { type: "separator" },
     {
-      label: "Quit",
+      label: isZh ? "退出" : isJa ? "終了" : "Quit",
       click: () => app.quit(),
     },
   ]);
@@ -482,7 +497,16 @@ function updateTrayMenu(): void {
 
 function setupTray(): void {
   tray = new Tray(path.join(__dirname, "../../assets/tray-icon.png"));
-  tray.setToolTip("Lingual 伴侣 · 点击打开设置");
+  const config = loadDesktopConfig();
+  const isZh = config.sourceLang === "zh" || config.sourceLang === "tw";
+  const isJa = config.sourceLang === "ja";
+  tray.setToolTip(
+    isZh
+      ? "Lingual 语言伴侣 · 点击打开设置"
+      : isJa
+      ? "Lingual 伴走 · クリックして設定を開く"
+      : "Lingual Companion · Click to open settings"
+  );
   updateTrayMenu();
 
   // Left click or double click on tray icon opens the Gabriel settings control center immediately!
@@ -640,9 +664,16 @@ if (!gotTheLock) {
     // If user double-clicks Lingual.exe while already running, immediately bring Settings window to foreground!
     openSettingsWindow();
     if (tray) {
+      const cfg = loadDesktopConfig();
+      const isZh = cfg.sourceLang === "zh" || cfg.sourceLang === "tw";
+      const isJa = cfg.sourceLang === "ja";
       tray.displayBalloon({
-        title: "Lingual 语言伴侣",
-        content: "设置控制中心已激活。快捷键：Alt+Q 切换模式，Ctrl+Enter 翻译并发送。",
+        title: isZh ? "Lingual 语言伴侣" : isJa ? "Lingual 伴走" : "Lingual Companion",
+        content: isZh
+          ? "设置控制中心已激活。快捷键：Alt+Q 切换模式，Ctrl+Enter 翻译并发送。"
+          : isJa
+          ? "設定画面がアクティブです。Alt+Q モード切替、Ctrl+Enter 送信。"
+          : "Settings window activated. Hotkeys: Alt+Q to cycle mode, Ctrl+Enter to submit.",
       });
     }
   });
@@ -674,9 +705,15 @@ if (!gotTheLock) {
     if (!isSilent) {
       openSettingsWindow();
     } else if (tray) {
+      const isZh = config.sourceLang === "zh" || config.sourceLang === "tw";
+      const isJa = config.sourceLang === "ja";
       tray.displayBalloon({
-        title: "Lingual 伴侣已启动",
-        content: "模式：[" + currentMode.toUpperCase() + "]。快捷键：Alt+Q 切模式，Ctrl+Enter 发送并翻译。",
+        title: isZh ? "Lingual 伴侣已启动" : isJa ? "Lingual 伴走 起動完了" : "Lingual Started",
+        content: isZh
+          ? `模式：[${currentMode.toUpperCase()}]。快捷键：Alt+Q 切模式，Ctrl+Enter 发送。`
+          : isJa
+          ? `モード：[${currentMode.toUpperCase()}]。Alt+Q モード切替、Ctrl+Enter 送信。`
+          : `Mode: [${currentMode.toUpperCase()}]. Alt+Q to cycle mode, Ctrl+Enter to submit.`,
       });
     }
 
@@ -688,7 +725,7 @@ if (!gotTheLock) {
     globalShortcut.unregisterAll();
   });
 
-  app.on("window-all-closed", (e: Event) => {
-    e.preventDefault();
+  app.on("window-all-closed", () => {
+    // Keep ambient companion resident in Windows system tray
   });
 }
