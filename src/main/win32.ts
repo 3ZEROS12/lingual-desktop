@@ -122,19 +122,30 @@ export function getCaretPosition(): { x: number; y: number } | null {
   }
 }
 
+export function probeFocusedElement(): { isEditable: boolean; text: string | null } {
+  try {
+    const helper = getHelperPath("uia_helper.exe");
+    const out = execFileSync(helper, ["focused-text"], { encoding: "utf8", timeout: 2000 });
+    const trimmed = out ? out.trim() : "";
+    if (trimmed === "NONE" || trimmed === "NON_EDITABLE") {
+      return { isEditable: false, text: null };
+    }
+    if (trimmed === "EDITABLE_FALLBACK" || trimmed === "UNSUPPORTED") {
+      return { isEditable: true, text: null };
+    }
+    return { isEditable: true, text: out };
+  } catch {
+    return { isEditable: false, text: null };
+  }
+}
+
 /**
  * Reads text from the currently focused element via Windows UI Automation
  * 100% zero clipboard interaction!
  */
 export function getFocusedElementText(): string | null {
-  try {
-    const helper = getHelperPath("uia_helper.exe");
-    const out = execFileSync(helper, ["focused-text"], { encoding: "utf8", timeout: 2000 });
-    if (!out || out === "NONE" || out === "UNSUPPORTED") return null;
-    return out;
-  } catch {
-    return null;
-  }
+  const probe = probeFocusedElement();
+  return probe.text;
 }
 
 /**
@@ -253,13 +264,20 @@ export async function captureActiveInputText(
   clipboard: ClipboardLike,
   allowSelectAll = true
 ): Promise<{ text: string; backup: string; method: "uia" | "clipboard" } | null> {
-  const uiaText = getFocusedElementText();
-  if (uiaText && uiaText.trim()) {
+  const probe = probeFocusedElement();
+  if (probe.text && probe.text.trim()) {
     return {
-      text: uiaText,
+      text: probe.text,
       backup: clipboard.readText(),
       method: "uia",
     };
+  }
+
+  // If UIA explicitly reports the focused element is NOT editable (e.g. a button, desktop, folder)
+  // and there is no Win32 text caret, do not run clipboard shortcuts!
+  const hasCaret = getCaretPosition() !== null;
+  if (!probe.isEditable && !hasCaret) {
+    return null;
   }
 
   const clipCaptured = await captureSelectedText(clipboard);
@@ -271,7 +289,7 @@ export async function captureActiveInputText(
     };
   }
 
-  if (allowSelectAll) {
+  if (allowSelectAll && (probe.isEditable || hasCaret)) {
     const allCaptured = await captureAllInputText(clipboard);
     if (allCaptured && allCaptured.text.trim()) {
       return {
@@ -287,9 +305,9 @@ export async function captureActiveInputText(
 
 /**
  * Hybrid Text Injection:
- * 1. Attempts UI Automation SetValue first (0ms, 0 clipboard pollution).
- * 2. If UIA unsupported, restores focus and triggers delayed-rollback Clipboard Paste.
- * 3. If submitAfter is true, sends native VK_RETURN keystroke after replacing text.
+ * 1. When submitting (Enter pipeline), uses atomic Ctrl+A -> Ctrl+V -> Enter so React/Vue/Web inputs
+ *    update their internal state before form submission.
+ * 2. When not submitting, attempts UIA SetValue first with clipboard fallback.
  */
 export async function injectTextToTarget(
   replacementText: string,
@@ -298,17 +316,13 @@ export async function injectTextToTarget(
   clipboard: ClipboardLike,
   submitAfter = false
 ): Promise<"uia" | "clipboard"> {
-  const uiaSuccess = setFocusedElementText(replacementText);
-  if (uiaSuccess) {
-    if (submitAfter) {
-      restoreFocus(targetHwnd);
-      await new Promise((r) => setTimeout(r, 25));
-      triggerEnter();
+  if (!submitAfter) {
+    const uiaSuccess = setFocusedElementText(replacementText);
+    if (uiaSuccess) {
+      return "uia";
     }
-    return "uia";
   }
 
-  // Fallback to clipboard transaction
   await injectReplacementText(replacementText, targetHwnd, backup, clipboard, submitAfter);
   return "clipboard";
 }

@@ -24,7 +24,7 @@
       <!-- Right Actions: Minimalist Language Code Switcher & Close -->
       <div class="nav-actions">
         <div class="lang-dropdown-wrapper">
-          <button id="btn-lang-trigger" class="btn-lang-code" title="Interface & Source Language">
+          <button id="btn-lang-trigger" class="btn-lang-code" title="Interface Language">
             <span id="lang-current-code">EN</span>
           </button>
           <div id="lang-popover" class="lang-popover hidden">
@@ -57,17 +57,17 @@
         <div class="card">
           <div class="card-header">
             <h2 class="card-title" data-i18n="sec_mode_title">Operating Mode</h2>
-            <p class="card-desc" data-i18n="sec_mode_desc">Cycle modes anytime with Alt + Q:</p>
+            <p class="card-desc" data-i18n="sec_mode_desc">Just press Enter in any input box. Lingual automatically detects natural language and dispatches to the configured model (commands, code, and Ctrl+Enter / Shift+Enter newlines pass through untouched). Cycle anytime with Alt + Q:</p>
           </div>
 
           <div class="segmented-control" id="companion-mode-segmented">
             <button type="button" class="seg-btn active" data-mode="english">
               <span class="seg-title" data-i18n="mode_en_title">Translate</span>
-              <span class="seg-sub" data-i18n="mode_en_sub">Replaces text in target input and displays card</span>
+              <span class="seg-sub" data-i18n="mode_en_sub">Press Enter ➔ Translates, replaces & submits + shows card</span>
             </button>
             <button type="button" class="seg-btn" data-mode="original">
               <span class="seg-title" data-i18n="mode_orig_title">Learn</span>
-              <span class="seg-sub" data-i18n="mode_orig_sub">Keeps original text intact; pops up card only</span>
+              <span class="seg-sub" data-i18n="mode_orig_sub">Press Enter ➔ Submits original immediately + shows card</span>
             </button>
             <button type="button" class="seg-btn" data-mode="off">
               <span class="seg-title" data-i18n="mode_off_title">Off</span>
@@ -76,11 +76,28 @@
           </div>
         </div>
 
-        <!-- 2. Target Language -->
+        <!-- 2. Source Language -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title" data-i18n="sec_slang_title">Source Language</h2>
+            <p class="card-desc" data-i18n="sec_slang_desc">The primary language you type in:</p>
+          </div>
+          <div class="chip-row" id="source-lang-chips">
+            <button type="button" class="chip active" data-slang="zh">ZH</button>
+            <button type="button" class="chip" data-slang="en">EN</button>
+            <button type="button" class="chip" data-slang="ja">JA</button>
+            <button type="button" class="chip" data-slang="es">ES</button>
+            <button type="button" class="chip" data-slang="de">DE</button>
+            <button type="button" class="chip" data-slang="fr">FR</button>
+            <button type="button" class="chip" data-slang="ko">KO</button>
+          </div>
+        </div>
+
+        <!-- 3. Target Language -->
         <div class="card">
           <div class="card-header">
             <h2 class="card-title" data-i18n="sec_tlang_title">Target Language</h2>
-            <p class="card-desc" data-i18n="sec_tlang_desc">Translates your drafts into the selected language:</p>
+            <p class="card-desc" data-i18n="sec_tlang_desc">The target language to translate into:</p>
           </div>
           <div class="chip-row" id="target-lang-chips">
             <button type="button" class="chip active" data-tlang="en">EN</button>
@@ -91,68 +108,6 @@
             <button type="button" class="chip" data-tlang="fr">FR</button>
             <button type="button" class="chip" data-tlang="ko">KO</button>
           </div>
-        </div>
-
-        <!-- 3. Trigger Shortcut -->
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title" data-i18n="sec_hotkey_title">Trigger Shortcut</h2>
-            <p class="card-desc" data-i18n="sec_hotkey_desc">Press this key to translate your draft (Enter and Ctrl+Enter remain untouched):</p>
-          </div>
-
-          <div class="segmented-control" id="trigger-segmented">
-            <button type="button" class="seg-btn active" data-val="Alt+E">
-              <span class="seg-title">Alt + E</span>
-              <span class="seg-sub" data-i18n="hk_alte_sub">Recommended (zero typing conflict)</span>
-            </button>
-            <button type="button" class="seg-btn" data-val="Alt+S">
-              <span class="seg-title">Alt + S</span>
-              <span class="seg-sub" data-i18n="hk_alts_sub">Left-hand single stroke for fast chat</span>
-            </button>
-            <button type="button" class="seg-btn" data-val="Alt+Enter">
-              <span class="seg-title">Alt + Enter</span>
-              <span class="seg-sub" data-i18n="hk_altenter_sub">Preserves Enter and Ctrl+Enter newlines</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 4. Replacement Action -->
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title" data-i18n="sec_dispatch_title">Replacement Action</h2>
-            <p class="card-desc" data-i18n="sec_dispatch_desc">How translations are committed into your active input field:</p>
-          </div>
-
-          <div class="choice-grid" id="autosend-choice-grid">
-            <div class="choice-card active" data-autosend="true">
-              <div class="choice-top">
-                <span class="radio-dot"></span>
-                <span class="choice-title" data-i18n="dispatch_auto_title">Replace Directly</span>
-                <span class="badge-subtle" data-i18n="dispatch_auto_badge">Fastest</span>
-              </div>
-              <div class="choice-flow" data-i18n="dispatch_auto_flow">
-                Draft ➔ Alt+E ➔ <strong>In-place text replacement</strong>
-              </div>
-              <p class="choice-desc" data-i18n="dispatch_auto_desc">
-                Replaces input text immediately and shows a 3s card. Press <strong>Esc within 3s</strong> to undo.
-              </p>
-            </div>
-
-            <div class="choice-card" data-autosend="false">
-              <div class="choice-top">
-                <span class="radio-dot"></span>
-                <span class="choice-title" data-i18n="dispatch_pick_title">Preview First</span>
-              </div>
-              <div class="choice-flow" data-i18n="dispatch_pick_flow">
-                Draft ➔ Alt+E ➔ <strong>Press 1 or 2 to commit</strong>
-              </div>
-              <p class="choice-desc" data-i18n="dispatch_pick_desc">
-                Displays the card first. Press number keys 1 or 2 to insert the phrasing you prefer.
-              </p>
-            </div>
-          </div>
-
-          <input type="checkbox" id="check-auto-send" class="hidden" checked />
         </div>
       </section>
 

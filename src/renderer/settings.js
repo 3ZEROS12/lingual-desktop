@@ -1,46 +1,33 @@
 // ============================================================================
-// Lingual Desktop Settings — Minimalist Paper & Stone Controller
-// - Clean Language Code Switcher (EN / ZH / TW / JA) — Zero emojis, concise copy
-// - 3 Operating Modes (Translate / Learn / Off)
-// - Non-Intrusive Shortcuts (Alt+E / Alt+S / Alt+Enter)
+// Lingual Desktop Settings — Pure pi-lingual Parity Controller
+// - Enter-Driven Automatic Dispatch (Translate / Learn / Off)
+// - Clean Language Code Switcher (EN / ZH / TW / JA)
+// - Source & Target Language Chips (ZH / EN / JA / ES / DE / FR / KO)
 // - Live Card Preview & Natural Language Preset Tuner
-// - Zero Local-Model Clutter (Built-in Fast Cloud vs Custom API Key)
 // - Instant Auto-Save on Every Action
 // ============================================================================
 
 (function () {
-  // 0. Concise Editorial i18n Dictionary (Zero Emojis)
   const UI_I18N = {
     en: {
       nav_general: "General",
       nav_cards: "Cards",
       nav_engine: "Engine",
       sec_mode_title: "Operating Mode",
-      sec_mode_desc: "Cycle modes anytime with Alt + Q:",
+      sec_mode_desc:
+        "Just press Enter in any input box. Lingual automatically detects natural language and dispatches to the configured model (commands, code, and Ctrl+Enter / Shift+Enter newlines pass through untouched). Cycle anytime with Alt + Q:",
       mode_en_title: "Translate",
-      mode_en_sub: "Replaces text in target input and displays card",
+      mode_en_sub: "Press Enter ➔ Translates, replaces & submits + shows card",
       mode_orig_title: "Learn",
-      mode_orig_sub: "Keeps original text intact; pops up card only",
+      mode_orig_sub: "Press Enter ➔ Submits original immediately + shows card",
       mode_off_title: "Off",
       mode_off_sub: "Inactive; no translation or popup",
+      sec_slang_title: "Source Language",
+      sec_slang_desc: "The primary language you type in:",
       sec_tlang_title: "Target Language",
-      sec_tlang_desc: "Translates your drafts into the selected language:",
-      sec_hotkey_title: "Trigger Shortcut",
-      sec_hotkey_desc: "Press this key to translate your draft (Enter and Ctrl+Enter remain untouched):",
-      hk_alte_sub: "Recommended (zero typing conflict)",
-      hk_alts_sub: "Left-hand single stroke for fast chat",
-      hk_altenter_sub: "Preserves Enter and Ctrl+Enter newlines",
-      sec_dispatch_title: "Replacement Action",
-      sec_dispatch_desc: "How translations are committed into your active input field:",
-      dispatch_auto_title: "Replace Directly",
-      dispatch_auto_badge: "Fastest",
-      dispatch_auto_flow: "Draft ➔ Alt+E ➔ <strong>In-place text replacement</strong>",
-      dispatch_auto_desc: "Replaces input text immediately and shows a 3s card. Press <strong>Esc within 3s</strong> to undo.",
-      dispatch_pick_title: "Preview First",
-      dispatch_pick_flow: "Draft ➔ Alt+E ➔ <strong>Press 1 or 2 to commit</strong>",
-      dispatch_pick_desc: "Displays the card first. Press number keys 1 or 2 to insert the phrasing you prefer.",
+      sec_tlang_desc: "The target language to translate into:",
       preview_title: "Live Preview",
-      preview_hint: "Sample: \"Can we release this feature tomorrow?\"",
+      preview_hint: 'Sample: "Can we release this feature tomorrow?"',
       ai_tuner_title: "Natural Language Preset",
       ai_tuner_desc: "Describe your preferred layout or select a preset below:",
       ai_tuner_placeholder: "e.g. Single line only for fast chat, no source row or vocab...",
@@ -79,40 +66,24 @@
       meta_orig: "Original input",
       meta_key: "Key {n}",
       meta_vocab: "Key terms",
-      lbl_source: "Source",
-      lbl_casual: "Casual",
-      lbl_formal: "Formal",
-      lbl_single: "Translation",
-      lbl_vocab: "Vocab",
     },
     zh: {
       nav_general: "常规",
       nav_cards: "卡片",
       nav_engine: "引擎",
-      sec_mode_title: "运行模式",
-      sec_mode_desc: "随时按 Alt + Q 可循环切换：",
+      sec_mode_title: "运行模式（与 pi-lingual 完全一致）",
+      sec_mode_desc:
+        "在任何输入框打完字直接按回车 (Enter)，自动判断是否需要翻译并交给所配置的模型（代码、命令及 Ctrl+Enter / Shift+Enter 换行自动原样放行）。随时可按 Alt + Q 切换模式：",
       mode_en_title: "译文 (Translate)",
-      mode_en_sub: "直接替换输入框草稿并展开对照卡片",
+      mode_en_sub: "按回车 ➔ 自动翻译替换并发出 + 展开对照卡片",
       mode_orig_title: "伴学 (Learn)",
-      mode_orig_sub: "保留原文字不变，仅展开卡片对照",
+      mode_orig_sub: "按回车 ➔ 原文直接发出 + 后台展开对照卡片",
       mode_off_title: "关闭 (Off)",
-      mode_off_sub: "静默待机，不触发翻译或弹窗",
-      sec_tlang_title: "目标语言",
-      sec_tlang_desc: "将输入草稿转换为选定的目标语言：",
-      sec_hotkey_title: "触发快捷键",
-      sec_hotkey_desc: "需要翻译时按下（绝不占用 Enter 与 Ctrl+Enter 换行）：",
-      hk_alte_sub: "推荐（顺手且零打字冲突）",
-      hk_alts_sub: "左手单键快速触发",
-      hk_altenter_sub: "保留普通回车与 Ctrl+Enter 换行",
-      sec_dispatch_title: "上屏方式",
-      sec_dispatch_desc: "译文模式下，翻译结果如何填入输入框：",
-      dispatch_auto_title: "直接替换",
-      dispatch_auto_badge: "最快",
-      dispatch_auto_flow: "输入草稿 ➔ Alt+E ➔ <strong>原地替换为目标外语</strong>",
-      dispatch_auto_desc: "立即替换输入框文本并浮现 3 秒卡片。<strong>3 秒内按 Esc</strong> 可撤回恢复原草稿。",
-      dispatch_pick_title: "先看后选",
-      dispatch_pick_flow: "输入草稿 ➔ Alt+E ➔ <strong>按数字 1 或 2 确认上屏</strong>",
-      dispatch_pick_desc: "先弹出卡片展示不同语气，按键盘数字键 1 或 2 选择后填入。",
+      mode_off_sub: "静默待机，不触发任何翻译或弹窗",
+      sec_slang_title: "源语言 (Source)",
+      sec_slang_desc: "你日常打字输入的母语：",
+      sec_tlang_title: "目标语言 (Target)",
+      sec_tlang_desc: "希望转换成的目标外语：",
       preview_title: "实时预览",
       preview_hint: "示例：「这个功能明天能上线吗？」",
       ai_tuner_title: "一句话定制版式",
@@ -136,7 +107,7 @@
       adv_slots_summary: "高级行项配置",
       btn_add_row: "+ 新增行",
       btn_reset_rows: "重置默认",
-      banner_ready: "内置高速云端翻译已就绪，免配置开箱即用。",
+      banner_ready: "内置高速云端翻译与本机模型已就绪，打字按回车即可触发。",
       engine_choose_title: "翻译服务商",
       emode_free_title: "内置高速云（默认）",
       emode_free_desc: "免费免 Key 直连，无需配置账号即可直接打字翻译。",
@@ -153,40 +124,24 @@
       meta_orig: "输入原文",
       meta_key: "按 {n} 选择",
       meta_vocab: "重点短语",
-      lbl_source: "Source",
-      lbl_casual: "Casual",
-      lbl_formal: "Formal",
-      lbl_single: "Translation",
-      lbl_vocab: "Vocab",
     },
     "zh-TW": {
       nav_general: "常規",
       nav_cards: "卡片",
       nav_engine: "引擎",
-      sec_mode_title: "運行模式",
-      sec_mode_desc: "隨時按 Alt + Q 可循環切換：",
+      sec_mode_title: "運行模式（與 pi-lingual 完全一致）",
+      sec_mode_desc:
+        "在任何輸入框打完字直接按 Enter，自動判斷是否需要翻譯並交給所配置的模型（代碼、命令及 Ctrl+Enter / Shift+Enter 換行自動原樣放行）。隨時可按 Alt + Q 切換模式：",
       mode_en_title: "譯文 (Translate)",
-      mode_en_sub: "直接替換輸入框草稿並展開對照卡片",
+      mode_en_sub: "按 Enter ➔ 自動翻譯替換並發出 + 展開對照卡片",
       mode_orig_title: "伴學 (Learn)",
-      mode_orig_sub: "保留原文字不變，僅展開卡片對照",
+      mode_orig_sub: "按 Enter ➔ 原文直接發出 + 後台展開對照卡片",
       mode_off_title: "關閉 (Off)",
-      mode_off_sub: "靜默待機，不觸發翻譯或彈窗",
-      sec_tlang_title: "目標語言",
-      sec_tlang_desc: "將輸入草稿轉換為選定的目標語言：",
-      sec_hotkey_title: "觸發快捷鍵",
-      sec_hotkey_desc: "需要翻譯時按下（絕不佔用 Enter 與 Ctrl+Enter 換行）：",
-      hk_alte_sub: "推薦（順手且零打字衝突）",
-      hk_alts_sub: "左手單鍵快速觸發",
-      hk_altenter_sub: "保留普通 Enter 與 Ctrl+Enter 換行",
-      sec_dispatch_title: "上屏方式",
-      sec_dispatch_desc: "譯文模式下，翻譯結果如何填入輸入框：",
-      dispatch_auto_title: "直接替換",
-      dispatch_auto_badge: "最快",
-      dispatch_auto_flow: "輸入草稿 ➔ Alt+E ➔ <strong>原地替換為目標外語</strong>",
-      dispatch_auto_desc: "立即替換輸入框文本並浮現 3 秒卡片。<strong>3 秒內按 Esc</strong> 可撤回恢復原草稿。",
-      dispatch_pick_title: "先看後選",
-      dispatch_pick_flow: "輸入草稿 ➔ Alt+E ➔ <strong>按數字 1 或 2 確認上屏</strong>",
-      dispatch_pick_desc: "先彈出卡片展示不同語氣，按鍵盤數字鍵 1 或 2 選擇後填入。",
+      mode_off_sub: "靜默待機，不觸發任何翻譯或彈窗",
+      sec_slang_title: "源語言 (Source)",
+      sec_slang_desc: "你日常打字輸入的母語：",
+      sec_tlang_title: "目標語言 (Target)",
+      sec_tlang_desc: "希望轉換成的目標外語：",
       preview_title: "即時預覽",
       preview_hint: "示例：「這個功能明天能上線嗎？」",
       ai_tuner_title: "一句話定制版式",
@@ -210,7 +165,7 @@
       adv_slots_summary: "高級行項配置",
       btn_add_row: "+ 新增行",
       btn_reset_rows: "重置默認",
-      banner_ready: "內置高速雲端翻譯已就緒，免配置開箱即用。",
+      banner_ready: "內置高速雲端翻譯與本機模型已就緒，打字按 Enter 即可觸發。",
       engine_choose_title: "翻譯服務商",
       emode_free_title: "內置高速雲（默認）",
       emode_free_desc: "免費免 Key 直連，無需配置帳號即可直接打字翻譯。",
@@ -227,40 +182,24 @@
       meta_orig: "輸入原文",
       meta_key: "按 {n} 選擇",
       meta_vocab: "重點短語",
-      lbl_source: "Source",
-      lbl_casual: "Casual",
-      lbl_formal: "Formal",
-      lbl_single: "Translation",
-      lbl_vocab: "Vocab",
     },
     ja: {
       nav_general: "一般",
       nav_cards: "カード",
       nav_engine: "エンジン",
-      sec_mode_title: "動作モード",
-      sec_mode_desc: "Alt + Q でいつでも切り替え可能：",
+      sec_mode_title: "動作モード（pi-lingual と完全共通）",
+      sec_mode_desc:
+        "入力欄で Enter を押すだけで、自然言語かどうかを自動判定して設定モデルへ送信します（コード、コマンド、Ctrl+Enter / Shift+Enter の改行はそのまま通過）。Alt + Q でモード切替：",
       mode_en_title: "翻訳 (Translate)",
-      mode_en_sub: "入力欄のテキストを置換しカードを表示",
+      mode_en_sub: "Enter ➔ 翻訳して置換・送信＋カード表示",
       mode_orig_title: "学習 (Learn)",
-      mode_orig_sub: "原文を維持したままカードのみ表示",
+      mode_orig_sub: "Enter ➔ 原文をそのまま即送信＋カード表示",
       mode_off_title: "オフ (Off)",
       mode_off_sub: "待機状態（翻訳・ポップアップなし）",
-      sec_tlang_title: "ターゲット言語",
-      sec_tlang_desc: "下書きを選択した言語へ翻訳します：",
-      sec_hotkey_title: "翻訳ショートカット",
-      sec_hotkey_desc: "翻訳実行キー（Enter や Ctrl+Enter の改行と競合しません）：",
-      hk_alte_sub: "推奨（通常の入力と競合しない）",
-      hk_alts_sub: "左手ワンストロークで即実行",
-      hk_altenter_sub: "Enter / Ctrl+Enter の改行を維持",
-      sec_dispatch_title: "反映アクション",
-      sec_dispatch_desc: "翻訳結果を入力欄へ反映する方法：",
-      dispatch_auto_title: "即時置換",
-      dispatch_auto_badge: "最速",
-      dispatch_auto_flow: "下書き ➔ Alt+E ➔ <strong>その場で外国語に置換</strong>",
-      dispatch_auto_desc: "即座にテキストを置換し3秒間カードを表示。<strong>3秒以内に Esc</strong> で元に戻せます。",
-      dispatch_pick_title: "プレビュー選択",
-      dispatch_pick_flow: "下書き ➔ Alt+E ➔ <strong>数字キー 1 / 2 で確定</strong>",
-      dispatch_pick_desc: "先にカードを表示し、数字キー 1 または 2 で選んだ表現を反映します。",
+      sec_slang_title: "ソース言語 (Source)",
+      sec_slang_desc: "普段入力する言語：",
+      sec_tlang_title: "ターゲット言語 (Target)",
+      sec_tlang_desc: "翻訳先の言語：",
       preview_title: "プレビュー",
       preview_hint: "例：「この機能、明日リリースできる？」",
       ai_tuner_title: "自然言語プリセット",
@@ -284,7 +223,7 @@
       adv_slots_summary: "詳細スロット設定",
       btn_add_row: "+ 行を追加",
       btn_reset_rows: "リセット",
-      banner_ready: "内蔵の高速クラウド翻訳が有効です（設定不要）。",
+      banner_ready: "高速クラウド翻訳が有効です。Enter を押すだけで動作します。",
       engine_choose_title: "翻訳プロバイダー",
       emode_free_title: "内蔵高速クラウド（デフォルト）",
       emode_free_desc: "APIキー不要で即座に利用可能。",
@@ -301,11 +240,6 @@
       meta_orig: "入力原文",
       meta_key: "{n} キーで選択",
       meta_vocab: "重要語彙",
-      lbl_source: "Source",
-      lbl_casual: "Casual",
-      lbl_formal: "Formal",
-      lbl_single: "Translation",
-      lbl_vocab: "Vocab",
     },
   };
 
@@ -313,7 +247,6 @@
   let activeSourceLang = "zh";
   let activeTargetLang = "en";
   let activeCompanionMode = "english";
-  let selectedTriggerKey = "Alt+E";
   let activeSlotPreset = "developer";
   let currentSlots = [];
   let isInitialLoading = true;
@@ -378,7 +311,6 @@
   function setUiLangState(langCode) {
     const normalized = UI_I18N[langCode] ? langCode : "en";
     activeUiLang = normalized;
-    activeSourceLang = normalized;
 
     langOpts.forEach((opt) => {
       const isMatch = opt.dataset.lang === normalized;
@@ -397,16 +329,13 @@
     opt.addEventListener("click", () => {
       setUiLangState(opt.dataset.lang);
       langPopover.classList.add("hidden");
-      autoSaveNow();
     });
   });
 
-  // 2. Tab 1: General (Operating Mode, Target Language, Trigger Shortcut, Replacement Action)
+  // 2. Tab 1: General (Operating Mode, Source Language, Target Language)
   const modeSegButtons = document.querySelectorAll("#companion-mode-segmented .seg-btn");
+  const sourceLangChips = document.querySelectorAll("#source-lang-chips .chip");
   const targetLangChips = document.querySelectorAll("#target-lang-chips .chip");
-  const triggerSegButtons = document.querySelectorAll("#trigger-segmented .seg-btn");
-  const autoSendCards = document.querySelectorAll("#autosend-choice-grid .choice-card");
-  const checkAutoSend = document.getElementById("check-auto-send");
 
   function setCompanionModeState(mode) {
     activeCompanionMode = mode || "english";
@@ -422,6 +351,20 @@
     });
   });
 
+  function setSourceLangState(slang) {
+    activeSourceLang = slang || "zh";
+    sourceLangChips.forEach((chip) => {
+      chip.classList.toggle("active", chip.dataset.slang === activeSourceLang);
+    });
+  }
+
+  sourceLangChips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      setSourceLangState(chip.dataset.slang);
+      autoSaveNow();
+    });
+  });
+
   function setTargetLangState(tlang) {
     activeTargetLang = tlang || "en";
     targetLangChips.forEach((chip) => {
@@ -433,39 +376,6 @@
   targetLangChips.forEach((chip) => {
     chip.addEventListener("click", () => {
       setTargetLangState(chip.dataset.tlang);
-      autoSaveNow();
-    });
-  });
-
-  function setTriggerState(val) {
-    const safeVal =
-      !val || val.toLowerCase() === "enter" || val.toLowerCase() === "ctrl+enter"
-        ? "Alt+E"
-        : val;
-    selectedTriggerKey = safeVal;
-    triggerSegButtons.forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.val === selectedTriggerKey);
-    });
-  }
-
-  triggerSegButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      setTriggerState(btn.dataset.val);
-      autoSaveNow();
-    });
-  });
-
-  function setAutoSendState(isAutoSend) {
-    if (checkAutoSend) checkAutoSend.checked = Boolean(isAutoSend);
-    autoSendCards.forEach((card) => {
-      const cardVal = card.dataset.autosend === "true";
-      card.classList.toggle("active", cardVal === Boolean(isAutoSend));
-    });
-  }
-
-  autoSendCards.forEach((card) => {
-    card.addEventListener("click", () => {
-      setAutoSendState(card.dataset.autosend === "true");
       autoSaveNow();
     });
   });
@@ -1053,8 +963,8 @@
       model: inputModel ? inputModel.value.trim() : "",
       slotPreset: activeSlotPreset,
       slots: currentSlots,
-      hotkeySubmit: selectedTriggerKey,
-      autoSend: checkAutoSend ? checkAutoSend.checked : true,
+      hotkeySubmit: "Enter",
+      autoSend: true,
     };
 
     try {
@@ -1081,6 +991,8 @@
       if (!cfg) {
         currentSlots = getDefaultSlotsList();
         setUiLangState("en");
+        setSourceLangState("zh");
+        setTargetLangState("en");
         syncSimpleTogglesFromSlots();
         renderLiveHudPreview();
         renderSlotCards();
@@ -1089,13 +1001,12 @@
       }
 
       setCompanionModeState(cfg.mode || "english");
+      setSourceLangState(cfg.sourceLang || "zh");
       setTargetLangState(cfg.targetLang || "en");
-      setTriggerState(cfg.hotkeySubmit || "Alt+E");
-      setAutoSendState(cfg.autoSend !== false);
 
       currentSlots = Array.isArray(cfg.slots) && cfg.slots.length > 0 ? cfg.slots : getDefaultSlotsList();
       normalizeSlotLabelsToEnglish(currentSlots);
-      setUiLangState(cfg.sourceLang || "en");
+      setUiLangState("en");
       syncSimpleTogglesFromSlots();
       renderLiveHudPreview();
       renderSlotCards();

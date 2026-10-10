@@ -35,8 +35,8 @@ export const DEFAULT_DESKTOP_CONFIG: LingualDesktopConfig = {
   autoSend: true,
   showCapsule: true,
   hotkeyToggleMode: "Alt+Q",
-  hotkeySubmit: "Alt+E",
-  hotkeyRewrite: "Alt+R",
+  hotkeySubmit: "Enter",
+  hotkeyRewrite: "Alt+E",
   hotkeySpotlight: "Alt+Space",
 };
 
@@ -137,10 +137,9 @@ export function loadDesktopConfig(): LingualDesktopConfig {
   const piDiscovered = !isTestEnvironment() ? discoverPiModelConfig() : null;
 
   const rawSubmitKey = desktopRaw.hotkeySubmit || DEFAULT_DESKTOP_CONFIG.hotkeySubmit;
+  // Never allow hijacking Ctrl+Enter (reserved for newline without sending)
   const safeHotkeySubmit =
-    rawSubmitKey.toLowerCase() === "enter" || rawSubmitKey.toLowerCase() === "ctrl+enter"
-      ? "Alt+E"
-      : rawSubmitKey;
+    rawSubmitKey.toLowerCase() === "ctrl+enter" ? "Enter" : rawSubmitKey;
 
   const cleanDesktopEndpoint =
     desktopRaw.endpoint && !desktopRaw.endpoint.includes("11434")
