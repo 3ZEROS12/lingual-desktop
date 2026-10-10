@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 
+// 1. In-Situ Companion & HUD API
 contextBridge.exposeInMainWorld("lingualAPI", {
   onTranslationData: (callback: (data: any) => void) => {
     ipcRenderer.on("lingual:data", (_event, data) => callback(data));
@@ -28,4 +29,12 @@ contextBridge.exposeInMainWorld("lingualAPI", {
   submitSpotlightInput: (text: string) => {
     ipcRenderer.send("lingual:submit-spotlight", text);
   },
+});
+
+// 2. Gabriel-Style Settings Window API
+contextBridge.exposeInMainWorld("lingualSettingsAPI", {
+  getConfig: () => ipcRenderer.invoke("lingual:get-config"),
+  saveConfig: (patch: any) => ipcRenderer.invoke("lingual:save-config", patch),
+  testConnection: (params: any) => ipcRenderer.invoke("lingual:test-connection", params),
+  closeWindow: () => ipcRenderer.send("lingual:close-settings"),
 });

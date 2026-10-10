@@ -84,6 +84,11 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    if (strcmp(cmd, "select-all") == 0) {
+        send_key_combination(VK_CONTROL, 'A');
+        return 0;
+    }
+
     if (strcmp(cmd, "caret") == 0) {
         HWND hwnd = GetForegroundWindow();
         if (hwnd) {

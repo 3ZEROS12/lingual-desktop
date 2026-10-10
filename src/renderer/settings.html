@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Lingual 伴侣设置</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="settings-window">
+    <!-- Gabriel-style Header -->
+    <header class="header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#533afd"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">Lingual 伴侣设置</h1>
+          <p class="brand-subtitle">Gabriel Design v4 · 随身外挂语言伴侣控制中心</p>
+        </div>
+      </div>
+      <button id="btn-window-close" class="btn-icon" title="关闭">✕</button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="content">
+      <!-- 1. Model Provider Section -->
+      <section class="card">
+        <h2 class="section-title">大模型推理服务商</h2>
+        <div class="field">
+          <label for="select-preset">快速预设</label>
+          <select id="select-preset" class="select-input">
+            <option value="deepseek">DeepSeek 官方 (性价比之王)</option>
+            <option value="siliconflow">SiliconFlow 硅基流动 (国内极速)</option>
+            <option value="groq">Groq 极速云 (超低延迟 500 T/s)</option>
+            <option value="openai">OpenAI 官方 (GPT-4o mini)</option>
+            <option value="ollama">本地 Ollama (0费用 · 离线私有)</option>
+            <option value="custom">自定义服务商 (OpenAI 兼容)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="input-endpoint">API 端点 URL</label>
+          <input type="text" id="input-endpoint" class="text-input" placeholder="https://api.deepseek.com/v1" />
+        </div>
+
+        <div class="field">
+          <label for="input-apikey">API 密钥 (API Key)</label>
+          <div class="input-with-button">
+            <input type="password" id="input-apikey" class="text-input" placeholder="sk-..." />
+            <button type="button" id="btn-toggle-key" class="btn-small">显示</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="input-model">模型代号 (Model ID)</label>
+          <input type="text" id="input-model" class="text-input" placeholder="deepseek-chat" />
+        </div>
+
+        <div class="test-row">
+          <button type="button" id="btn-test-connection" class="btn-outline">
+            <span class="icon-spark">⚡</span> 测试连接并测速
+          </button>
+          <div id="test-status" class="test-status hidden">
+            <span class="status-dot"></span>
+            <span id="test-status-text">就绪</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Interaction & Trigger Flow -->
+      <section class="card">
+        <h2 class="section-title">按键习惯与伴写心流</h2>
+        <div class="field">
+          <label for="select-trigger">推荐触发动作</label>
+          <select id="select-trigger" class="select-input">
+            <option value="Ctrl+Enter">Ctrl + Enter (默认推荐 · 兼容多行)</option>
+            <option value="Enter">Enter (直接发送 · 针对微信/Slack)</option>
+            <option value="Alt+E">Alt + E (划选重写模式)</option>
+          </select>
+          <span class="field-hint">打中文时，光标旁微胶囊常驻浮动，敲击触发键立即自动转换并发出。</span>
+        </div>
+
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">自动发送 (Auto-Send)</div>
+            <div class="toggle-desc">翻译完成后直接替我发出；关闭则先弹窗选 [1] 口语或 [2] 书面确认。</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="check-auto-send" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">3 秒物理撤销缓冲区 (Recall Buffer)</div>
+            <div class="toggle-desc">自动发送后的 3 秒倒计时内，按下 Esc 键瞬间撤回并恢复原中文草稿。</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="check-recall-buffer" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">开机静默启动 (Silent Startup)</div>
+            <div class="toggle-desc">Windows 启动时自动最小化常驻系统托盘，不弹窗打扰工作。</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="check-autostart" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer Actions -->
+    <footer class="footer">
+      <div class="footer-status" id="save-status"></div>
+      <div class="footer-buttons">
+        <button id="btn-cancel" class="btn-outline">取消</button>
+        <button id="btn-save" class="btn-primary">保存并即刻生效</button>
+      </div>
+    </footer>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>

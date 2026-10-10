@@ -62,6 +62,15 @@ export function triggerPaste(): void {
   }
 }
 
+export function triggerSelectAll(): void {
+  try {
+    const helper = getHelperPath("win32_helper.exe");
+    execFileSync(helper, ["select-all"], { timeout: 2000 });
+  } catch (err) {
+    console.error("[win32] Failed to trigger select all:", err);
+  }
+}
+
 /**
  * Checks if the foreground application's input method is currently composing text (e.g. typing pinyin)
  * If true, our companion MUST NOT intercept submission or touch input!
@@ -246,6 +255,9 @@ export async function injectReplacementText(
   clipboard.writeText(replacementText);
   restoreFocus(targetHwnd);
   await new Promise((r) => setTimeout(r, 40));
+  // Clean replacement: select all before pasting to avoid appending Chinese + English!
+  triggerSelectAll();
+  await new Promise((r) => setTimeout(r, 20));
   triggerPaste();
 
   setTimeout(() => {

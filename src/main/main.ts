@@ -18,6 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let companionWindow: BrowserWindow | null = null;
+let settingsWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 
 let currentMode: CompanionMode = "english";
@@ -357,6 +358,43 @@ function registerShortcuts(config: LingualDesktopConfig): void {
   });
 }
 
+function openSettingsWindow(): void {
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.show();
+    settingsWindow.focus();
+    return;
+  }
+
+  settingsWindow = new BrowserWindow({
+    width: 520,
+    height: 660,
+    title: "Lingual 伴侣设置",
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    autoHideMenuBar: true,
+    show: false,
+    backgroundColor: "#f6f9fc",
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  const settingsHtml = path.join(__dirname, "../../src/renderer/settings.html");
+  settingsWindow.loadFile(settingsHtml);
+
+  settingsWindow.once("ready-to-show", () => {
+    settingsWindow?.show();
+    settingsWindow?.focus();
+  });
+
+  settingsWindow.on("closed", () => {
+    settingsWindow = null;
+  });
+}
+
 function updateTrayMenu(): void {
   if (!tray) return;
 
@@ -368,6 +406,10 @@ function updateTrayMenu(): void {
     {
       label: "Cycle Mode (Alt+Q)",
       click: () => cycleCompanionMode(),
+    },
+    {
+      label: "⚙️ 设置 (Settings)...",
+      click: () => openSettingsWindow(),
     },
     { type: "separator" },
     {
@@ -471,6 +513,66 @@ function setupIpc(): void {
       setTimeout(() => triggerPaste(), 40);
     } else {
       restoreFocus(activeTargetHwnd);
+    }
+  });
+
+  ipcMain.on("lingual:close-settings", () => {
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+      settingsWindow.close();
+    }
+  });
+
+  ipcMain.handle("lingual:get-config", async () => {
+    return loadDesktopConfig();
+  });
+
+  ipcMain.handle("lingual:save-config", async (_event, patch: any) => {
+    saveDesktopConfig(patch);
+    const updated = loadDesktopConfig();
+    currentMode = updated.mode || currentMode;
+    registerShortcuts(updated);
+    updateTrayMenu();
+    if (companionWindow && !companionWindow.isDestroyed()) {
+      companionWindow.webContents.send("lingual:mode-changed", currentMode);
+    }
+    console.log("[lingual-desktop] Config updated and hot-reloaded:", patch);
+    return { success: true };
+  });
+
+  ipcMain.handle("lingual:test-connection", async (_event, params: any) => {
+    const { endpoint, apiKey, model } = params;
+    const start = Date.now();
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      const res = await fetch(endpoint || "http://127.0.0.1:11434/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(apiKey && apiKey !== "ollama" ? { Authorization: `Bearer ${apiKey}` } : {}),
+        },
+        body: JSON.stringify({
+          model: model || "qwen2.5:3b",
+          messages: [
+            { role: "system", content: "You are a test probe. Answer with OK." },
+            { role: "user", content: "ping" },
+          ],
+          max_tokens: 5,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      const latencyMs = Date.now() - start;
+
+      if (res.ok) {
+        return { success: true, latencyMs };
+      } else {
+        return { success: false, latencyMs, error: `HTTP ${res.status} ${res.statusText}` };
+      }
+    } catch (err: any) {
+      return { success: false, latencyMs: Date.now() - start, error: err.message || "连接失败" };
     }
   });
 
