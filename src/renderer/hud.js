@@ -143,6 +143,14 @@
       footerAutoHint.classList.add("hidden");
       footerConfirmHint.classList.remove("hidden");
     }
+
+    // Dynamic auto-height sensing: measure actual rendered height and report to main process
+    requestAnimationFrame(() => {
+      if (hudContainer) {
+        const measured = Math.ceil(hudContainer.getBoundingClientRect().height + 24);
+        window.lingualAPI?.reportHeight(measured);
+      }
+    });
   });
 
   // Interactive slot clicks

@@ -10,6 +10,7 @@ import {
   injectReplacementText,
   captureActiveInputText,
   injectTextToTarget,
+  isImeComposing,
   type ClipboardLike,
 } from "../src/main/win32.js";
 
@@ -17,6 +18,11 @@ test("win32: getActiveWindowHwnd returns non-empty decimal hwnd", () => {
   const hwnd = getActiveWindowHwnd();
   assert.ok(hwnd && hwnd !== "0", `Expected non-zero hwnd, got ${hwnd}`);
   assert.match(hwnd, /^[0-9]+$/);
+});
+
+test("win32: isImeComposing returns boolean without throwing", () => {
+  const composing = isImeComposing();
+  assert.equal(typeof composing, "boolean");
 });
 
 test("win32: getCaretPosition returns coordinate object or null gracefully", () => {
@@ -43,7 +49,6 @@ test("win32: getFocusedElementRect returns valid bounding rectangle or null grac
 
 test("win32: getFocusedElementText and setFocusedElementText execute without throwing", () => {
   const txt = getFocusedElementText();
-  // Can be string or null depending on focused element
   assert.ok(txt === null || typeof txt === "string");
 
   const success = setFocusedElementText("test-val");

@@ -13,7 +13,7 @@ if (!fs.existsSync(binDir)) {
 }
 
 console.log("[build-native] Compiling win32_helper.c with GCC...");
-const gccCmd = `D:/Workspace/environment/mingw64/bin/gcc.exe -O2 src/native/win32_helper.c -o bin/win32_helper.exe -luser32`;
+const gccCmd = `D:/Workspace/environment/mingw64/bin/gcc.exe -O2 src/native/win32_helper.c -o bin/win32_helper.exe -luser32 -limm32`;
 execSync(gccCmd, { cwd: ROOT, stdio: "inherit" });
 
 console.log("[build-native] Compiling uia_helper.cs with CSC...");

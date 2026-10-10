@@ -59,6 +59,20 @@ export function triggerPaste(): void {
   }
 }
 
+/**
+ * Checks if the foreground application's input method is currently composing text (e.g. typing pinyin)
+ * If true, our companion MUST NOT intercept submission or touch input!
+ */
+export function isImeComposing(): boolean {
+  try {
+    const helper = getHelperPath("win32_helper.exe");
+    const out = execFileSync(helper, ["ime-composing"], { encoding: "utf8", timeout: 1500 }).trim();
+    return out === "1";
+  } catch {
+    return false;
+  }
+}
+
 export function getCaretPosition(): { x: number; y: number } | null {
   try {
     const helper = getHelperPath("win32_helper.exe");

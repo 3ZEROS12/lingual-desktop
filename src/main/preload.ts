@@ -10,6 +10,9 @@ contextBridge.exposeInMainWorld("lingualAPI", {
   onViewState: (callback: (state: "capsule" | "hud" | "spotlight") => void) => {
     ipcRenderer.on("lingual:view-state", (_event, state) => callback(state));
   },
+  reportHeight: (height: number) => {
+    ipcRenderer.send("lingual:resize-hud", height);
+  },
   toggleMode: () => {
     ipcRenderer.send("lingual:toggle-mode");
   },

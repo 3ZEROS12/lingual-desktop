@@ -10,6 +10,7 @@ import {
   captureActiveInputText,
   injectTextToTarget,
   triggerPaste,
+  isImeComposing,
 } from "./win32.js";
 import { executeTranslation, shouldTriggerTranslation } from "./engine.js";
 
@@ -72,21 +73,35 @@ function switchToCapsuleView(): void {
   companionWindow.webContents.send("lingual:view-state", "capsule");
 }
 
-function switchToHudView(targetX: number, targetY: number): void {
+let lastAnchorPos = { x: 0, y: 0 };
+
+function switchToHudView(targetX: number, targetY: number, autoSent = true): void {
   if (!companionWindow) return;
   viewState = "hud";
-  companionWindow.setFocusable(true);
-  companionWindow.setSize(HUD_WIDTH, HUD_HEIGHT);
+  lastAnchorPos = { x: targetX, y: targetY };
 
-  const display = screen.getDisplayNearestPoint({ x: targetX, y: targetY });
-  const { workArea } = display;
+  // Focus Policy:
+  // If autoSent is true, window is purely ambient read-only, DO NOT steal focus (WS_EX_NOACTIVATE)!
+  // If autoSent is false (confirm mode), user needs to press 1/2/Esc, so make it focusable.
+  if (autoSent) {
+    companionWindow.setFocusable(false);
+  } else {
+    companionWindow.setFocusable(true);
+  }
 
-  let clampedX = Math.max(workArea.x + 8, Math.min(targetX, workArea.x + workArea.width - HUD_WIDTH - 8));
-  let clampedY = Math.max(workArea.y + 8, Math.min(targetY, workArea.y + workArea.height - HUD_HEIGHT - 8));
+  const initialHeight = 180;
+  companionWindow.setSize(HUD_WIDTH, initialHeight);
 
-  companionWindow.setPosition(Math.round(clampedX), Math.round(clampedY));
-  companionWindow.show();
-  companionWindow.focus();
+  // Roof-docking: default preferAbove = true so it NEVER collides with IME candidate box
+  const pos = getClampedPosition(targetX, targetY, HUD_WIDTH, initialHeight, true);
+  companionWindow.setPosition(pos.x, pos.y);
+
+  if (autoSent) {
+    companionWindow.showInactive();
+  } else {
+    companionWindow.show();
+    companionWindow.focus();
+  }
   companionWindow.webContents.send("lingual:view-state", "hud");
 }
 
@@ -175,9 +190,15 @@ async function handleSubmitInterception(): Promise<void> {
 
   if (currentMode === "off") return;
 
+  // IME Composition Guard:
+  // If input method is currently composing text (e.g. typing pinyin or candidate list open),
+  // 0ms pass-through immediately, NEVER intercept or interfere!
+  if (isImeComposing()) {
+    return;
+  }
+
   const captured = await captureActiveInputText(clipboard);
   if (!captured || !captured.text.trim()) {
-    // If nothing in input, pass through
     return;
   }
 
@@ -193,9 +214,9 @@ async function handleSubmitInterception(): Promise<void> {
   const cursor = screen.getCursorScreenPoint();
   const pos = caret || cursor;
 
-  // Mode A: Original Mode (0ms pass-through, HUD explains in background)
+  // Mode A: Original Mode (0ms pass-through, HUD explains in background without stealing focus)
   if (currentMode === "original") {
-    switchToHudView(pos.x, pos.y + 16);
+    switchToHudView(pos.x, pos.y, true);
     if (companionWindow) {
       companionWindow.webContents.send("lingual:data", {
         loading: true,
@@ -222,7 +243,7 @@ async function handleSubmitInterception(): Promise<void> {
   }
 
   // Mode B: English Mode (Intercept -> Translate -> Replace & Send / Confirm)
-  switchToHudView(pos.x, pos.y + 16);
+  switchToHudView(pos.x, pos.y, config.autoSend);
   if (companionWindow) {
     companionWindow.webContents.send("lingual:data", {
       loading: true,
@@ -241,7 +262,6 @@ async function handleSubmitInterception(): Promise<void> {
       // Auto-Send Pipeline:
       if (replacement) {
         await injectTextToTarget(replacement, targetHwnd, activeBackupText, clipboard);
-        // Trigger submit in target
         setTimeout(() => triggerPaste(), 60);
       }
       if (companionWindow && companionWindow.isVisible()) {
@@ -378,6 +398,18 @@ function setupTray(): void {
 }
 
 function setupIpc(): void {
+  ipcMain.on("lingual:resize-hud", (_event, measuredHeight: number) => {
+    if (viewState !== "hud" || !companionWindow) return;
+    const clampedHeight = Math.max(140, Math.min(340, Math.ceil(measuredHeight)));
+    companionWindow.setSize(HUD_WIDTH, clampedHeight);
+
+    // Re-dock with Roof-Docking respecting new height
+    if (lastAnchorPos.x > 0 || lastAnchorPos.y > 0) {
+      const pos = getClampedPosition(lastAnchorPos.x, lastAnchorPos.y, HUD_WIDTH, clampedHeight, true);
+      companionWindow.setPosition(pos.x, pos.y);
+    }
+  });
+
   ipcMain.on("lingual:toggle-mode", () => {
     cycleCompanionMode();
   });

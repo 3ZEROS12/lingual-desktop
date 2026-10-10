@@ -1,5 +1,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <imm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,7 +49,7 @@ static void restore_focus(HWND target_hwnd) {
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        printf("Usage: win32_helper <active-window|focus <hwnd>|copy|paste|caret>\n");
+        printf("Usage: win32_helper <active-window|focus <hwnd>|copy|paste|caret|ime-composing>\n");
         return 1;
     }
 
@@ -101,6 +102,23 @@ int main(int argc, char* argv[]) {
             }
         }
         printf("none\n");
+        return 0;
+    }
+
+    if (strcmp(cmd, "ime-composing") == 0) {
+        HWND hwnd = GetForegroundWindow();
+        if (hwnd) {
+            HIMC imc = ImmGetContext(hwnd);
+            if (imc) {
+                LONG compLen = ImmGetCompositionStringW(imc, GCS_COMPSTR, NULL, 0);
+                ImmReleaseContext(hwnd, imc);
+                if (compLen > 0) {
+                    printf("1\n");
+                    return 0;
+                }
+            }
+        }
+        printf("0\n");
         return 0;
     }
 
