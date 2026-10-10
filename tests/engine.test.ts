@@ -5,6 +5,7 @@ import {
   shouldTriggerTranslation,
   fetchZeroKeyTranslation,
   detectLocalEndpoints,
+  generateSlotsFromUserIntent,
 } from "../src/main/engine.js";
 
 test("engine: executeTranslation bypasses pure CLI command via 0ms shield", async () => {
@@ -54,3 +55,29 @@ test("engine: detectLocalEndpoints checks local ports without throwing", async (
   assert.equal(typeof result.lmstudio, "boolean");
   assert.equal(typeof result.vllm, "boolean");
 });
+
+test("engine: generateSlotsFromUserIntent understands plain-language single-line typing request", async () => {
+  const res = await generateSlotsFromUserIntent("我只是为了打字，只要一行最简单的翻译，不要原话也不要单词");
+  assert.ok(Array.isArray(res.slots));
+  assert.equal(res.slots.length, 1);
+  assert.equal(res.slots[0].role, "translation");
+  assert.ok(res.summary.includes("只保留 1 行"));
+});
+
+test("engine: generateSlotsFromUserIntent understands business customer support scenario", async () => {
+  const res = await generateSlotsFromUserIntent("我是做外贸客服的，想要客气礼貌回复和简短催单跟进，不要原话");
+  assert.equal(res.slots.some((s) => s.role === "source"), false);
+  const transSlots = res.slots.filter((s) => s.role === "translation");
+  assert.equal(transSlots.length, 2);
+  assert.equal(transSlots[0].label, "客气礼貌");
+  assert.equal(transSlots[1].label, "简短干脆");
+});
+
+test("engine: generateSlotsFromUserIntent understands Japanese learning with vocab request", async () => {
+  const res = await generateSlotsFromUserIntent("学日语，想同时对比朋友随和口语和职场礼貌敬语，加上单词");
+  assert.equal(res.slots.some((s) => s.role === "source"), true);
+  assert.equal(res.slots.some((s) => s.role === "vocab"), true);
+  const transSlots = res.slots.filter((s) => s.role === "translation");
+  assert.equal(transSlots.length, 2);
+});
+

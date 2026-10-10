@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld("lingualAPI", {
   toggleMode: () => {
     ipcRenderer.send("lingual:toggle-mode");
   },
-  selectTranslation: (slot: 1 | 2) => {
+  selectTranslation: (slot: number) => {
     ipcRenderer.send("lingual:select", slot);
   },
   undo: () => {
@@ -36,5 +36,7 @@ contextBridge.exposeInMainWorld("lingualSettingsAPI", {
   getConfig: () => ipcRenderer.invoke("lingual:get-config"),
   saveConfig: (patch: any) => ipcRenderer.invoke("lingual:save-config", patch),
   testConnection: (params: any) => ipcRenderer.invoke("lingual:test-connection", params),
+  aiTuneSlots: (promptText: string) => ipcRenderer.invoke("lingual:ai-tune-slots", promptText),
+  detectLocalAI: () => ipcRenderer.invoke("lingual:detect-local-ai"),
   closeWindow: () => ipcRenderer.send("lingual:close-settings"),
 });

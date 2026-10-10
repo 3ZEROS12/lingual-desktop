@@ -852,3 +852,401 @@ input:checked + .slider:before {
 .hidden {
   display: none !important;
 }
+
+/* ==========================================================================
+   Human-Friendly Plain-Language UI Components (v0.1.5)
+   ========================================================================== */
+
+/* 1. Mode Choice Cards (Auto-Send vs Manual Pick) */
+.mode-choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mode-choice-card,
+.engine-mode-card {
+  background: #f8fafc;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mode-choice-card:hover,
+.engine-mode-card:hover {
+  border-color: var(--border-strong);
+  background: #ffffff;
+}
+
+.mode-choice-card.active,
+.engine-mode-card.active {
+  background: #ffffff;
+  border-color: var(--indigo);
+  box-shadow: 0 2px 10px rgba(83, 58, 253, 0.08);
+}
+
+.mode-choice-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-radio-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  display: inline-block;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.mode-choice-card.active .mode-radio-dot,
+.engine-mode-card.active .mode-radio-dot {
+  border-color: var(--indigo);
+  background: var(--indigo);
+  box-shadow: inset 0 0 0 2.5px #ffffff;
+}
+
+.mode-choice-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-primary);
+}
+
+.mode-badge-rec {
+  margin-left: auto;
+  background: var(--indigo-soft);
+  color: var(--indigo);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 99px;
+}
+
+.mode-choice-flow {
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: var(--ink-secondary);
+}
+
+.mode-choice-flow strong {
+  color: var(--indigo);
+}
+
+.mode-choice-desc {
+  font-size: 11.5px;
+  color: var(--ink-secondary);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* 2. Live HUD Preview Stage (WYSIWYG Dark Card Preview) */
+.preview-stage {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #f8fafc;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.16);
+}
+
+.preview-stage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.preview-stage-label {
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.live-hud-box {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.preview-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  line-height: 1.4;
+}
+
+.preview-tree {
+  color: #64748b;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  user-select: none;
+}
+
+.preview-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  flex-shrink: 0;
+}
+
+.preview-badge.vocab {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+}
+
+.preview-badge.source {
+  background: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+}
+
+.preview-main-text {
+  color: #f8fafc;
+  font-weight: 500;
+}
+
+.preview-meaning-text {
+  color: #94a3b8;
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.preview-explain-pill {
+  margin-left: auto;
+  font-size: 10px;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* 3. Conversational AI Tuner Card */
+.ai-tuner-card {
+  border: 1.5px solid rgba(83, 58, 253, 0.22);
+  background: linear-gradient(180deg, #fafaff 0%, #ffffff 100%);
+}
+
+.ai-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-wish-input {
+  flex: 1;
+}
+
+.btn-ai-tune {
+  background: var(--indigo);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.btn-ai-tune:hover {
+  background: var(--indigo-hover);
+}
+
+.wish-bubbles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.wish-chip {
+  background: #ffffff;
+  border: 1px solid var(--border-strong);
+  border-radius: 99px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition: all 0.12s;
+  font-family: inherit;
+}
+
+.wish-chip:hover {
+  border-color: var(--indigo);
+  color: var(--indigo);
+  background: var(--indigo-soft);
+}
+
+.ai-feedback {
+  margin-top: 8px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 4. Simple Plain-Language Checkboxes */
+.simple-toggles-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.simple-toggle-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+
+.simple-toggle-item:hover {
+  border-color: var(--border-strong);
+  background: #ffffff;
+}
+
+.simple-toggle-item input[type="checkbox"] {
+  margin-top: 2px;
+  width: 15px;
+  height: 15px;
+  accent-color: var(--indigo);
+  cursor: pointer;
+}
+
+.simple-toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.simple-toggle-text strong {
+  font-size: 12px;
+  color: var(--ink-primary);
+}
+
+.simple-toggle-text span {
+  font-size: 11px;
+  color: var(--ink-muted);
+  line-height: 1.35;
+}
+
+/* 5. Advanced Fold & Engine Mode Cards */
+.advanced-fold {
+  margin-top: 10px;
+  border-top: 1px dashed var(--border);
+  padding-top: 8px;
+}
+
+.advanced-fold summary {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.advanced-fold summary:hover {
+  color: var(--indigo);
+}
+
+.advanced-fold-body {
+  margin-top: 8px;
+}
+
+.ready-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.ready-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.15);
+  flex-shrink: 0;
+}
+
+.ready-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ready-text strong {
+  font-size: 12.5px;
+  color: #14532d;
+}
+
+.ready-text span {
+  font-size: 11px;
+  color: #166534;
+}
+
+.engine-mode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-inline-action {
+  margin-left: auto;
+  background: #ffffff;
+  border: 1px solid var(--border-strong);
+  border-radius: 99px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--indigo);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-inline-action:hover {
+  background: var(--indigo-soft);
+  border-color: var(--indigo);
+}
+
+.local-detect-msg {
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: var(--ink-secondary);
+}
+
+.cloud-config-box {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+

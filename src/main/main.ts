@@ -12,7 +12,12 @@ import {
   triggerPaste,
   isImeComposing,
 } from "./win32.js";
-import { executeTranslation, shouldTriggerTranslation } from "./engine.js";
+import {
+  executeTranslation,
+  shouldTriggerTranslation,
+  generateSlotsFromUserIntent,
+  detectLocalEndpoints,
+} from "./engine.js";
 import { SLOT_PRESETS, getDefaultSlots } from "pi-lingual/core";
 import { resolveLabelsForLang } from "pi-lingual";
 
@@ -621,6 +626,24 @@ function setupIpc(): void {
       }
     } catch (err: any) {
       return { success: false, latencyMs: Date.now() - start, error: err.message || "连接失败" };
+    }
+  });
+
+  ipcMain.handle("lingual:ai-tune-slots", async (_event, promptText: string) => {
+    try {
+      const result = await generateSlotsFromUserIntent(promptText);
+      return { success: true, ...result };
+    } catch (err: any) {
+      return { success: false, error: err.message || "生成失败" };
+    }
+  });
+
+  ipcMain.handle("lingual:detect-local-ai", async () => {
+    try {
+      const detected = await detectLocalEndpoints();
+      return { success: true, ...detected };
+    } catch (err: any) {
+      return { success: false, ollama: false, lmstudio: false, vllm: false };
     }
   });
 
