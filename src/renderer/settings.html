@@ -16,12 +16,36 @@
 
       <!-- Navigation Tabs -->
       <nav class="nav-tabs">
-        <button class="nav-pill active" data-tab="tab-general">General</button>
-        <button class="nav-pill" data-tab="tab-cards">Cards</button>
-        <button class="nav-pill" data-tab="tab-engine">Engine</button>
+        <button class="nav-pill active" data-tab="tab-general" data-i18n="nav_general">General</button>
+        <button class="nav-pill" data-tab="tab-cards" data-i18n="nav_cards">Cards</button>
+        <button class="nav-pill" data-tab="tab-engine" data-i18n="nav_engine">Engine</button>
       </nav>
 
+      <!-- Right Actions: Minimalist Language Code Switcher & Close -->
       <div class="nav-actions">
+        <div class="lang-dropdown-wrapper">
+          <button id="btn-lang-trigger" class="btn-lang-code" title="Interface & Source Language">
+            <span id="lang-current-code">EN</span>
+          </button>
+          <div id="lang-popover" class="lang-popover hidden">
+            <button type="button" class="lang-opt active" data-lang="en" data-code="EN">
+              <span class="opt-code">EN</span>
+              <span class="opt-label">English</span>
+            </button>
+            <button type="button" class="lang-opt" data-lang="zh" data-code="ZH">
+              <span class="opt-code">ZH</span>
+              <span class="opt-label">中文</span>
+            </button>
+            <button type="button" class="lang-opt" data-lang="zh-TW" data-code="TW">
+              <span class="opt-code">TW</span>
+              <span class="opt-label">繁體</span>
+            </button>
+            <button type="button" class="lang-opt" data-lang="ja" data-code="JA">
+              <span class="opt-code">JA</span>
+              <span class="opt-label">日本語</span>
+            </button>
+          </div>
+        </div>
         <button id="btn-window-close" class="btn-icon-subtle" title="Close window">✕</button>
       </div>
     </header>
@@ -32,22 +56,22 @@
         <!-- 1. Operating Mode -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title">Operating Mode</h2>
-            <p class="card-desc">Cycle modes anytime with Alt + Q:</p>
+            <h2 class="card-title" data-i18n="sec_mode_title">Operating Mode</h2>
+            <p class="card-desc" data-i18n="sec_mode_desc">Cycle modes anytime with Alt + Q:</p>
           </div>
 
           <div class="segmented-control" id="companion-mode-segmented">
             <button type="button" class="seg-btn active" data-mode="english">
-              <span class="seg-title">Translate</span>
-              <span class="seg-sub">Replaces text in target input and displays card</span>
+              <span class="seg-title" data-i18n="mode_en_title">Translate</span>
+              <span class="seg-sub" data-i18n="mode_en_sub">Replaces text in target input and displays card</span>
             </button>
             <button type="button" class="seg-btn" data-mode="original">
-              <span class="seg-title">Learn</span>
-              <span class="seg-sub">Keeps original text intact; pops up card only</span>
+              <span class="seg-title" data-i18n="mode_orig_title">Learn</span>
+              <span class="seg-sub" data-i18n="mode_orig_sub">Keeps original text intact; pops up card only</span>
             </button>
             <button type="button" class="seg-btn" data-mode="off">
-              <span class="seg-title">Off</span>
-              <span class="seg-sub">Inactive; no translation or popup</span>
+              <span class="seg-title" data-i18n="mode_off_title">Off</span>
+              <span class="seg-sub" data-i18n="mode_off_sub">Inactive; no translation or popup</span>
             </button>
           </div>
         </div>
@@ -55,8 +79,8 @@
         <!-- 2. Target Language -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title">Target Language</h2>
-            <p class="card-desc">Translates your drafts into the selected language:</p>
+            <h2 class="card-title" data-i18n="sec_tlang_title">Target Language</h2>
+            <p class="card-desc" data-i18n="sec_tlang_desc">Translates your drafts into the selected language:</p>
           </div>
           <div class="chip-row" id="target-lang-chips">
             <button type="button" class="chip active" data-tlang="en">EN</button>
@@ -72,22 +96,22 @@
         <!-- 3. Trigger Shortcut -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title">Trigger Shortcut</h2>
-            <p class="card-desc">Press this key when you want to translate your draft (Enter and Ctrl+Enter remain untouched):</p>
+            <h2 class="card-title" data-i18n="sec_hotkey_title">Trigger Shortcut</h2>
+            <p class="card-desc" data-i18n="sec_hotkey_desc">Press this key to translate your draft (Enter and Ctrl+Enter remain untouched):</p>
           </div>
 
           <div class="segmented-control" id="trigger-segmented">
             <button type="button" class="seg-btn active" data-val="Alt+E">
               <span class="seg-title">Alt + E</span>
-              <span class="seg-sub">Recommended (ergonomic, zero typing conflict)</span>
+              <span class="seg-sub" data-i18n="hk_alte_sub">Recommended (zero typing conflict)</span>
             </button>
             <button type="button" class="seg-btn" data-val="Alt+S">
               <span class="seg-title">Alt + S</span>
-              <span class="seg-sub">Left-hand single stroke for quick chat</span>
+              <span class="seg-sub" data-i18n="hk_alts_sub">Left-hand single stroke for fast chat</span>
             </button>
             <button type="button" class="seg-btn" data-val="Alt+Enter">
               <span class="seg-title">Alt + Enter</span>
-              <span class="seg-sub">Leaves normal Enter and Ctrl+Enter untouched</span>
+              <span class="seg-sub" data-i18n="hk_altenter_sub">Preserves Enter and Ctrl+Enter newlines</span>
             </button>
           </div>
         </div>
@@ -95,35 +119,35 @@
         <!-- 4. Replacement Action -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title">Replacement Action</h2>
-            <p class="card-desc">How translations are committed into your active input field in Translate mode:</p>
+            <h2 class="card-title" data-i18n="sec_dispatch_title">Replacement Action</h2>
+            <p class="card-desc" data-i18n="sec_dispatch_desc">How translations are committed into your active input field:</p>
           </div>
 
           <div class="choice-grid" id="autosend-choice-grid">
             <div class="choice-card active" data-autosend="true">
               <div class="choice-top">
                 <span class="radio-dot"></span>
-                <span class="choice-title">Replace Directly</span>
-                <span class="badge-subtle">Fastest</span>
+                <span class="choice-title" data-i18n="dispatch_auto_title">Replace Directly</span>
+                <span class="badge-subtle" data-i18n="dispatch_auto_badge">Fastest</span>
               </div>
-              <div class="choice-flow">
+              <div class="choice-flow" data-i18n="dispatch_auto_flow">
                 Draft ➔ Alt+E ➔ <strong>In-place text replacement</strong>
               </div>
-              <p class="choice-desc">
-                Replaces input text immediately and shows a 3-second HUD card. Press <strong>Esc within 3 seconds</strong> to undo and recover original text.
+              <p class="choice-desc" data-i18n="dispatch_auto_desc">
+                Replaces input text immediately and shows a 3s card. Press <strong>Esc within 3s</strong> to undo.
               </p>
             </div>
 
             <div class="choice-card" data-autosend="false">
               <div class="choice-top">
                 <span class="radio-dot"></span>
-                <span class="choice-title">Preview First</span>
+                <span class="choice-title" data-i18n="dispatch_pick_title">Preview First</span>
               </div>
-              <div class="choice-flow">
+              <div class="choice-flow" data-i18n="dispatch_pick_flow">
                 Draft ➔ Alt+E ➔ <strong>Press 1 or 2 to commit</strong>
               </div>
-              <p class="choice-desc">
-                Pops up the card first. Select between Casual and Formal phrasing by pressing number keys 1 or 2.
+              <p class="choice-desc" data-i18n="dispatch_pick_desc">
+                Displays the card first. Press number keys 1 or 2 to insert the phrasing you prefer.
               </p>
             </div>
           </div>
@@ -137,8 +161,8 @@
         <!-- 1. Live Preview -->
         <div class="preview-stage">
           <div class="preview-stage-header">
-            <span class="preview-stage-label">Live Preview</span>
-            <span>Sample: "Can we release this feature tomorrow?"</span>
+            <span class="preview-stage-label" data-i18n="preview_title">Live Preview</span>
+            <span data-i18n="preview_hint">Sample: "Can we release this feature tomorrow?"</span>
           </div>
           <div class="live-card-box" id="live-hud-preview"></div>
         </div>
@@ -146,8 +170,8 @@
         <!-- 2. Conversational Intent Tuner -->
         <div class="card ai-tuner-card">
           <div class="card-header">
-            <h2 class="card-title">Natural Language Preset</h2>
-            <p class="card-desc">Describe your preferred layout or click a preset chip:</p>
+            <h2 class="card-title" data-i18n="ai_tuner_title">Natural Language Preset</h2>
+            <p class="card-desc" data-i18n="ai_tuner_desc">Describe your preferred layout or select a preset below:</p>
           </div>
 
           <div class="ai-input-row">
@@ -155,17 +179,18 @@
               type="text"
               id="input-ai-wish"
               class="input-text"
+              data-i18n-placeholder="ai_tuner_placeholder"
               placeholder="e.g. Single line only for fast chat, no source row or vocab..."
             />
-            <button type="button" id="btn-ai-tune" class="btn-action">Apply</button>
+            <button type="button" id="btn-ai-tune" class="btn-action" data-i18n="ai_tuner_btn">Apply</button>
           </div>
 
           <div class="wish-chips" id="wish-bubbles">
-            <button type="button" class="wish-chip" data-wish="Single clean translation line, no source text or vocab">Single line only (Minimal)</button>
-            <button type="button" class="wish-chip" data-wish="Casual team chat and formal technical documentation with source text">Casual + Formal (Work)</button>
-            <button type="button" class="wish-chip" data-wish="Polite customer support reply and concise follow-up">Support & Outreach</button>
-            <button type="button" class="wish-chip" data-wish="Short punchy social hook and insightful community comment">Social & X/Twitter</button>
-            <button type="button" class="wish-chip" data-wish="Casual spoken and polite business honorifics with vocabulary notes">Japanese Immersion</button>
+            <button type="button" class="wish-chip" data-wish="Single clean translation line, no source text or vocab" data-i18n="wish_1">Single line (Minimal)</button>
+            <button type="button" class="wish-chip" data-wish="Casual team chat and formal technical documentation with source text" data-i18n="wish_2">Casual + Formal</button>
+            <button type="button" class="wish-chip" data-wish="Polite customer support reply and concise follow-up" data-i18n="wish_3">Customer Support</button>
+            <button type="button" class="wish-chip" data-wish="Short punchy social hook and insightful community comment" data-i18n="wish_4">Social / X</button>
+            <button type="button" class="wish-chip" data-wish="Casual spoken and polite business honorifics with vocabulary notes" data-i18n="wish_5">Language Study</button>
           </div>
 
           <div id="ai-tune-feedback" class="ai-status-msg hidden"></div>
@@ -174,50 +199,50 @@
         <!-- 3. Visible Rows Toggles -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title">Visible Rows</h2>
+            <h2 class="card-title" data-i18n="manual_toggle_title">Visible Rows</h2>
           </div>
 
           <div class="toggle-grid">
             <label class="toggle-item">
               <input type="checkbox" id="toggle-show-source" checked />
               <div class="toggle-text">
-                <strong>Source text row</strong>
-                <span>Displays your initial input on top</span>
+                <strong data-i18n="tog_source_title">Source text row</strong>
+                <span data-i18n="tog_source_desc">Displays your initial input on top</span>
               </div>
             </label>
 
             <label class="toggle-item">
               <input type="checkbox" id="toggle-dual-style" checked />
               <div class="toggle-text">
-                <strong>Dual tone comparison</strong>
-                <span>Compares Casual spoken vs. Formal written</span>
+                <strong data-i18n="tog_dual_title">Dual tone comparison</strong>
+                <span data-i18n="tog_dual_desc">Compares Casual spoken vs. Formal written</span>
               </div>
             </label>
 
             <label class="toggle-item">
               <input type="checkbox" id="toggle-show-meaning" checked />
               <div class="toggle-text">
-                <strong>Nuance annotations</strong>
-                <span>Displays brief tone explanations below phrases</span>
+                <strong data-i18n="tog_meaning_title">Nuance annotations</strong>
+                <span data-i18n="tog_meaning_desc">Displays brief tone explanations below phrases</span>
               </div>
             </label>
 
             <label class="toggle-item">
               <input type="checkbox" id="toggle-show-vocab" checked />
               <div class="toggle-text">
-                <strong>Vocabulary highlights</strong>
-                <span>Extracts key collocations and idioms at the bottom</span>
+                <strong data-i18n="tog_vocab_title">Vocabulary highlights</strong>
+                <span data-i18n="tog_vocab_desc">Extracts key collocations and idioms at the bottom</span>
               </div>
             </label>
           </div>
 
           <details class="advanced-details">
-            <summary>Advanced slot configuration</summary>
+            <summary data-i18n="adv_slots_summary">Advanced slot configuration</summary>
             <div class="advanced-body">
               <div class="slot-list-container" id="slot-card-list"></div>
               <div style="display: flex; gap: 8px; margin-top: 6px;">
-                <button type="button" class="btn-secondary" id="btn-add-slot">+ Add Row</button>
-                <button type="button" class="btn-secondary" id="btn-reset-slots">Reset Default</button>
+                <button type="button" class="btn-secondary" id="btn-add-slot" data-i18n="btn_add_row">+ Add Row</button>
+                <button type="button" class="btn-secondary" id="btn-reset-slots" data-i18n="btn_reset_rows">Reset Default</button>
               </div>
             </div>
           </details>
@@ -227,12 +252,12 @@
       <!-- ==================== TAB 3: ENGINE ==================== -->
       <section id="tab-engine" class="tab-pane">
         <div class="notice-banner">
-          <span>Fast cloud translation active. Zero configuration required.</span>
+          <span data-i18n="banner_ready">Fast cloud translation active. Zero configuration required.</span>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title">Translation Provider</h2>
+            <h2 class="card-title" data-i18n="engine_choose_title">Translation Provider</h2>
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 8px;" id="engine-mode-list">
@@ -240,9 +265,9 @@
             <div class="choice-card" data-emode="free">
               <div class="choice-top">
                 <span class="radio-dot"></span>
-                <span class="choice-title">Built-in Fast Cloud (Default)</span>
+                <span class="choice-title" data-i18n="emode_free_title">Built-in Fast Cloud (Default)</span>
               </div>
-              <p class="choice-desc">
+              <p class="choice-desc" data-i18n="emode_free_desc">
                 Free zero-key translation. Instant out of the box with zero account setup.
               </p>
             </div>
@@ -251,9 +276,9 @@
             <div class="choice-card active" data-emode="cloud">
               <div class="choice-top">
                 <span class="radio-dot"></span>
-                <span class="choice-title">Custom LLM API Key</span>
+                <span class="choice-title" data-i18n="emode_cloud_title">Custom LLM API Key</span>
               </div>
-              <p class="choice-desc">
+              <p class="choice-desc" data-i18n="emode_cloud_desc">
                 Enables dual tone comparisons (Casual + Formal) and vocabulary extraction:
               </p>
 
@@ -269,8 +294,8 @@
                   <label>API Key</label>
                   <div class="input-group">
                     <input type="password" id="input-apikey" class="input-text" placeholder="sk-..." />
-                    <button type="button" id="btn-toggle-key" class="btn-secondary">Show</button>
-                    <button type="button" id="btn-test-connection" class="btn-secondary">Test</button>
+                    <button type="button" id="btn-toggle-key" class="btn-secondary" data-i18n="btn_show">Show</button>
+                    <button type="button" id="btn-test-connection" class="btn-secondary" data-i18n="btn_test">Test</button>
                   </div>
                 </div>
 
@@ -279,7 +304,7 @@
                 </div>
 
                 <details class="advanced-details">
-                  <summary>Endpoint URL & Model ID</summary>
+                  <summary data-i18n="adv_endpoint_summary">Endpoint URL & Model ID</summary>
                   <div class="advanced-body">
                     <div class="form-field">
                       <label>Endpoint URL</label>
@@ -300,10 +325,10 @@
 
     <!-- Footer -->
     <footer class="bottom-bar">
-      <div id="save-status" class="save-indicator">Changes save automatically</div>
+      <div id="save-status" class="save-indicator" data-i18n="footer_hint">Changes save automatically</div>
       <div class="footer-actions">
-        <button id="btn-cancel" class="btn-secondary">Close</button>
-        <button id="btn-save" class="btn-primary">Done</button>
+        <button id="btn-cancel" class="btn-secondary" data-i18n="btn_close">Close</button>
+        <button id="btn-save" class="btn-primary" data-i18n="btn_done">Done</button>
       </div>
     </footer>
   </div>

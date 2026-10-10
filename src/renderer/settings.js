@@ -1,6 +1,7 @@
 // ============================================================================
-// Lingual Desktop Settings — Minimalist English Editorial Controller
-// - Clean 3-Mode Control (Translate / Learn / Off)
+// Lingual Desktop Settings — Minimalist Paper & Stone Controller
+// - Clean Language Code Switcher (EN / ZH / TW / JA) — Zero emojis, concise copy
+// - 3 Operating Modes (Translate / Learn / Off)
 // - Non-Intrusive Shortcuts (Alt+E / Alt+S / Alt+Enter)
 // - Live Card Preview & Natural Language Preset Tuner
 // - Zero Local-Model Clutter (Built-in Fast Cloud vs Custom API Key)
@@ -8,9 +9,346 @@
 // ============================================================================
 
 (function () {
-  // 1. Navigation Tabs
+  // 0. Concise Editorial i18n Dictionary (Zero Emojis)
+  const UI_I18N = {
+    en: {
+      nav_general: "General",
+      nav_cards: "Cards",
+      nav_engine: "Engine",
+      sec_mode_title: "Operating Mode",
+      sec_mode_desc: "Cycle modes anytime with Alt + Q:",
+      mode_en_title: "Translate",
+      mode_en_sub: "Replaces text in target input and displays card",
+      mode_orig_title: "Learn",
+      mode_orig_sub: "Keeps original text intact; pops up card only",
+      mode_off_title: "Off",
+      mode_off_sub: "Inactive; no translation or popup",
+      sec_tlang_title: "Target Language",
+      sec_tlang_desc: "Translates your drafts into the selected language:",
+      sec_hotkey_title: "Trigger Shortcut",
+      sec_hotkey_desc: "Press this key to translate your draft (Enter and Ctrl+Enter remain untouched):",
+      hk_alte_sub: "Recommended (zero typing conflict)",
+      hk_alts_sub: "Left-hand single stroke for fast chat",
+      hk_altenter_sub: "Preserves Enter and Ctrl+Enter newlines",
+      sec_dispatch_title: "Replacement Action",
+      sec_dispatch_desc: "How translations are committed into your active input field:",
+      dispatch_auto_title: "Replace Directly",
+      dispatch_auto_badge: "Fastest",
+      dispatch_auto_flow: "Draft ➔ Alt+E ➔ <strong>In-place text replacement</strong>",
+      dispatch_auto_desc: "Replaces input text immediately and shows a 3s card. Press <strong>Esc within 3s</strong> to undo.",
+      dispatch_pick_title: "Preview First",
+      dispatch_pick_flow: "Draft ➔ Alt+E ➔ <strong>Press 1 or 2 to commit</strong>",
+      dispatch_pick_desc: "Displays the card first. Press number keys 1 or 2 to insert the phrasing you prefer.",
+      preview_title: "Live Preview",
+      preview_hint: "Sample: \"Can we release this feature tomorrow?\"",
+      ai_tuner_title: "Natural Language Preset",
+      ai_tuner_desc: "Describe your preferred layout or select a preset below:",
+      ai_tuner_placeholder: "e.g. Single line only for fast chat, no source row or vocab...",
+      ai_tuner_btn: "Apply",
+      wish_1: "Single line (Minimal)",
+      wish_2: "Casual + Formal",
+      wish_3: "Customer Support",
+      wish_4: "Social / X",
+      wish_5: "Language Study",
+      manual_toggle_title: "Visible Rows",
+      tog_source_title: "Source text row",
+      tog_source_desc: "Displays your initial input on top",
+      tog_dual_title: "Dual tone comparison",
+      tog_dual_desc: "Compares Casual spoken vs. Formal written",
+      tog_meaning_title: "Nuance annotations",
+      tog_meaning_desc: "Displays brief tone explanations below phrases",
+      tog_vocab_title: "Vocabulary highlights",
+      tog_vocab_desc: "Extracts key collocations and idioms at the bottom",
+      adv_slots_summary: "Advanced slot configuration",
+      btn_add_row: "+ Add Row",
+      btn_reset_rows: "Reset Default",
+      banner_ready: "Fast cloud translation active. Zero configuration required.",
+      engine_choose_title: "Translation Provider",
+      emode_free_title: "Built-in Fast Cloud (Default)",
+      emode_free_desc: "Free zero-key translation. Instant out of the box with zero account setup.",
+      emode_cloud_title: "Custom LLM API Key",
+      emode_cloud_desc: "Enables dual tone comparisons (Casual + Formal) and vocabulary extraction:",
+      btn_show: "Show",
+      btn_hide: "Hide",
+      btn_test: "Test",
+      adv_endpoint_summary: "Endpoint URL & Model ID",
+      footer_hint: "Changes save automatically",
+      footer_saved: "Saved · Active immediately",
+      btn_close: "Close",
+      btn_done: "Done",
+      meta_orig: "Original input",
+      meta_key: "Key {n}",
+      meta_vocab: "Key terms",
+      lbl_source: "Source",
+      lbl_casual: "Casual",
+      lbl_formal: "Formal",
+      lbl_single: "Translation",
+      lbl_vocab: "Vocab",
+    },
+    zh: {
+      nav_general: "常规",
+      nav_cards: "卡片",
+      nav_engine: "引擎",
+      sec_mode_title: "运行模式",
+      sec_mode_desc: "随时按 Alt + Q 可循环切换：",
+      mode_en_title: "译文 (Translate)",
+      mode_en_sub: "直接替换输入框草稿并展开对照卡片",
+      mode_orig_title: "伴学 (Learn)",
+      mode_orig_sub: "保留原文字不变，仅展开卡片对照",
+      mode_off_title: "关闭 (Off)",
+      mode_off_sub: "静默待机，不触发翻译或弹窗",
+      sec_tlang_title: "目标语言",
+      sec_tlang_desc: "将输入草稿转换为选定的目标语言：",
+      sec_hotkey_title: "触发快捷键",
+      sec_hotkey_desc: "需要翻译时按下（绝不占用 Enter 与 Ctrl+Enter 换行）：",
+      hk_alte_sub: "推荐（顺手且零打字冲突）",
+      hk_alts_sub: "左手单键快速触发",
+      hk_altenter_sub: "保留普通回车与 Ctrl+Enter 换行",
+      sec_dispatch_title: "上屏方式",
+      sec_dispatch_desc: "译文模式下，翻译结果如何填入输入框：",
+      dispatch_auto_title: "直接替换",
+      dispatch_auto_badge: "最快",
+      dispatch_auto_flow: "输入草稿 ➔ Alt+E ➔ <strong>原地替换为目标外语</strong>",
+      dispatch_auto_desc: "立即替换输入框文本并浮现 3 秒卡片。<strong>3 秒内按 Esc</strong> 可撤回恢复原草稿。",
+      dispatch_pick_title: "先看后选",
+      dispatch_pick_flow: "输入草稿 ➔ Alt+E ➔ <strong>按数字 1 或 2 确认上屏</strong>",
+      dispatch_pick_desc: "先弹出卡片展示不同语气，按键盘数字键 1 或 2 选择后填入。",
+      preview_title: "实时预览",
+      preview_hint: "示例：「这个功能明天能上线吗？」",
+      ai_tuner_title: "一句话定制版式",
+      ai_tuner_desc: "输入你的日常用途或点选下方预设：",
+      ai_tuner_placeholder: "例如：只要一行极简译文，不显示原文和词汇...",
+      ai_tuner_btn: "应用",
+      wish_1: "单行极简（纯打字）",
+      wish_2: "口语 + 书面双轨",
+      wish_3: "商务与客服回复",
+      wish_4: "社媒与推特短句",
+      wish_5: "外语伴学（含词汇）",
+      manual_toggle_title: "显示行项",
+      tog_source_title: "原文行 (Source)",
+      tog_source_desc: "首行显示你输入的原话",
+      tog_dual_title: "双语气对照 (Casual / Formal)",
+      tog_dual_desc: "同时展示日常口语与正式书面语",
+      tog_meaning_title: "语境微释义 (Nuance)",
+      tog_meaning_desc: "在译文下方附简短语气说明",
+      tog_vocab_title: "重点词汇 (Vocab)",
+      tog_vocab_desc: "底部提取实用短语与搭配",
+      adv_slots_summary: "高级行项配置",
+      btn_add_row: "+ 新增行",
+      btn_reset_rows: "重置默认",
+      banner_ready: "内置高速云端翻译已就绪，免配置开箱即用。",
+      engine_choose_title: "翻译服务商",
+      emode_free_title: "内置高速云（默认）",
+      emode_free_desc: "免费免 Key 直连，无需配置账号即可直接打字翻译。",
+      emode_cloud_title: "自定义大模型 API Key",
+      emode_cloud_desc: "启用口语/书面双语气对比与词汇提取：",
+      btn_show: "显示",
+      btn_hide: "隐藏",
+      btn_test: "测试",
+      adv_endpoint_summary: "Endpoint URL & Model ID",
+      footer_hint: "所有改动自动保存并即时生效",
+      footer_saved: "已保存 · 即时生效",
+      btn_close: "关闭",
+      btn_done: "完成",
+      meta_orig: "输入原文",
+      meta_key: "按 {n} 选择",
+      meta_vocab: "重点短语",
+      lbl_source: "Source",
+      lbl_casual: "Casual",
+      lbl_formal: "Formal",
+      lbl_single: "Translation",
+      lbl_vocab: "Vocab",
+    },
+    "zh-TW": {
+      nav_general: "常規",
+      nav_cards: "卡片",
+      nav_engine: "引擎",
+      sec_mode_title: "運行模式",
+      sec_mode_desc: "隨時按 Alt + Q 可循環切換：",
+      mode_en_title: "譯文 (Translate)",
+      mode_en_sub: "直接替換輸入框草稿並展開對照卡片",
+      mode_orig_title: "伴學 (Learn)",
+      mode_orig_sub: "保留原文字不變，僅展開卡片對照",
+      mode_off_title: "關閉 (Off)",
+      mode_off_sub: "靜默待機，不觸發翻譯或彈窗",
+      sec_tlang_title: "目標語言",
+      sec_tlang_desc: "將輸入草稿轉換為選定的目標語言：",
+      sec_hotkey_title: "觸發快捷鍵",
+      sec_hotkey_desc: "需要翻譯時按下（絕不佔用 Enter 與 Ctrl+Enter 換行）：",
+      hk_alte_sub: "推薦（順手且零打字衝突）",
+      hk_alts_sub: "左手單鍵快速觸發",
+      hk_altenter_sub: "保留普通 Enter 與 Ctrl+Enter 換行",
+      sec_dispatch_title: "上屏方式",
+      sec_dispatch_desc: "譯文模式下，翻譯結果如何填入輸入框：",
+      dispatch_auto_title: "直接替換",
+      dispatch_auto_badge: "最快",
+      dispatch_auto_flow: "輸入草稿 ➔ Alt+E ➔ <strong>原地替換為目標外語</strong>",
+      dispatch_auto_desc: "立即替換輸入框文本並浮現 3 秒卡片。<strong>3 秒內按 Esc</strong> 可撤回恢復原草稿。",
+      dispatch_pick_title: "先看後選",
+      dispatch_pick_flow: "輸入草稿 ➔ Alt+E ➔ <strong>按數字 1 或 2 確認上屏</strong>",
+      dispatch_pick_desc: "先彈出卡片展示不同語氣，按鍵盤數字鍵 1 或 2 選擇後填入。",
+      preview_title: "即時預覽",
+      preview_hint: "示例：「這個功能明天能上線嗎？」",
+      ai_tuner_title: "一句話定制版式",
+      ai_tuner_desc: "輸入你的日常用途或點選下方預設：",
+      ai_tuner_placeholder: "例如：只要一行極簡譯文，不顯示原文和詞彙...",
+      ai_tuner_btn: "應用",
+      wish_1: "單行極簡（純打字）",
+      wish_2: "口語 + 書面雙軌",
+      wish_3: "商務與客服回覆",
+      wish_4: "社媒與推特短句",
+      wish_5: "外語伴學（含詞彙）",
+      manual_toggle_title: "顯示行項",
+      tog_source_title: "原文行 (Source)",
+      tog_source_desc: "首行顯示你輸入的原話",
+      tog_dual_title: "雙語氣對照 (Casual / Formal)",
+      tog_dual_desc: "同時展示日常口語與正式書面語",
+      tog_meaning_title: "語境微釋義 (Nuance)",
+      tog_meaning_desc: "在譯文下方附簡短語氣說明",
+      tog_vocab_title: "重點詞彙 (Vocab)",
+      tog_vocab_desc: "底部提取實用短語與搭配",
+      adv_slots_summary: "高級行項配置",
+      btn_add_row: "+ 新增行",
+      btn_reset_rows: "重置默認",
+      banner_ready: "內置高速雲端翻譯已就緒，免配置開箱即用。",
+      engine_choose_title: "翻譯服務商",
+      emode_free_title: "內置高速雲（默認）",
+      emode_free_desc: "免費免 Key 直連，無需配置帳號即可直接打字翻譯。",
+      emode_cloud_title: "自定義大模型 API Key",
+      emode_cloud_desc: "啟用口語/書面雙語氣對比與詞彙提取：",
+      btn_show: "顯示",
+      btn_hide: "隱藏",
+      btn_test: "測試",
+      adv_endpoint_summary: "Endpoint URL & Model ID",
+      footer_hint: "所有改動自動保存並即時生效",
+      footer_saved: "已保存 · 即時生效",
+      btn_close: "關閉",
+      btn_done: "完成",
+      meta_orig: "輸入原文",
+      meta_key: "按 {n} 選擇",
+      meta_vocab: "重點短語",
+      lbl_source: "Source",
+      lbl_casual: "Casual",
+      lbl_formal: "Formal",
+      lbl_single: "Translation",
+      lbl_vocab: "Vocab",
+    },
+    ja: {
+      nav_general: "一般",
+      nav_cards: "カード",
+      nav_engine: "エンジン",
+      sec_mode_title: "動作モード",
+      sec_mode_desc: "Alt + Q でいつでも切り替え可能：",
+      mode_en_title: "翻訳 (Translate)",
+      mode_en_sub: "入力欄のテキストを置換しカードを表示",
+      mode_orig_title: "学習 (Learn)",
+      mode_orig_sub: "原文を維持したままカードのみ表示",
+      mode_off_title: "オフ (Off)",
+      mode_off_sub: "待機状態（翻訳・ポップアップなし）",
+      sec_tlang_title: "ターゲット言語",
+      sec_tlang_desc: "下書きを選択した言語へ翻訳します：",
+      sec_hotkey_title: "翻訳ショートカット",
+      sec_hotkey_desc: "翻訳実行キー（Enter や Ctrl+Enter の改行と競合しません）：",
+      hk_alte_sub: "推奨（通常の入力と競合しない）",
+      hk_alts_sub: "左手ワンストロークで即実行",
+      hk_altenter_sub: "Enter / Ctrl+Enter の改行を維持",
+      sec_dispatch_title: "反映アクション",
+      sec_dispatch_desc: "翻訳結果を入力欄へ反映する方法：",
+      dispatch_auto_title: "即時置換",
+      dispatch_auto_badge: "最速",
+      dispatch_auto_flow: "下書き ➔ Alt+E ➔ <strong>その場で外国語に置換</strong>",
+      dispatch_auto_desc: "即座にテキストを置換し3秒間カードを表示。<strong>3秒以内に Esc</strong> で元に戻せます。",
+      dispatch_pick_title: "プレビュー選択",
+      dispatch_pick_flow: "下書き ➔ Alt+E ➔ <strong>数字キー 1 / 2 で確定</strong>",
+      dispatch_pick_desc: "先にカードを表示し、数字キー 1 または 2 で選んだ表現を反映します。",
+      preview_title: "プレビュー",
+      preview_hint: "例：「この機能、明日リリースできる？」",
+      ai_tuner_title: "自然言語プリセット",
+      ai_tuner_desc: "用途を入力するか下のプリセットを選択：",
+      ai_tuner_placeholder: "例：シンプルな翻訳1行のみ、原文と単語は非表示...",
+      ai_tuner_btn: "適用",
+      wish_1: "1行ミニマル（入力のみ）",
+      wish_2: "口語 + フォーマル比較",
+      wish_3: "ビジネス・サポート対応",
+      wish_4: "SNS / X ショート文",
+      wish_5: "語学学習（単語付き）",
+      manual_toggle_title: "表示項目",
+      tog_source_title: "原文行 (Source)",
+      tog_source_desc: "先頭行に入力した原文を表示",
+      tog_dual_title: "2トーン比較 (Casual / Formal)",
+      tog_dual_desc: "カジュアル口語とフォーマル文面を併記",
+      tog_meaning_title: "ニュアンス注釈 (Nuance)",
+      tog_meaning_desc: "各翻訳の下にトーン解説を表示",
+      tog_vocab_title: "重要表現 (Vocab)",
+      tog_vocab_desc: "下部に有用な連語・イディオムを抽出",
+      adv_slots_summary: "詳細スロット設定",
+      btn_add_row: "+ 行を追加",
+      btn_reset_rows: "リセット",
+      banner_ready: "内蔵の高速クラウド翻訳が有効です（設定不要）。",
+      engine_choose_title: "翻訳プロバイダー",
+      emode_free_title: "内蔵高速クラウド（デフォルト）",
+      emode_free_desc: "APIキー不要で即座に利用可能。",
+      emode_cloud_title: "カスタム LLM API Key",
+      emode_cloud_desc: "2トーン比較と重要語彙の抽出を有効化：",
+      btn_show: "表示",
+      btn_hide: "隠す",
+      btn_test: "テスト",
+      adv_endpoint_summary: "Endpoint URL & Model ID",
+      footer_hint: "変更は自動的に保存・反映されます",
+      footer_saved: "保存済み · 即時反映",
+      btn_close: "閉じる",
+      btn_done: "完了",
+      meta_orig: "入力原文",
+      meta_key: "{n} キーで選択",
+      meta_vocab: "重要語彙",
+      lbl_source: "Source",
+      lbl_casual: "Casual",
+      lbl_formal: "Formal",
+      lbl_single: "Translation",
+      lbl_vocab: "Vocab",
+    },
+  };
+
+  let activeUiLang = "en";
+  let activeSourceLang = "zh";
+  let activeTargetLang = "en";
+  let activeCompanionMode = "english";
+  let selectedTriggerKey = "Alt+E";
+  let activeSlotPreset = "developer";
+  let currentSlots = [];
+  let isInitialLoading = true;
+
+  function t(key) {
+    const dict = UI_I18N[activeUiLang] || UI_I18N.en;
+    return dict[key] || UI_I18N.en[key] || key;
+  }
+
+  function applyInterfaceLanguage(langCode) {
+    activeUiLang = UI_I18N[langCode] ? langCode : "en";
+    const dict = UI_I18N[activeUiLang] || UI_I18N.en;
+
+    document.querySelectorAll("[data-i18n]").forEach((el) => {
+      const key = el.getAttribute("data-i18n");
+      if (key && dict[key]) {
+        el.innerHTML = dict[key];
+      }
+    });
+
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+      const key = el.getAttribute("data-i18n-placeholder");
+      if (key && dict[key]) {
+        el.setAttribute("placeholder", dict[key]);
+      }
+    });
+  }
+
+  // 1. Top Pill Tabs & Language Switcher
   const navPills = document.querySelectorAll(".nav-pill");
   const tabPanes = document.querySelectorAll(".tab-pane");
+  const btnLangTrigger = document.getElementById("btn-lang-trigger");
+  const langCurrentCode = document.getElementById("lang-current-code");
+  const langPopover = document.getElementById("lang-popover");
+  const langOpts = document.querySelectorAll(".lang-opt");
 
   navPills.forEach((pill) => {
     pill.addEventListener("click", () => {
@@ -24,14 +362,44 @@
     });
   });
 
-  // State
-  let activeSourceLang = "zh";
-  let activeTargetLang = "en";
-  let activeCompanionMode = "english";
-  let selectedTriggerKey = "Alt+E";
-  let activeSlotPreset = "developer";
-  let currentSlots = [];
-  let isInitialLoading = true;
+  if (btnLangTrigger && langPopover) {
+    btnLangTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      langPopover.classList.toggle("hidden");
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!langPopover.contains(e.target) && e.target !== btnLangTrigger) {
+        langPopover.classList.add("hidden");
+      }
+    });
+  }
+
+  function setUiLangState(langCode) {
+    const normalized = UI_I18N[langCode] ? langCode : "en";
+    activeUiLang = normalized;
+    activeSourceLang = normalized;
+
+    langOpts.forEach((opt) => {
+      const isMatch = opt.dataset.lang === normalized;
+      opt.classList.toggle("active", isMatch);
+      if (isMatch && langCurrentCode) {
+        langCurrentCode.textContent = opt.dataset.code || "EN";
+      }
+    });
+
+    applyInterfaceLanguage(normalized);
+    renderLiveHudPreview();
+    renderSlotCards();
+  }
+
+  langOpts.forEach((opt) => {
+    opt.addEventListener("click", () => {
+      setUiLangState(opt.dataset.lang);
+      langPopover.classList.add("hidden");
+      autoSaveNow();
+    });
+  });
 
   // 2. Tab 1: General (Operating Mode, Target Language, Trigger Shortcut, Replacement Action)
   const modeSegButtons = document.querySelectorAll("#companion-mode-segmented .seg-btn");
@@ -251,7 +619,7 @@
         <div class="preview-row">
           <span class="preview-tag source">[${sourceSlot.label || "Source"}]</span>
           <span class="preview-text">${sample.source}</span>
-          <span class="preview-meta">Original input</span>
+          <span class="preview-meta">${t("meta_orig")}</span>
         </div>
       `;
     }
@@ -267,7 +635,7 @@
             <span class="preview-tree">${treeChar}</span>
             <span class="preview-tag vocab">[${slot.label || "Vocab"}]</span>
             <span class="preview-text">${sample.vocab}</span>
-            <span class="preview-meta">Key terms</span>
+            <span class="preview-meta">${t("meta_vocab")}</span>
           </div>
         `;
       } else {
@@ -282,7 +650,7 @@
             <span class="preview-tag">[${transIdx}] ${slot.label || "Translation"}</span>
             <span class="preview-text">${mainText}</span>
             ${showMeaning ? `<span class="preview-nuance">(${meaningText})</span>` : ""}
-            <span class="preview-meta">Key ${transIdx}</span>
+            <span class="preview-meta">${t("meta_key").replace("{n}", String(transIdx))}</span>
           </div>
         `;
       }
@@ -374,7 +742,7 @@
     if (inputAiWish) inputAiWish.value = text;
     if (btnAiTune) {
       btnAiTune.disabled = true;
-      btnAiTune.textContent = "Applying...";
+      btnAiTune.textContent = "...";
     }
 
     try {
@@ -392,7 +760,7 @@
         await autoSaveNow();
 
         if (aiTuneFeedback) {
-          aiTuneFeedback.textContent = "Preset applied and saved.";
+          aiTuneFeedback.textContent = t("footer_saved");
           aiTuneFeedback.classList.remove("hidden");
         }
       }
@@ -401,7 +769,7 @@
     } finally {
       if (btnAiTune) {
         btnAiTune.disabled = false;
-        btnAiTune.textContent = "Apply";
+        btnAiTune.textContent = t("ai_tuner_btn");
       }
     }
   }
@@ -637,10 +1005,10 @@
     btnToggleKey.addEventListener("click", () => {
       if (inputApiKey.type === "password") {
         inputApiKey.type = "text";
-        btnToggleKey.textContent = "Hide";
+        btnToggleKey.textContent = t("btn_hide");
       } else {
         inputApiKey.type = "password";
-        btnToggleKey.textContent = "Show";
+        btnToggleKey.textContent = t("btn_show");
       }
     });
   }
@@ -692,7 +1060,7 @@
     try {
       await window.lingualSettingsAPI?.saveConfig(patch);
       if (saveStatus) {
-        saveStatus.textContent = "Saved · Active immediately";
+        saveStatus.textContent = t("footer_saved");
       }
     } catch (err) {
       console.error("Auto-save failed:", err);
@@ -712,6 +1080,7 @@
       const cfg = await window.lingualSettingsAPI?.getConfig();
       if (!cfg) {
         currentSlots = getDefaultSlotsList();
+        setUiLangState("en");
         syncSimpleTogglesFromSlots();
         renderLiveHudPreview();
         renderSlotCards();
@@ -719,7 +1088,6 @@
         return;
       }
 
-      activeSourceLang = cfg.sourceLang || "zh";
       setCompanionModeState(cfg.mode || "english");
       setTargetLangState(cfg.targetLang || "en");
       setTriggerState(cfg.hotkeySubmit || "Alt+E");
@@ -727,6 +1095,7 @@
 
       currentSlots = Array.isArray(cfg.slots) && cfg.slots.length > 0 ? cfg.slots : getDefaultSlotsList();
       normalizeSlotLabelsToEnglish(currentSlots);
+      setUiLangState(cfg.sourceLang || "en");
       syncSimpleTogglesFromSlots();
       renderLiveHudPreview();
       renderSlotCards();
