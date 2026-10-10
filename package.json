@@ -5,7 +5,7 @@
   "main": "dist/main/main.js",
   "type": "module",
   "scripts": {
-    "build:native": "D:/Workspace/environment/mingw64/bin/gcc.exe -O2 src/native/win32_helper.c -o bin/win32_helper.exe -luser32",
+    "build:native": "node scripts/build-native.mjs",
     "build:main": "tsup src/main/main.ts src/main/preload.ts --out-dir dist/main --format esm --external electron",
     "build": "npm run build:native && npm run build:main",
     "start": "electron .",

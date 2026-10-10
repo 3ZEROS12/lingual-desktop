@@ -8,31 +8,35 @@ import {
   DEFAULT_DESKTOP_CONFIG,
 } from "../src/main/config.js";
 
-test("config: loadDesktopConfig returns valid configuration object", () => {
+test("config: loadDesktopConfig returns valid configuration object with companion defaults", () => {
   const cfg = loadDesktopConfig();
   assert.ok(cfg);
   assert.equal(typeof cfg.endpoint, "string");
   assert.equal(typeof cfg.model, "string");
-  assert.equal(typeof cfg.hotkeyRewrite, "string");
-  assert.equal(typeof cfg.hotkeySpotlight, "string");
+  assert.equal(cfg.mode, "english");
+  assert.equal(cfg.autoSend, true);
+  assert.equal(cfg.showCapsule, true);
+  assert.equal(cfg.hotkeyToggleMode, "Alt+Q");
+  assert.equal(cfg.hotkeySubmit, "Ctrl+Enter");
 });
 
-test("config: saveDesktopConfig writes to user config path and reloads cleanly", () => {
+test("config: saveDesktopConfig writes mode and autoSend to user config and reloads cleanly", () => {
   const configPath = getConfigPath();
   const originalExists = fs.existsSync(configPath);
   const originalRaw = originalExists ? fs.readFileSync(configPath, "utf8") : null;
 
   try {
     saveDesktopConfig({
-      model: "test-model-suite",
-      hotkeyRewrite: "Alt+R",
+      mode: "original",
+      autoSend: false,
+      hotkeyToggleMode: "Ctrl+Shift+L",
     });
 
     const updated = loadDesktopConfig();
-    assert.equal(updated.model, "test-model-suite");
-    assert.equal(updated.hotkeyRewrite, "Alt+R");
+    assert.equal(updated.mode, "original");
+    assert.equal(updated.autoSend, false);
+    assert.equal(updated.hotkeyToggleMode, "Ctrl+Shift+L");
   } finally {
-    // Restore or cleanup test changes
     if (originalExists && originalRaw !== null) {
       fs.writeFileSync(configPath, originalRaw, "utf8");
     } else if (fs.existsSync(configPath)) {

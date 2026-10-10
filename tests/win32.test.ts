@@ -3,8 +3,13 @@ import assert from "node:assert/strict";
 import {
   getActiveWindowHwnd,
   getCaretPosition,
+  getFocusedElementRect,
+  getFocusedElementText,
+  setFocusedElementText,
   captureSelectedText,
   injectReplacementText,
+  captureActiveInputText,
+  injectTextToTarget,
   type ClipboardLike,
 } from "../src/main/win32.js";
 
@@ -24,6 +29,27 @@ test("win32: getCaretPosition returns coordinate object or null gracefully", () 
   }
 });
 
+test("win32: getFocusedElementRect returns valid bounding rectangle or null gracefully", () => {
+  const rect = getFocusedElementRect();
+  if (rect !== null) {
+    assert.equal(typeof rect.x, "number");
+    assert.equal(typeof rect.y, "number");
+    assert.equal(typeof rect.width, "number");
+    assert.equal(typeof rect.height, "number");
+  } else {
+    assert.equal(rect, null);
+  }
+});
+
+test("win32: getFocusedElementText and setFocusedElementText execute without throwing", () => {
+  const txt = getFocusedElementText();
+  // Can be string or null depending on focused element
+  assert.ok(txt === null || typeof txt === "string");
+
+  const success = setFocusedElementText("test-val");
+  assert.equal(typeof success, "boolean");
+});
+
 test("win32: captureSelectedText and injectReplacementText manage clipboard transaction", async () => {
   let clipboardContent = "Initial User Clipboard History (Should be restored)";
 
@@ -37,22 +63,32 @@ test("win32: captureSelectedText and injectReplacementText manage clipboard tran
   const initialBackup = mockClipboard.readText();
   assert.equal(initialBackup, "Initial User Clipboard History (Should be restored)");
 
-  // Test injection with delayed rollback
   const targetHwnd = getActiveWindowHwnd();
   const replacement = "This feels over-engineered (Spoken)";
 
   await injectReplacementText(replacement, targetHwnd, initialBackup, mockClipboard);
 
-  // Immediately after injection, clipboard holds replacement
   assert.equal(clipboardContent, replacement);
 
-  // Wait for 220ms delayed rollback
   await new Promise((r) => setTimeout(r, 220));
 
-  // User's clipboard must be restored 100% cleanly
   assert.equal(
     mockClipboard.readText(),
     "Initial User Clipboard History (Should be restored)",
     "Original clipboard content was not restored!"
   );
+});
+
+test("win32: captureActiveInputText and injectTextToTarget handle hybrid pipeline", async () => {
+  let clipboardContent = "Backup Text";
+  const mockClipboard: ClipboardLike = {
+    readText: () => clipboardContent,
+    writeText: (t: string) => {
+      clipboardContent = t;
+    },
+  };
+
+  const targetHwnd = getActiveWindowHwnd();
+  const res = await injectTextToTarget("Hybrid Test", targetHwnd, "Backup Text", mockClipboard);
+  assert.ok(res === "uia" || res === "clipboard");
 });

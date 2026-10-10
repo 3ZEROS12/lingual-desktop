@@ -1,5 +1,8 @@
 import { translateCore, type LingualRequest, type LingualResponse } from "pi-lingual/core";
+import { shouldTriggerTranslation } from "pi-lingual";
 import { loadDesktopConfig, type LingualDesktopConfig } from "./config.js";
+
+export { shouldTriggerTranslation };
 
 /**
  * Creates an HTTP-based Model Completer conforming to the OpenAI Chat Completions API specification

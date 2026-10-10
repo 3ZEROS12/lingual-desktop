@@ -1,33 +1,48 @@
 import { app, BrowserWindow, globalShortcut, Tray, Menu, ipcMain, screen, clipboard } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadDesktopConfig, type LingualDesktopConfig } from "./config.js";
-import { getActiveWindowHwnd, restoreFocus, getCaretPosition, captureSelectedText, injectReplacementText } from "./win32.js";
-import { executeTranslation } from "./engine.js";
+import { loadDesktopConfig, saveDesktopConfig, type LingualDesktopConfig, type CompanionMode } from "./config.js";
+import {
+  getActiveWindowHwnd,
+  restoreFocus,
+  getCaretPosition,
+  getFocusedElementRect,
+  captureActiveInputText,
+  injectTextToTarget,
+  triggerPaste,
+} from "./win32.js";
+import { executeTranslation, shouldTriggerTranslation } from "./engine.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let hudWindow: BrowserWindow | null = null;
+let companionWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+
+let currentMode: CompanionMode = "english";
 let activeTargetHwnd = "0";
 let activeBackupText = "";
 let currentTranslationResponse: any = null;
+let viewState: "capsule" | "hud" | "spotlight" = "capsule";
+let caretPollInterval: NodeJS.Timeout | null = null;
 
+const CAPSULE_WIDTH = 84;
+const CAPSULE_HEIGHT = 30;
 const HUD_WIDTH = 540;
 const HUD_HEIGHT = 280;
 
-function createHudWindow(): BrowserWindow {
+function createCompanionWindow(): BrowserWindow {
   const win = new BrowserWindow({
-    width: HUD_WIDTH,
-    height: HUD_HEIGHT,
+    width: CAPSULE_WIDTH,
+    height: CAPSULE_HEIGHT,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
     show: false,
     resizable: false,
-    hasShadow: false, // Handled in CSS for clean borders
+    focusable: false, // Never steal typing focus in capsule state!
+    hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -38,10 +53,10 @@ function createHudWindow(): BrowserWindow {
   const rendererHtml = path.join(__dirname, "../../src/renderer/index.html");
   win.loadFile(rendererHtml);
 
-  // If user clicks outside HUD, auto-dismiss
+  // When in HUD state and losing focus, auto-dismiss back to capsule
   win.on("blur", () => {
-    if (win.isVisible()) {
-      win.hide();
+    if (viewState === "hud" || viewState === "spotlight") {
+      switchToCapsuleView();
       restoreFocus(activeTargetHwnd);
     }
   });
@@ -49,144 +64,327 @@ function createHudWindow(): BrowserWindow {
   return win;
 }
 
-function showHudAt(targetX: number, targetY: number): void {
-  if (!hudWindow) return;
+function switchToCapsuleView(): void {
+  if (!companionWindow) return;
+  viewState = "capsule";
+  companionWindow.setFocusable(false);
+  companionWindow.setSize(CAPSULE_WIDTH, CAPSULE_HEIGHT);
+  companionWindow.webContents.send("lingual:view-state", "capsule");
+}
 
-  const currentDisplay = screen.getDisplayNearestPoint({ x: targetX, y: targetY });
-  const { workArea } = currentDisplay;
+function switchToHudView(targetX: number, targetY: number): void {
+  if (!companionWindow) return;
+  viewState = "hud";
+  companionWindow.setFocusable(true);
+  companionWindow.setSize(HUD_WIDTH, HUD_HEIGHT);
 
-  // Clamp within display workArea bounds so HUD is never off-screen
+  const display = screen.getDisplayNearestPoint({ x: targetX, y: targetY });
+  const { workArea } = display;
+
   let clampedX = Math.max(workArea.x + 8, Math.min(targetX, workArea.x + workArea.width - HUD_WIDTH - 8));
   let clampedY = Math.max(workArea.y + 8, Math.min(targetY, workArea.y + workArea.height - HUD_HEIGHT - 8));
 
-  hudWindow.setPosition(Math.round(clampedX), Math.round(clampedY));
-  hudWindow.show();
-  hudWindow.focus();
+  companionWindow.setPosition(Math.round(clampedX), Math.round(clampedY));
+  companionWindow.show();
+  companionWindow.focus();
+  companionWindow.webContents.send("lingual:view-state", "hud");
 }
 
-async function handleInPlaceTrigger(): Promise<void> {
-  const targetHwnd = getActiveWindowHwnd();
-  activeTargetHwnd = targetHwnd;
-
-  const captured = await captureSelectedText(clipboard);
-  if (!captured || !captured.text.trim()) {
-    // If no text was selected, fallback to opening spotlight capsule at cursor
-    handleSpotlightTrigger();
-    return;
-  }
-
-  activeBackupText = captured.backup;
-
-  const caret = getCaretPosition();
-  const cursor = screen.getCursorScreenPoint();
-  const pos = caret || cursor;
-
-  showHudAt(pos.x, pos.y + 16);
-
-  if (hudWindow) {
-    hudWindow.webContents.send("lingual:data", {
-      loading: true,
-      mode: "In-Situ",
-      text: captured.text,
-    });
-  }
-
-  try {
-    const res = await executeTranslation(captured.text);
-    currentTranslationResponse = res;
-    if (hudWindow && hudWindow.isVisible()) {
-      hudWindow.webContents.send("lingual:data", {
-        ...res,
-        sourceText: captured.text,
-        mode: "In-Situ",
-      });
-    }
-  } catch (err: any) {
-    console.error("[main] Translation error:", err);
-    if (hudWindow && hudWindow.isVisible()) {
-      hudWindow.webContents.send("lingual:data", {
-        spoken: captured.text,
-        written: captured.text,
-        sourceText: captured.text,
-        mode: "In-Situ",
-      });
-    }
-  }
-}
-
-function handleSpotlightTrigger(): void {
-  const targetHwnd = getActiveWindowHwnd();
-  activeTargetHwnd = targetHwnd;
-  activeBackupText = clipboard.readText();
+function switchToSpotlightView(): void {
+  if (!companionWindow) return;
+  viewState = "spotlight";
+  companionWindow.setFocusable(true);
+  companionWindow.setSize(HUD_WIDTH, HUD_HEIGHT);
 
   const cursor = screen.getCursorScreenPoint();
   const display = screen.getDisplayNearestPoint(cursor);
   const x = Math.round(display.workArea.x + (display.workArea.width - HUD_WIDTH) / 2);
   const y = Math.round(display.workArea.y + display.workArea.height * 0.25);
 
-  showHudAt(x, y);
+  companionWindow.setPosition(x, y);
+  companionWindow.show();
+  companionWindow.focus();
+  companionWindow.webContents.send("lingual:view-state", "spotlight");
+}
 
-  if (hudWindow) {
-    hudWindow.webContents.send("lingual:spotlight-open");
+/**
+ * Ambient Caret Tracker:
+ * Periodically checks caret or focused element position to gently dock the micro-capsule
+ */
+function startCaretTracking(): void {
+  if (caretPollInterval) clearInterval(caretPollInterval);
+
+  caretPollInterval = setInterval(() => {
+    if (viewState !== "capsule" || !companionWindow) return;
+
+    const config = loadDesktopConfig();
+    if (!config.showCapsule || currentMode === "off") {
+      if (companionWindow.isVisible()) companionWindow.hide();
+      return;
+    }
+
+    const caret = getCaretPosition();
+    if (caret) {
+      const display = screen.getDisplayNearestPoint(caret);
+      const x = Math.min(caret.x + 8, display.workArea.x + display.workArea.width - CAPSULE_WIDTH - 4);
+      const y = Math.max(display.workArea.y + 4, caret.y - CAPSULE_HEIGHT - 4);
+
+      companionWindow.setPosition(Math.round(x), Math.round(y));
+      if (!companionWindow.isVisible()) {
+        companionWindow.showInactive();
+      }
+      return;
+    }
+
+    const rect = getFocusedElementRect();
+    if (rect && rect.width > 0 && rect.height > 0) {
+      const display = screen.getDisplayNearestPoint({ x: rect.x, y: rect.y });
+      const x = Math.min(rect.x + rect.width - CAPSULE_WIDTH, display.workArea.x + display.workArea.width - CAPSULE_WIDTH - 4);
+      const y = Math.max(display.workArea.y + 4, rect.y - CAPSULE_HEIGHT - 2);
+
+      companionWindow.setPosition(Math.round(x), Math.round(y));
+      if (!companionWindow.isVisible()) {
+        companionWindow.showInactive();
+      }
+      return;
+    }
+
+    // If no active typing control detected, gracefully hide capsule
+    if (companionWindow.isVisible()) {
+      companionWindow.hide();
+    }
+  }, 350);
+}
+
+function cycleCompanionMode(): void {
+  const modes: CompanionMode[] = ["english", "original", "off"];
+  const nextIdx = (modes.indexOf(currentMode) + 1) % modes.length;
+  currentMode = modes[nextIdx];
+  saveDesktopConfig({ mode: currentMode });
+
+  if (companionWindow) {
+    companionWindow.webContents.send("lingual:mode-changed", currentMode);
+  }
+  updateTrayMenu();
+  console.log(`[lingual-desktop] Mode cycled to: ${currentMode}`);
+}
+
+async function handleSubmitInterception(): Promise<void> {
+  const targetHwnd = getActiveWindowHwnd();
+  activeTargetHwnd = targetHwnd;
+
+  if (currentMode === "off") return;
+
+  const captured = await captureActiveInputText(clipboard);
+  if (!captured || !captured.text.trim()) {
+    // If nothing in input, pass through
+    return;
+  }
+
+  activeBackupText = captured.backup;
+  const config = loadDesktopConfig();
+
+  // Check if natural language should trigger translation
+  if (!shouldTriggerTranslation(captured.text, config.sourceLang)) {
+    return;
+  }
+
+  const caret = getCaretPosition();
+  const cursor = screen.getCursorScreenPoint();
+  const pos = caret || cursor;
+
+  // Mode A: Original Mode (0ms pass-through, HUD explains in background)
+  if (currentMode === "original") {
+    switchToHudView(pos.x, pos.y + 16);
+    if (companionWindow) {
+      companionWindow.webContents.send("lingual:data", {
+        loading: true,
+        sourceText: captured.text,
+        autoSent: true,
+        modeLabel: "Original",
+      });
+    }
+
+    executeTranslation(captured.text, config)
+      .then((res) => {
+        currentTranslationResponse = res;
+        if (companionWindow && companionWindow.isVisible()) {
+          companionWindow.webContents.send("lingual:data", {
+            ...res,
+            sourceText: captured.text,
+            autoSent: true,
+            modeLabel: "Original",
+          });
+        }
+      })
+      .catch((err) => console.error("[main] Translation error:", err));
+    return;
+  }
+
+  // Mode B: English Mode (Intercept -> Translate -> Replace & Send / Confirm)
+  switchToHudView(pos.x, pos.y + 16);
+  if (companionWindow) {
+    companionWindow.webContents.send("lingual:data", {
+      loading: true,
+      sourceText: captured.text,
+      autoSent: config.autoSend,
+      modeLabel: "English",
+    });
+  }
+
+  try {
+    const res = await executeTranslation(captured.text, config);
+    currentTranslationResponse = res;
+    const replacement = res.written || res.spoken;
+
+    if (config.autoSend) {
+      // Auto-Send Pipeline:
+      if (replacement) {
+        await injectTextToTarget(replacement, targetHwnd, activeBackupText, clipboard);
+        // Trigger submit in target
+        setTimeout(() => triggerPaste(), 60);
+      }
+      if (companionWindow && companionWindow.isVisible()) {
+        companionWindow.webContents.send("lingual:data", {
+          ...res,
+          sourceText: captured.text,
+          autoSent: true,
+          modeLabel: "Submitted",
+        });
+      }
+    } else {
+      // Confirm-before-send Pipeline:
+      if (companionWindow && companionWindow.isVisible()) {
+        companionWindow.webContents.send("lingual:data", {
+          ...res,
+          sourceText: captured.text,
+          autoSent: false,
+          modeLabel: "Ready",
+        });
+      }
+    }
+  } catch (err: any) {
+    console.error("[main] English translation interception error:", err);
+    switchToCapsuleView();
+    restoreFocus(targetHwnd);
   }
 }
 
 function registerShortcuts(config: LingualDesktopConfig): void {
   globalShortcut.unregisterAll();
 
+  // 1. Mode cycle shortcut (Alt+Q)
+  const toggleKey = config.hotkeyToggleMode || "Alt+Q";
+  globalShortcut.register(toggleKey, () => {
+    cycleCompanionMode();
+  });
+
+  // 2. Submit interceptor shortcut (Ctrl+Enter)
+  const submitKey = config.hotkeySubmit || "Ctrl+Enter";
+  globalShortcut.register(submitKey, () => {
+    handleSubmitInterception();
+  });
+
+  // 3. Selection rewrite shortcut (Alt+E)
   const rewriteKey = config.hotkeyRewrite || "Alt+E";
+  globalShortcut.register(rewriteKey, () => {
+    handleSubmitInterception();
+  });
+
+  // 4. Spotlight capsule shortcut (Alt+Space)
   const spotlightKey = config.hotkeySpotlight || "Alt+Space";
-
-  const okRewrite = globalShortcut.register(rewriteKey, () => {
-    handleInPlaceTrigger();
+  globalShortcut.register(spotlightKey, () => {
+    switchToSpotlightView();
   });
-  if (!okRewrite) {
-    console.warn(`[main] Failed to register global shortcut: ${rewriteKey}`);
-  }
-
-  const okSpotlight = globalShortcut.register(spotlightKey, () => {
-    handleSpotlightTrigger();
-  });
-  if (!okSpotlight) {
-    console.warn(`[main] Failed to register global shortcut: ${spotlightKey}`);
-  }
 }
 
-function setupTray(): void {
-  // Use a simple 16x16 programmatic canvas / buffer icon or standard tray
-  tray = new Tray(path.join(__dirname, "../../assets/tray-icon.png"));
-  tray.setToolTip("lingual-desktop · Universal Dual-Register Companion");
+function updateTrayMenu(): void {
+  if (!tray) return;
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: "⇄ lingual-desktop",
+      label: `⇄ Current Mode: [${currentMode.toUpperCase()}]`,
       enabled: false,
+    },
+    {
+      label: "Cycle Mode (Alt+Q)",
+      click: () => cycleCompanionMode(),
     },
     { type: "separator" },
     {
-      label: "Trigger In-Situ Rewrite (Alt+E)",
-      click: () => handleInPlaceTrigger(),
+      label: "Mode: English (Auto-translate & Submit)",
+      type: "radio",
+      checked: currentMode === "english",
+      click: () => {
+        currentMode = "english";
+        saveDesktopConfig({ mode: "english" });
+        if (companionWindow) companionWindow.webContents.send("lingual:mode-changed", "english");
+        updateTrayMenu();
+      },
     },
     {
-      label: "Trigger Spotlight Capsule (Alt+Space)",
-      click: () => handleSpotlightTrigger(),
+      label: "Mode: Original (Send original + Learn)",
+      type: "radio",
+      checked: currentMode === "original",
+      click: () => {
+        currentMode = "original";
+        saveDesktopConfig({ mode: "original" });
+        if (companionWindow) companionWindow.webContents.send("lingual:mode-changed", "original");
+        updateTrayMenu();
+      },
+    },
+    {
+      label: "Mode: Off",
+      type: "radio",
+      checked: currentMode === "off",
+      click: () => {
+        currentMode = "off";
+        saveDesktopConfig({ mode: "off" });
+        if (companionWindow) companionWindow.webContents.send("lingual:mode-changed", "off");
+        updateTrayMenu();
+      },
+    },
+    { type: "separator" },
+    {
+      label: "Auto-Send after Translation",
+      type: "checkbox",
+      checked: loadDesktopConfig().autoSend,
+      click: (item) => {
+        saveDesktopConfig({ autoSend: item.checked });
+      },
+    },
+    {
+      label: "Show Ambient Caret Capsule",
+      type: "checkbox",
+      checked: loadDesktopConfig().showCapsule,
+      click: (item) => {
+        saveDesktopConfig({ showCapsule: item.checked });
+      },
     },
     { type: "separator" },
     {
       label: "Quit",
-      click: () => {
-        app.quit();
-      },
+      click: () => app.quit(),
     },
   ]);
 
   tray.setContextMenu(contextMenu);
 }
 
+function setupTray(): void {
+  tray = new Tray(path.join(__dirname, "../../assets/tray-icon.png"));
+  tray.setToolTip("lingual-desktop · Ambient Language Companion");
+  updateTrayMenu();
+}
+
 function setupIpc(): void {
+  ipcMain.on("lingual:toggle-mode", () => {
+    cycleCompanionMode();
+  });
+
   ipcMain.on("lingual:select", async (_event, slot: 1 | 2) => {
     if (!currentTranslationResponse) {
-      if (hudWindow) hudWindow.hide();
+      switchToCapsuleView();
       restoreFocus(activeTargetHwnd);
       return;
     }
@@ -195,17 +393,18 @@ function setupIpc(): void {
       ? currentTranslationResponse.spoken
       : currentTranslationResponse.written;
 
-    if (hudWindow) hudWindow.hide();
+    switchToCapsuleView();
 
     if (selectedText) {
-      await injectReplacementText(selectedText, activeTargetHwnd, activeBackupText, clipboard);
+      await injectTextToTarget(selectedText, activeTargetHwnd, activeBackupText, clipboard);
+      setTimeout(() => triggerPaste(), 40);
     } else {
       restoreFocus(activeTargetHwnd);
     }
   });
 
   ipcMain.on("lingual:dismiss", () => {
-    if (hudWindow) hudWindow.hide();
+    switchToCapsuleView();
     restoreFocus(activeTargetHwnd);
   });
 
@@ -213,11 +412,12 @@ function setupIpc(): void {
     try {
       const res = await executeTranslation(input);
       currentTranslationResponse = res;
-      if (hudWindow && hudWindow.isVisible()) {
-        hudWindow.webContents.send("lingual:data", {
+      if (companionWindow && companionWindow.isVisible()) {
+        companionWindow.webContents.send("lingual:data", {
           ...res,
           sourceText: input,
-          mode: "Spotlight",
+          autoSent: false,
+          modeLabel: "Spotlight",
         });
       }
     } catch (err: any) {
@@ -226,26 +426,30 @@ function setupIpc(): void {
   });
 }
 
-// Ensure single instance lock
+// Single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
 } else {
   app.whenReady().then(() => {
-    hudWindow = createHudWindow();
     const config = loadDesktopConfig();
+    currentMode = config.mode || "english";
+
+    companionWindow = createCompanionWindow();
     registerShortcuts(config);
     setupTray();
     setupIpc();
+    startCaretTracking();
 
-    console.log("[lingual-desktop] Initialized successfully. Shortcuts: Alt+E, Alt+Space");
+    console.log(`[lingual-desktop] Initialized ambient companion in [${currentMode}] mode.`);
   });
 
   app.on("will-quit", () => {
+    if (caretPollInterval) clearInterval(caretPollInterval);
     globalShortcut.unregisterAll();
   });
 
   app.on("window-all-closed", (e: Event) => {
-    e.preventDefault(); // Keep background daemon running in tray
+    e.preventDefault();
   });
 }

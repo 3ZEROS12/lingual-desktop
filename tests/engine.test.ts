@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { executeTranslation } from "../src/main/engine.js";
+import { executeTranslation, shouldTriggerTranslation } from "../src/main/engine.js";
 
 test("engine: executeTranslation bypasses pure CLI command via 0ms shield", async () => {
   const res = await executeTranslation("git checkout -b feature/unified-desktop");
@@ -15,8 +15,14 @@ test("engine: executeTranslation bypasses code statements via 0ms shield", async
   assert.equal(res.spoken, "const [state, setState] = useState(null);");
 });
 
+test("engine: shouldTriggerTranslation correctly detects natural language for companion interception", () => {
+  assert.equal(shouldTriggerTranslation("这个并发引擎性能极佳，彻底解决了内存泄漏问题", "zh"), true);
+  assert.equal(shouldTriggerTranslation("npm install", "zh"), false);
+  assert.equal(shouldTriggerTranslation("const a = 1;", "zh"), false);
+  assert.equal(shouldTriggerTranslation("git status", "zh"), false);
+});
+
 test("engine: executeTranslation returns structured response with fallback when offline", async () => {
-  // Point to a non-existent port to simulate graceful offline fallback
   const res = await executeTranslation("这个方案需要精简", {
     endpoint: "http://127.0.0.1:54321/v1/chat/completions",
   });

@@ -2,12 +2,19 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
+export type CompanionMode = "english" | "original" | "off";
+
 export interface LingualDesktopConfig {
   endpoint: string;
   apiKey: string;
   model: string;
   sourceLang: string;
   targetLang: string;
+  mode: CompanionMode;
+  autoSend: boolean;
+  showCapsule: boolean;
+  hotkeyToggleMode: string;
+  hotkeySubmit: string;
   hotkeyRewrite: string;
   hotkeySpotlight: string;
 }
@@ -18,6 +25,11 @@ export const DEFAULT_DESKTOP_CONFIG: LingualDesktopConfig = {
   model: "qwen2.5:3b",
   sourceLang: "zh",
   targetLang: "en",
+  mode: "english",
+  autoSend: true,
+  showCapsule: true,
+  hotkeyToggleMode: "Alt+Q",
+  hotkeySubmit: "Ctrl+Enter",
   hotkeyRewrite: "Alt+E",
   hotkeySpotlight: "Alt+Space",
 };
@@ -67,6 +79,7 @@ export function loadDesktopConfig(): LingualDesktopConfig {
           model: target.selectedModel || target.model || DEFAULT_DESKTOP_CONFIG.model,
           sourceLang: target.sourceLang || DEFAULT_DESKTOP_CONFIG.sourceLang,
           targetLang: target.targetLang || DEFAULT_DESKTOP_CONFIG.targetLang,
+          mode: target.mode || DEFAULT_DESKTOP_CONFIG.mode,
         };
       } catch {
         // Ignore read errors

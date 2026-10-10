@@ -6,23 +6,23 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function getHelperPath(): string {
+function getHelperPath(helperName: "win32_helper.exe" | "uia_helper.exe" = "win32_helper.exe"): string {
   const candidates = [
-    path.join(__dirname, "../../bin/win32_helper.exe"),
-    path.join(__dirname, "../bin/win32_helper.exe"),
-    path.join(process.cwd(), "bin/win32_helper.exe"),
+    path.join(__dirname, "../../bin", helperName),
+    path.join(__dirname, "../bin", helperName),
+    path.join(process.cwd(), "bin", helperName),
   ];
   for (const c of candidates) {
     if (fs.existsSync(c)) {
       return c;
     }
   }
-  throw new Error(`win32_helper.exe not found in candidates: ${candidates.join(", ")}`);
+  throw new Error(`${helperName} not found in candidates: ${candidates.join(", ")}`);
 }
 
 export function getActiveWindowHwnd(): string {
   try {
-    const helper = getHelperPath();
+    const helper = getHelperPath("win32_helper.exe");
     const out = execFileSync(helper, ["active-window"], { encoding: "utf8", timeout: 2000 }).trim();
     return out;
   } catch (err) {
@@ -34,7 +34,7 @@ export function getActiveWindowHwnd(): string {
 export function restoreFocus(hwnd: string): void {
   try {
     if (!hwnd || hwnd === "0") return;
-    const helper = getHelperPath();
+    const helper = getHelperPath("win32_helper.exe");
     execFileSync(helper, ["focus", hwnd], { timeout: 2000 });
   } catch (err) {
     console.error("[win32] Failed to restore focus to hwnd:", hwnd, err);
@@ -43,7 +43,7 @@ export function restoreFocus(hwnd: string): void {
 
 export function triggerCopy(): void {
   try {
-    const helper = getHelperPath();
+    const helper = getHelperPath("win32_helper.exe");
     execFileSync(helper, ["copy"], { timeout: 2000 });
   } catch (err) {
     console.error("[win32] Failed to trigger copy:", err);
@@ -52,7 +52,7 @@ export function triggerCopy(): void {
 
 export function triggerPaste(): void {
   try {
-    const helper = getHelperPath();
+    const helper = getHelperPath("win32_helper.exe");
     execFileSync(helper, ["paste"], { timeout: 2000 });
   } catch (err) {
     console.error("[win32] Failed to trigger paste:", err);
@@ -61,7 +61,7 @@ export function triggerPaste(): void {
 
 export function getCaretPosition(): { x: number; y: number } | null {
   try {
-    const helper = getHelperPath();
+    const helper = getHelperPath("win32_helper.exe");
     const out = execFileSync(helper, ["caret"], { encoding: "utf8", timeout: 2000 }).trim();
     if (!out || out === "none") return null;
     const parts = out.split(/\s+/);
@@ -78,6 +78,59 @@ export function getCaretPosition(): { x: number; y: number } | null {
   }
 }
 
+/**
+ * Reads text from the currently focused element via Windows UI Automation
+ * 100% zero clipboard interaction!
+ */
+export function getFocusedElementText(): string | null {
+  try {
+    const helper = getHelperPath("uia_helper.exe");
+    const out = execFileSync(helper, ["focused-text"], { encoding: "utf8", timeout: 2000 });
+    if (!out || out === "NONE" || out === "UNSUPPORTED") return null;
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sets text in the currently focused element via Windows UI Automation
+ * 100% zero clipboard interaction!
+ */
+export function setFocusedElementText(text: string): boolean {
+  try {
+    const helper = getHelperPath("uia_helper.exe");
+    const out = execFileSync(helper, ["set-text", text], { encoding: "utf8", timeout: 2000 }).trim();
+    return out === "OK";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Retrieves the bounding rectangle of the currently focused UI element
+ */
+export function getFocusedElementRect(): { x: number; y: number; width: number; height: number } | null {
+  try {
+    const helper = getHelperPath("uia_helper.exe");
+    const out = execFileSync(helper, ["focused-rect"], { encoding: "utf8", timeout: 2000 }).trim();
+    if (!out || out === "NONE") return null;
+    const parts = out.split(/\s+/);
+    if (parts.length >= 4) {
+      const x = parseInt(parts[0], 10);
+      const y = parseInt(parts[1], 10);
+      const width = parseInt(parts[2], 10);
+      const height = parseInt(parts[3], 10);
+      if (!isNaN(x) && !isNaN(y) && !isNaN(width) && !isNaN(height)) {
+        return { x, y, width, height };
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export interface ClipboardLike {
   readText(): string;
   writeText(text: string): void;
@@ -85,16 +138,11 @@ export interface ClipboardLike {
 
 /**
  * Capture selected text with Atomic Clipboard Guard
- * 1. Backs up current clipboard.
- * 2. Triggers Ctrl+C.
- * 3. Waits up to 150ms for clipboard to update with newly selected text.
- * 4. Returns selected text and the original backup.
  */
 export async function captureSelectedText(
   clipboard: ClipboardLike
 ): Promise<{ text: string; backup: string } | null> {
   const backup = clipboard.readText();
-  // Clear or set temporary sentinel to detect change
   const sentinel = `__LINGUAL_CLIP_${Date.now()}_${Math.random()}__`;
   clipboard.writeText(sentinel);
 
@@ -111,7 +159,6 @@ export async function captureSelectedText(
     }
   }
 
-  // If nothing was selected or clipboard didn't update, revert immediately
   if (!captured || captured === sentinel) {
     clipboard.writeText(backup);
     return null;
@@ -121,11 +168,57 @@ export async function captureSelectedText(
 }
 
 /**
+ * Hybrid Text Capture:
+ * 1. Attempts UI Automation first (0ms, 0 clipboard pollution).
+ * 2. If UIA unsupported, smoothly falls back to Atomic Clipboard Guard.
+ */
+export async function captureActiveInputText(
+  clipboard: ClipboardLike
+): Promise<{ text: string; backup: string; method: "uia" | "clipboard" } | null> {
+  const uiaText = getFocusedElementText();
+  if (uiaText && uiaText.trim()) {
+    return {
+      text: uiaText,
+      backup: clipboard.readText(),
+      method: "uia",
+    };
+  }
+
+  const clipCaptured = await captureSelectedText(clipboard);
+  if (clipCaptured) {
+    return {
+      text: clipCaptured.text,
+      backup: clipCaptured.backup,
+      method: "clipboard",
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Hybrid Text Injection:
+ * 1. Attempts UI Automation SetValue first (0ms, 0 clipboard pollution).
+ * 2. If UIA unsupported, restores focus and triggers delayed-rollback Clipboard Paste.
+ */
+export async function injectTextToTarget(
+  replacementText: string,
+  targetHwnd: string,
+  backup: string,
+  clipboard: ClipboardLike
+): Promise<"uia" | "clipboard"> {
+  const uiaSuccess = setFocusedElementText(replacementText);
+  if (uiaSuccess) {
+    return "uia";
+  }
+
+  // Fallback to clipboard transaction
+  await injectReplacementText(replacementText, targetHwnd, backup, clipboard);
+  return "clipboard";
+}
+
+/**
  * Injects replacement text into target window and restores the original clipboard
- * 1. Writes replacement text to clipboard.
- * 2. Restores focus to target window.
- * 3. Triggers Ctrl+V.
- * 4. Delays 150ms to let target window process paste, then restores original clipboard backup.
  */
 export async function injectReplacementText(
   replacementText: string,
@@ -138,7 +231,6 @@ export async function injectReplacementText(
   await new Promise((r) => setTimeout(r, 40));
   triggerPaste();
 
-  // Delayed clipboard restore to protect user's Win+V history
   setTimeout(() => {
     try {
       clipboard.writeText(backup);

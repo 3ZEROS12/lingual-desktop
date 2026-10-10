@@ -4,8 +4,14 @@ contextBridge.exposeInMainWorld("lingualAPI", {
   onTranslationData: (callback: (data: any) => void) => {
     ipcRenderer.on("lingual:data", (_event, data) => callback(data));
   },
-  onSpotlightOpen: (callback: () => void) => {
-    ipcRenderer.on("lingual:spotlight-open", () => callback());
+  onModeChanged: (callback: (mode: string) => void) => {
+    ipcRenderer.on("lingual:mode-changed", (_event, mode) => callback(mode));
+  },
+  onViewState: (callback: (state: "capsule" | "hud" | "spotlight") => void) => {
+    ipcRenderer.on("lingual:view-state", (_event, state) => callback(state));
+  },
+  toggleMode: () => {
+    ipcRenderer.send("lingual:toggle-mode");
   },
   selectTranslation: (slot: 1 | 2) => {
     ipcRenderer.send("lingual:select", slot);
