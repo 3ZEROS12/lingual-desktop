@@ -4,12 +4,18 @@ import { loadDesktopConfig, type LingualDesktopConfig } from "./config.js";
 
 export { shouldTriggerTranslation };
 
+export interface DesktopTranslationResult extends LingualResponse {
+  isOfflineOrFailed?: boolean;
+}
+
 /**
  * Creates an HTTP-based Model Completer conforming to the OpenAI Chat Completions API specification
  * Works universally with Ollama, Groq, DeepSeek, OpenRouter, and OpenAI endpoints.
  */
 export function createHttpCompleter(config: LingualDesktopConfig) {
-  return async (prompt: string, systemPrompt: string, signal?: AbortSignal): Promise<string | null> => {
+  let requestFailed = false;
+
+  const completer = async (prompt: string, systemPrompt: string, signal?: AbortSignal): Promise<string | null> => {
     const endpoint = config.endpoint || "http://127.0.0.1:11434/v1/chat/completions";
     const apiKey = config.apiKey || "ollama";
     const model = config.model || "qwen2.5:3b";
@@ -43,6 +49,7 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
 
       if (!res.ok) {
         console.error(`[engine] Completion request failed: ${res.status} ${res.statusText}`);
+        requestFailed = true;
         return null;
       }
 
@@ -50,6 +57,7 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
       const content = data?.choices?.[0]?.message?.content;
       return typeof content === "string" ? content : null;
     } catch (err: any) {
+      requestFailed = true;
       if (err.name === "AbortError") {
         console.warn("[engine] Completion request timed out or was aborted");
       } else {
@@ -63,18 +71,24 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
       }
     }
   };
+
+  return {
+    completer,
+    didFail: () => requestFailed,
+  };
 }
 
 /**
  * Dispatches a translation request using the desktop configuration and pi-lingual core engine
+ * Accurately tracks offline/network failure to prevent auto-sending un-translated raw text!
  */
 export async function executeTranslation(
   text: string,
   configOverride?: Partial<LingualDesktopConfig>,
   context?: string
-): Promise<LingualResponse> {
+): Promise<DesktopTranslationResult> {
   const config = { ...loadDesktopConfig(), ...configOverride };
-  const completer = createHttpCompleter(config);
+  const { completer, didFail } = createHttpCompleter(config);
 
   const req: LingualRequest = {
     text,
@@ -84,5 +98,11 @@ export async function executeTranslation(
     tone: "general",
   };
 
-  return translateCore(req, { completer });
+  const res = await translateCore(req, { completer });
+  const isOfflineOrFailed = didFail() || (!res.shieldBypassed && !res.cached && res.spoken === text && res.written === text);
+
+  return {
+    ...res,
+    isOfflineOrFailed,
+  };
 }

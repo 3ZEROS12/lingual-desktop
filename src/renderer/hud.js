@@ -116,32 +116,28 @@
       return;
     }
 
-    badgeMode.textContent = payload.modeLabel || (payload.autoSent ? "Auto-Sent" : "Ready");
-
-    textSource.textContent = payload.sourceText || payload.text || "";
-    textSpoken.textContent = payload.spoken || "";
-    meaningSpoken.textContent = payload.spokenMeaning ? `(${payload.spokenMeaning})` : "";
-    meaningSpoken.style.display = payload.spokenMeaning ? "block" : "none";
-
-    textWritten.textContent = payload.written || "";
-    meaningWritten.textContent = payload.writtenMeaning ? `(${payload.writtenMeaning})` : "";
-    meaningWritten.style.display = payload.writtenMeaning ? "block" : "none";
-
-    if (payload.vocab) {
-      textVocab.textContent = payload.vocab;
-      vocabRow.classList.remove("hidden");
-    } else {
-      vocabRow.classList.add("hidden");
-    }
-
-    // Toggle footer hint based on autoSent
-    if (payload.autoSent) {
-      footerAutoHint.classList.remove("hidden");
-      footerConfirmHint.classList.add("hidden");
-      startAutoDismissCountdown();
-    } else {
+    if (payload.isOffline) {
+      badgeMode.textContent = "⚠️ Offline · Draft Preserved";
+      badgeMode.style.background = "rgba(239, 68, 68, 0.15)";
+      badgeMode.style.color = "#f87171";
+      badgeMode.style.borderColor = "rgba(239, 68, 68, 0.35)";
       footerAutoHint.classList.add("hidden");
       footerConfirmHint.classList.remove("hidden");
+    } else {
+      badgeMode.style.background = "";
+      badgeMode.style.color = "";
+      badgeMode.style.borderColor = "";
+      badgeMode.textContent = payload.modeLabel || (payload.autoSent ? "Auto-Sent" : "Ready");
+
+      // Toggle footer hint based on autoSent
+      if (payload.autoSent) {
+        footerAutoHint.classList.remove("hidden");
+        footerConfirmHint.classList.add("hidden");
+        startAutoDismissCountdown();
+      } else {
+        footerAutoHint.classList.add("hidden");
+        footerConfirmHint.classList.remove("hidden");
+      }
     }
 
     // Dynamic auto-height sensing: measure actual rendered height and report to main process
@@ -199,8 +195,15 @@
       window.lingualAPI?.selectTranslation(2);
     } else if (e.key === "Escape") {
       e.preventDefault();
-      if (countdownTimer) clearInterval(countdownTimer);
-      window.lingualAPI?.dismiss();
+      // If escaping during the 3-second auto-send countdown, execute instant physical Undo
+      if (countdownTimer && currentData?.autoSent) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+        window.lingualAPI?.undo();
+      } else {
+        if (countdownTimer) clearInterval(countdownTimer);
+        window.lingualAPI?.dismiss();
+      }
     }
   });
 })();

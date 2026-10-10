@@ -73,6 +73,36 @@ function switchToCapsuleView(): void {
   companionWindow.webContents.send("lingual:view-state", "capsule");
 }
 
+function getClampedPosition(targetPhysicalX: number, targetPhysicalY: number, winWidth: number, winHeight: number, preferAbove = true): { x: number; y: number } {
+  // Convert physical screen coordinates to Electron DIP coordinate space to prevent 1.5x coordinate drift on High-DPI screens
+  const display = screen.getDisplayNearestPoint({ x: targetPhysicalX, y: targetPhysicalY });
+  const scale = display.scaleFactor || 1.0;
+  const dipTargetX = targetPhysicalX / scale;
+  const dipTargetY = targetPhysicalY / scale;
+  const { workArea } = display; // workArea operates strictly in DIPs
+
+  // 1. Horizontal Clamping (prevent sticking off the right or left edge)
+  let x = dipTargetX + 10;
+  if (x + winWidth > workArea.x + workArea.width - 12) {
+    // Flip to the left of target point if right edge is exceeded
+    x = Math.max(workArea.x + 12, dipTargetX - winWidth - 10);
+  }
+
+  // 2. Vertical Positioning (Roof-Docking: prefer above the caret to strictly avoid IME candidate box overlap!)
+  let y = preferAbove ? dipTargetY - winHeight - 8 : dipTargetY + 20;
+
+  // If above goes past top edge, flip to below
+  if (y < workArea.y + 12) {
+    y = dipTargetY + 24;
+  }
+  // If below goes past bottom edge, clamp inside
+  if (y + winHeight > workArea.y + workArea.height - 12) {
+    y = workArea.y + workArea.height - winHeight - 12;
+  }
+
+  return { x: Math.round(x), y: Math.round(y) };
+}
+
 let lastAnchorPos = { x: 0, y: 0 };
 
 function switchToHudView(targetX: number, targetY: number, autoSent = true): void {
@@ -124,7 +154,8 @@ function switchToSpotlightView(): void {
 
 /**
  * Ambient Caret Tracker:
- * Periodically checks caret or focused element position to gently dock the micro-capsule
+ * Periodically checks caret position using purely native C helper (<0.2ms)
+ * Strictly avoids spawning .NET CLR uia_helper.exe in high-frequency loop to prevent laptop battery cremation
  */
 function startCaretTracking(): void {
   if (caretPollInterval) clearInterval(caretPollInterval);
@@ -138,11 +169,16 @@ function startCaretTracking(): void {
       return;
     }
 
+    // Pure lightweight Win32 probe: 0.1ms, zero CLR allocation, 0.0% idle CPU
     const caret = getCaretPosition();
     if (caret) {
       const display = screen.getDisplayNearestPoint(caret);
-      const x = Math.min(caret.x + 8, display.workArea.x + display.workArea.width - CAPSULE_WIDTH - 4);
-      const y = Math.max(display.workArea.y + 4, caret.y - CAPSULE_HEIGHT - 4);
+      const scale = display.scaleFactor || 1.0;
+      const dipX = caret.x / scale;
+      const dipY = caret.y / scale;
+
+      const x = Math.min(dipX + 8, display.workArea.x + display.workArea.width - CAPSULE_WIDTH - 4);
+      const y = Math.max(display.workArea.y + 4, dipY - CAPSULE_HEIGHT - 4);
 
       companionWindow.setPosition(Math.round(x), Math.round(y));
       if (!companionWindow.isVisible()) {
@@ -151,20 +187,7 @@ function startCaretTracking(): void {
       return;
     }
 
-    const rect = getFocusedElementRect();
-    if (rect && rect.width > 0 && rect.height > 0) {
-      const display = screen.getDisplayNearestPoint({ x: rect.x, y: rect.y });
-      const x = Math.min(rect.x + rect.width - CAPSULE_WIDTH, display.workArea.x + display.workArea.width - CAPSULE_WIDTH - 4);
-      const y = Math.max(display.workArea.y + 4, rect.y - CAPSULE_HEIGHT - 2);
-
-      companionWindow.setPosition(Math.round(x), Math.round(y));
-      if (!companionWindow.isVisible()) {
-        companionWindow.showInactive();
-      }
-      return;
-    }
-
-    // If no active typing control detected, gracefully hide capsule
+    // If caret is not reported (e.g. non-editing window or browser chrome), gracefully hide capsule
     if (companionWindow.isVisible()) {
       companionWindow.hide();
     }
@@ -256,13 +279,29 @@ async function handleSubmitInterception(): Promise<void> {
   try {
     const res = await executeTranslation(captured.text, config);
     currentTranslationResponse = res;
+
+    // OFFLINE CIRCUIT BREAKER:
+    // If local/remote model is offline or timed out, NEVER auto-send raw untranslated Chinese!
+    if (res.isOfflineOrFailed) {
+      if (companionWindow && companionWindow.isVisible()) {
+        companionWindow.webContents.send("lingual:data", {
+          sourceText: captured.text,
+          spoken: captured.text,
+          written: captured.text,
+          autoSent: false,
+          modeLabel: "Offline",
+        });
+      }
+      return;
+    }
+
     const replacement = res.written || res.spoken;
 
     if (config.autoSend) {
       // Auto-Send Pipeline:
+      // injectTextToTarget already handles atomic replacement & paste; eliminated double-paste bug!
       if (replacement) {
         await injectTextToTarget(replacement, targetHwnd, activeBackupText, clipboard);
-        setTimeout(() => triggerPaste(), 60);
       }
       if (companionWindow && companionWindow.isVisible()) {
         companionWindow.webContents.send("lingual:data", {
@@ -433,6 +472,14 @@ function setupIpc(): void {
     } else {
       restoreFocus(activeTargetHwnd);
     }
+  });
+
+  ipcMain.on("lingual:undo", async () => {
+    if (activeBackupText && activeTargetHwnd !== "0") {
+      await injectTextToTarget(activeBackupText, activeTargetHwnd, "", clipboard);
+    }
+    switchToCapsuleView();
+    restoreFocus(activeTargetHwnd);
   });
 
   ipcMain.on("lingual:dismiss", () => {

@@ -19,6 +19,9 @@ contextBridge.exposeInMainWorld("lingualAPI", {
   selectTranslation: (slot: 1 | 2) => {
     ipcRenderer.send("lingual:select", slot);
   },
+  undo: () => {
+    ipcRenderer.send("lingual:undo");
+  },
   dismiss: () => {
     ipcRenderer.send("lingual:dismiss");
   },
