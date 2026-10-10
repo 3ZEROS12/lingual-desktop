@@ -3,7 +3,7 @@
 > **The zero-friction desktop writing companion that lives alongside your existing IME.**  
 > Type naturally with your preferred input method (Microsoft Pinyin, WeChat IME, Sogou, Rime) in any Windows app (X/Twitter, Slack, Discord, VS Code, Notion, WeChat, Email). Upon hitting submit, `lingual-desktop` intercepts, translates, and delivers authentic Silicon Valley spoken flow or technical RFC precision—while keeping you in complete flow state.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 12/12 Pass](https://img.shields.io/badge/Tests-12%2F12%20Pass-brightgreen)](tests/win32.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 18/18 Pass](https://img.shields.io/badge/Tests-18%2F18%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
 
 **English** | [简体中文](README_zh.md)
 
@@ -67,11 +67,12 @@ The micro-capsule stays docked beside your active caret without stealing typing 
 ### 5. 0ms Code & CLI Shield
 Inherited from `@lingual/core`, 40+ terminal command prefixes (`git`, `npm`, `cargo`, `docker`, `curl`, etc.) and multi-language code snippets pass through in 0ms without burning tokens.
 
-### 6. Gabriel Design System v4 Settings Center (`⚙️ Settings`)
-Right-click the system tray icon to open the GUI settings center, styled with the **Gabriel Design System v4 "Light Indigo"** aesthetic (clean white canvas, deep navy ink, hairline borders, and pill-shaped controls):
-* **1-Click Provider Presets**: Instant configuration for DeepSeek, SiliconFlow, Groq (500 T/s), OpenAI, and local Ollama.
-* **⚡ Live Latency Probe**: Test your endpoint connectivity and view round-trip latency in milliseconds.
-* **3-Second Physical Recall Buffer**: When `autoSend` is enabled, press `Esc` within the 3-second countdown to instantly recall and restore your original native text.
+### 6. Human-First WYSIWYG Settings & Built-in Conversational AI Tuner (`⚙️ Settings`)
+Right-click the system tray icon to open the human-first GUI settings center:
+* **Zero-Key Out-of-the-Box Fallback**: Works immediately upon installation without requiring any API key or local Ollama setup.
+* **👀 Real-Time WYSIWYG HUD Preview**: Every toggle (show/hide source text, 1-line vs 2-style comparison, Chinese nuance explanations, vocabulary notes) updates a live dark HUD preview card in real time.
+* **🤖 Built-in Conversational AI Tuner ("一句话让 AI 帮我配好")**: Just like chatting with an AI agent in Pi, type a plain-language sentence describing what you use typing for (e.g., *"I just want 1 simple translation line for chatting, no source text or vocab"* or *"Customer support: polite reply + brief follow-up"*), and the built-in intent engine configures your card layout automatically.
+* **1-Click Local AI Sniffer & Cloud Presets**: Auto-detects local Ollama/LM Studio with a single click, or connects to DeepSeek, SiliconFlow, Groq, and OpenAI by pasting just an API key.
 
 ### 7. Dynamic Dual-Slot Architecture (Domain-Specific Customization)
 `[Spoken]` and `[Written]` are simply the defaults for **Slot 1** and **Slot 2**. Switch presets in the settings window to match your exact scenario:

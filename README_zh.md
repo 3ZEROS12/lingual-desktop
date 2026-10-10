@@ -3,7 +3,7 @@
 > **不替代你的输入法 · 随身光标微胶囊 · 发送拦截与双模分流 · 剪贴板历史零污染**  
 > 你完全照旧使用最顺手的**微软拼音、微信输入法、搜狗或 Rime**，在任何软件（X/推特、Slack、Discord、VS Code、Notion、微信、邮件）中打字。打完敲发送，`lingual-desktop` 自动按模式拦截与分流，直接发出地道英文或原文，并就地展开双轨伴学视窗。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 12/12 Pass](https://img.shields.io/badge/Tests-12%2F12%20Pass-brightgreen)](tests/win32.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 18/18 Pass](https://img.shields.io/badge/Tests-18%2F18%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
 
 [English](README.md) | **简体中文**
 
@@ -67,11 +67,12 @@
 ### 5. 0ms 代码与终端命令护盾 (Shield)
 继承自 `@lingual/core`，40+ 常见命令行前缀（`git`, `npm`, `cargo`, `docker`, `curl` 等）和常见编程语言代码语句在 0.1ms 内自动直通，绝不浪费 1 个 Token。
 
-### 6. 纯正 Gabriel 风格图形控制中心 (`⚙️ 设置`)
-右键系统托盘图标即可打开独立图形设置面板，完整继承自 **Gabriel Design System v4 "Light Indigo"** 纯净克制设计哲学（白画布、深藏青文字、hairline 细线、药丸按键）：
-* **1-Click 厂商极速预设**：一键无缝配置 DeepSeek 官方、SiliconFlow 硅基流动、Groq（500 T/s 极速云）、OpenAI、本地 Ollama；
-* **⚡ 毫秒级网络测速探针**：填完 Key 点击按钮，由主进程发起真实的握手探测，实时反馈真实端到端延迟（如 `⚡ 185ms · 连接成功`）；
-* **3 秒物理撤销缓冲区**：开启自动发送后，若偶发误译，在 3 秒倒计时内按下 `Esc` 键瞬间原地撤销并还原原中文草稿。
+### 6. 所见即所得大白话设置中心 & 内置「一句话让 AI 帮我配好」 (`⚙️ 设置`)
+右键系统托盘图标即可打开零门槛设置面板，专为“只想专心打字”的用户设计：
+* **🌱 免 Key 开箱即用保底**：安装后无需填写任何 API Key、无需安装 Ollama，第一秒打字即可使用内置免费极速翻译；
+* **👀 实时弹窗效果预览 (WYSIWYG)**：界面上方直接展示真实的深色小卡片预览。勾选“保留中文原话 / 给 2 种语气对比 / 附中文语气解释 / 顺便挑 2 个单词”，上方预览卡片当场实时变化，每个选项管哪一行一目了然；
+* **🤖 内置「一句话让 AI 帮我配好」**：把在终端里跟智能体说话的体验直接搬进桌面端！你只需输入一句大白话（如：*“我只是为了打字，只要一行简单翻译，不要原话和单词”* 或 *“我是做外贸客服的，想要客气礼貌回复和简短催单”*），AI 当场自动帮你配好卡片结构；
+* **🔍 本地 AI 一键自动检测与云端极简接入**：点一下按钮自动扫描连接电脑上的 Ollama / LM Studio，或直接粘贴 DeepSeek / 硅基流动 / OpenAI 密钥（网址与模型名全部自动隐藏配好）。
 
 ### 7. 动态双槽位架构与领域定制 (Dual-Slot Architecture)
 `[口语]` 与 `[书面]` 仅是 **Slot 1** 与 **Slot 2** 的出厂默认值。在设置面板中可自由切换预设语域以适配你的真实业务场景：
