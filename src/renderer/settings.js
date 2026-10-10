@@ -100,47 +100,165 @@
   const checkRecallBuffer = document.getElementById("check-recall-buffer");
   const checkAutostart = document.getElementById("check-autostart");
 
-  // 4. Tab 2: Slot Arranger & Presets
+  // 4. Tab 2: Dynamic Slot Canvas & Presets
   const slotPresetChips = document.querySelectorAll("#slot-preset-chips .chip");
-  const checkSlotSource = document.getElementById("check-slot-source");
-  const slot0Label = document.getElementById("slot-0-label");
-  const checkSlot1 = document.getElementById("check-slot-1");
-  const slot1Label = document.getElementById("slot-1-label");
-  const checkSlot2 = document.getElementById("check-slot-2");
-  const slot2Label = document.getElementById("slot-2-label");
-  const checkSlotVocab = document.getElementById("check-slot-vocab");
-  const slotVocabLabel = document.getElementById("slot-vocab-label");
+  const slotCardList = document.getElementById("slot-card-list");
+  const btnAddSlot = document.getElementById("btn-add-slot");
+  const btnResetSlots = document.getElementById("btn-reset-slots");
 
   let activeSlotPreset = "developer";
+  let currentSlots = [];
 
-  const SLOT_TEMPLATES = {
-    developer: {
-      slot1: { enabled: true, label: "口语" },
-      slot2: { enabled: true, label: "写作" },
-      vocab: { enabled: true, label: "重点" },
-    },
-    social: {
-      slot1: { enabled: true, label: "Hook" },
-      slot2: { enabled: true, label: "Deep" },
-      vocab: { enabled: true, label: "重点" },
-    },
-    japanese: {
-      slot1: { enabled: true, label: "口語" },
-      slot2: { enabled: true, label: "敬語" },
-      vocab: { enabled: true, label: "単語" },
-    },
-    academic: {
-      slot1: { enabled: true, label: "Discussion" },
-      slot2: { enabled: true, label: "Paper" },
-      vocab: { enabled: true, label: "重点" },
-    },
-    compact2: {
-      slot1: { enabled: true, label: "译文" },
-      slot2: { enabled: false, label: "写作" },
-      vocab: { enabled: false, label: "重点" },
-    },
-  };
+  function getPresetSlots(presetKey, lang = "zh") {
+    const isZh = lang === "zh" || lang === "tw";
+    const isJa = lang === "ja";
 
+    if (presetKey === "social") {
+      return [
+        {
+          id: "twitter",
+          label: "Tweet",
+          role: "translation",
+          instruction: "Punchy opening hook and viral developer tweet under 280 chars with authentic dev slang.",
+          showMeaning: true,
+          enabled: true,
+        },
+        {
+          id: "deep",
+          label: "Deep",
+          role: "translation",
+          instruction: "High-signal architecture reasoning and nuanced technical value.",
+          showMeaning: true,
+          enabled: true,
+        },
+        {
+          id: "vocab",
+          label: isZh ? "重点" : isJa ? "単語" : "Vocab",
+          role: "vocab",
+          instruction: "Key engagement idioms and technical phrases.",
+          enabled: true,
+        },
+      ];
+    }
+
+    if (presetKey === "japanese") {
+      return [
+        { id: "source", label: isZh ? "原文" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: "口語", role: "translation", instruction: "親しい同僚やチームとの自然な口語表現（朝会、Slackハドル、ペアプログラミング）。", showMeaning: true, enabled: true },
+        { id: "written", label: "敬語", role: "translation", instruction: "明確で洗練された現代的技術文書表現（PR概要、RFC、技術設計書）。", showMeaning: true, enabled: true },
+        { id: "vocab", label: "単語", role: "vocab", instruction: "重要な連語、句動詞、技術表現の抽出。", enabled: true },
+      ];
+    }
+
+    if (presetKey === "academic") {
+      return [
+        { id: "source", label: isZh ? "原文" : isJa ? "原文" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: "Discussion", role: "translation", instruction: "Academic colloquium and seminar discussion tone.", showMeaning: true, enabled: true },
+        { id: "written", label: "Paper", role: "translation", instruction: "Formal, objective academic prose suitable for peer-reviewed IEEE/ACM papers.", showMeaning: true, enabled: true },
+      ];
+    }
+
+    if (presetKey === "compact2") {
+      return [
+        { id: "source", label: isZh ? "原文" : isJa ? "原文" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: isZh ? "译文" : isJa ? "訳文" : "Translation", role: "translation", instruction: "Natural, authentic target language translation.", showMeaning: true, enabled: true },
+      ];
+    }
+
+    // Default: developer
+    return [
+      { id: "source", label: isZh ? "原文" : isJa ? "原文" : "Source", role: "source", enabled: true },
+      { id: "spoken", label: isZh ? "口语" : isJa ? "口語" : "Spoken", role: "translation", instruction: "Natural, fluent spoken flow (daily standup, Slack, agile collaboration).", showMeaning: true, enabled: true },
+      { id: "written", label: isZh ? "写作" : isJa ? "文面" : "Written", role: "translation", instruction: "Clear, precise, modern technical written prose (RFCs, PR descriptions, documentation).", showMeaning: true, enabled: true },
+      { id: "vocab", label: isZh ? "重点" : isJa ? "単語" : "Vocab", role: "vocab", instruction: "Adaptively extract key idiomatic collocations, phrasal verbs, or technical idioms.", enabled: true },
+    ];
+  }
+
+  function renderSlotCards() {
+    if (!slotCardList) return;
+    slotCardList.innerHTML = "";
+
+    if (currentSlots.length === 0) {
+      slotCardList.innerHTML = '<div style="text-align:center; padding:16px; font-size:12px; color:var(--ink-muted);">未配置任何槽位，请点击下方添加按钮或选择预设</div>';
+      return;
+    }
+
+    currentSlots.forEach((slot, idx) => {
+      const card = document.createElement("div");
+      card.className = `slot-card ${slot.enabled ? "" : "disabled"}`;
+      card.dataset.id = slot.id;
+
+      const isSource = slot.role === "source";
+      const isVocab = slot.role === "vocab";
+      const hasNuance = !isSource && !isVocab;
+
+      card.innerHTML = `
+        <div class="slot-card-header">
+          <span class="slot-idx-badge">#${idx + 1}</span>
+          <input type="checkbox" class="slot-checkbox" ${slot.enabled ? "checked" : ""} title="开启/禁用该槽位" />
+          <input type="text" class="slot-input-label" value="${slot.label || ""}" placeholder="标签名称" />
+          <select class="slot-select-role">
+            <option value="translation" ${slot.role === "translation" ? "selected" : ""}>译文 (Translation)</option>
+            <option value="custom" ${slot.role === "custom" ? "selected" : ""}>自定义 (Custom)</option>
+            <option value="vocab" ${slot.role === "vocab" ? "selected" : ""}>重点 (Vocab)</option>
+            <option value="source" ${slot.role === "source" ? "selected" : ""}>母语原文 (Source)</option>
+          </select>
+          ${hasNuance ? `
+            <label class="slot-nuance-toggle" title="是否展示针对母语的微释义标注">
+              <input type="checkbox" class="nuance-check" ${slot.showMeaning !== false ? "checked" : ""} />
+              <span>↳ 微释义</span>
+            </label>
+          ` : ""}
+          <button type="button" class="btn-delete-slot" title="删除该槽位（包括原文皆可完全删除）">✕</button>
+        </div>
+        ${!isSource ? `
+          <input type="text" class="slot-input-instruction" value="${slot.instruction || ""}" placeholder="具体风格要求 (Prompt instruction，如：严谨RFC文档、爆款推文)..." />
+        ` : ""}
+      `;
+
+      // Event bindings
+      const checkEnabled = card.querySelector(".slot-checkbox");
+      checkEnabled.addEventListener("change", (e) => {
+        slot.enabled = e.target.checked;
+        card.classList.toggle("disabled", !slot.enabled);
+      });
+
+      const inputLabel = card.querySelector(".slot-input-label");
+      inputLabel.addEventListener("input", (e) => {
+        slot.label = e.target.value.trim();
+      });
+
+      const selectRole = card.querySelector(".slot-select-role");
+      selectRole.addEventListener("change", (e) => {
+        slot.role = e.target.value;
+        renderSlotCards();
+      });
+
+      const nuanceCheck = card.querySelector(".nuance-check");
+      if (nuanceCheck) {
+        nuanceCheck.addEventListener("change", (e) => {
+          slot.showMeaning = e.target.checked;
+        });
+      }
+
+      const inputInst = card.querySelector(".slot-input-instruction");
+      if (inputInst) {
+        inputInst.addEventListener("input", (e) => {
+          slot.instruction = e.target.value;
+        });
+      }
+
+      const btnDelete = card.querySelector(".btn-delete-slot");
+      btnDelete.addEventListener("click", () => {
+        currentSlots.splice(idx, 1);
+        renderSlotCards();
+      });
+
+      slotCardList.appendChild(card);
+    });
+  }
+
+  // Preset chips click
   slotPresetChips.forEach((chip) => {
     chip.addEventListener("click", () => {
       const presetKey = chip.dataset.preset;
@@ -148,34 +266,46 @@
       slotPresetChips.forEach((c) => c.classList.remove("active"));
       chip.classList.add("active");
 
-      const tpl = SLOT_TEMPLATES[presetKey];
-      if (tpl) {
-        checkSlot1.checked = tpl.slot1.enabled;
-        slot1Label.value = tpl.slot1.label;
-        checkSlot2.checked = tpl.slot2.enabled;
-        slot2Label.value = tpl.slot2.label;
-        checkSlotVocab.checked = tpl.vocab.enabled;
-        slotVocabLabel.value = tpl.vocab.label;
-      }
+      currentSlots = getPresetSlots(presetKey, activeLangCode);
+      renderSlotCards();
     });
   });
 
+  // Add slot button
+  if (btnAddSlot) {
+    btnAddSlot.addEventListener("click", () => {
+      const newId = "custom_" + Date.now().toString(36);
+      const isZh = activeLangCode === "zh" || activeLangCode === "tw";
+      currentSlots.push({
+        id: newId,
+        label: isZh ? "自定义" : "Custom",
+        role: "translation",
+        instruction: "Express the message accurately and authentically.",
+        showMeaning: true,
+        enabled: true,
+      });
+      renderSlotCards();
+      if (slotCardList) {
+        slotCardList.scrollTop = slotCardList.scrollHeight;
+      }
+    });
+  }
+
+  // Reset slots button
+  if (btnResetSlots) {
+    btnResetSlots.addEventListener("click", () => {
+      activeSlotPreset = "developer";
+      slotPresetChips.forEach((c) => c.classList.toggle("active", c.dataset.preset === "developer"));
+      currentSlots = getPresetSlots("developer", activeLangCode);
+      renderSlotCards();
+    });
+  }
+
   function updateSlotsForLanguage(lang) {
-    if (lang === "ja") {
-      if (slot0Label) slot0Label.value = "原文";
-      slot1Label.value = "口語";
-      slot2Label.value = "敬語";
-      slotVocabLabel.value = "単語";
-    } else if (lang === "en") {
-      if (slot0Label) slot0Label.value = "Source";
-      slot1Label.value = "Spoken";
-      slot2Label.value = "Written";
-      slotVocabLabel.value = "Vocab";
-    } else {
-      if (slot0Label) slot0Label.value = "原文";
-      slot1Label.value = "口语";
-      slot2Label.value = "写作";
-      slotVocabLabel.value = "重点";
+    // If current slots match initial default preset, refresh their labels to match language
+    if (activeSlotPreset) {
+      currentSlots = getPresetSlots(activeSlotPreset, lang);
+      renderSlotCards();
     }
   }
 
@@ -297,31 +427,16 @@
         c.classList.toggle("active", c.dataset.preset === activeSlotPreset);
       });
 
-      if (Array.isArray(cfg.slots)) {
-        const s0 = cfg.slots.find((s) => s.id === "source" || s.role === "source");
-        if (s0) {
-          if (checkSlotSource) checkSlotSource.checked = s0.enabled !== false;
-          if (slot0Label) slot0Label.value = s0.label || (activeLangCode === "en" ? "Source" : "原文");
-        } else if (checkSlotSource) {
-          checkSlotSource.checked = false;
-        }
+      // Slots: 动态槽位卡片列表初始化
+      activeSlotPreset = cfg.slotPreset || "developer";
+      slotPresetChips.forEach((c) => {
+        c.classList.toggle("active", c.dataset.preset === activeSlotPreset);
+      });
 
-        const s1 = cfg.slots.find((s) => s.id === "spoken");
-        if (s1) {
-          checkSlot1.checked = s1.enabled !== false;
-          slot1Label.value = s1.label || "口语";
-        }
-        const s2 = cfg.slots.find((s) => s.id === "written");
-        if (s2) {
-          checkSlot2.checked = s2.enabled !== false;
-          slot2Label.value = s2.label || "写作";
-        }
-        const sv = cfg.slots.find((s) => s.id === "vocab");
-        if (sv) {
-          checkSlotVocab.checked = sv.enabled !== false;
-          slotVocabLabel.value = sv.label || "重点";
-        }
-      }
+      currentSlots = Array.isArray(cfg.slots) && cfg.slots.length > 0
+        ? cfg.slots
+        : getPresetSlots(activeSlotPreset, cfg.sourceLang || "zh");
+      renderSlotCards();
 
       // Model
       inputEndpoint.value = cfg.endpoint || "";
@@ -341,51 +456,13 @@
   }
 
   btnSave.addEventListener("click", async () => {
-    const dynamicSlots = [];
-
-    // #0 原文槽位（支持用户完全关闭隐藏！）
-    if (checkSlotSource && checkSlotSource.checked) {
-      dynamicSlots.push({
-        id: "source",
-        label: (slot0Label?.value.trim()) || (activeLangCode === "en" ? "Source" : "原文"),
-        role: "source",
-        enabled: true,
-      });
-    }
-
-    dynamicSlots.push(
-      {
-        id: "spoken",
-        label: slot1Label.value.trim() || (activeLangCode === "en" ? "Spoken" : activeLangCode === "ja" ? "口語" : "口语"),
-        role: "translation",
-        instruction: "Natural, fluent spoken flow (daily standup, Slack, agile collaboration, conversational banter).",
-        showMeaning: true,
-        enabled: checkSlot1.checked,
-      },
-      {
-        id: "written",
-        label: slot2Label.value.trim() || (activeLangCode === "en" ? "Written" : activeLangCode === "ja" ? "敬語" : "写作"),
-        role: "translation",
-        instruction: "Clear, precise, modern technical written prose (RFCs, PR descriptions, documentation, deep insight).",
-        showMeaning: true,
-        enabled: checkSlot2.checked,
-      },
-      {
-        id: "vocab",
-        label: slotVocabLabel.value.trim() || (activeLangCode === "en" ? "Vocab" : activeLangCode === "ja" ? "単語" : "重点"),
-        role: "vocab",
-        instruction: "Adaptively extract key idiomatic collocations, phrasal verbs, or technical idioms.",
-        enabled: checkSlotVocab.checked,
-      }
-    );
-
     const patch = {
       sourceLang: activeLangCode,
       endpoint: inputEndpoint.value.trim(),
       apiKey: inputApiKey.value.trim(),
       model: inputModel.value.trim(),
       slotPreset: activeSlotPreset,
-      slots: dynamicSlots,
+      slots: currentSlots,
       hotkeySubmit: selectedTriggerKey,
       autoSend: checkAutoSend.checked,
     };

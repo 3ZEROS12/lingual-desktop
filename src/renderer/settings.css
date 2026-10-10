@@ -480,33 +480,52 @@ input:checked + .slider:before {
   font-weight: 600;
 }
 
-/* Slot Table */
-.slot-table {
+/* ==========================================================================
+   Dynamic Slot Canvas (Gabriel v4 Card List)
+   ========================================================================== */
+.slot-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.slot-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 4px;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.slot-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
+.slot-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.slot-card.disabled {
+  opacity: 0.6;
   background: #f8fafc;
-  border: 1px solid var(--border);
-  border-radius: 8px;
 }
 
-.slot-row.fixed-row {
-  background: #f1f5f9;
-  opacity: 0.85;
-}
-
-.slot-left {
+.slot-card-header {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.slot-idx-badge {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  width: 20px;
+  text-align: center;
 }
 
 .slot-checkbox {
@@ -516,42 +535,130 @@ input:checked + .slider:before {
   cursor: pointer;
 }
 
-.slot-idx {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--ink-muted);
-}
-
-.slot-name {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ink-primary);
-}
-
-.badge-fixed {
-  font-size: 9px;
-  background: #e2e8f0;
-  color: #64748b;
-  border-radius: 4px;
-  padding: 1px 5px;
-  font-weight: 600;
-}
-
-.slot-mini-input {
+.slot-input-label {
   background: #ffffff;
   border: 1px solid var(--border-strong);
   border-radius: 6px;
-  padding: 3px 8px;
+  padding: 4px 8px;
   font-size: 12px;
+  font-weight: 600;
   color: var(--ink-primary);
   width: 80px;
   text-align: center;
   outline: none;
 }
 
-.slot-mini-input:focus {
+.slot-input-label:focus {
   border-color: var(--indigo);
+  box-shadow: 0 0 0 2px var(--indigo-glow);
+}
+
+.slot-select-role {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 11px;
+  color: var(--ink-secondary);
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.slot-select-role:focus {
+  border-color: var(--indigo);
+}
+
+.slot-nuance-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--ink-muted);
+  cursor: pointer;
+  margin-left: auto;
+  user-select: none;
+}
+
+.btn-delete-slot {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  color: var(--ink-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  margin-left: 4px;
+  transition: all 0.12s;
+}
+
+.btn-delete-slot:hover {
+  background: #fee2e2;
+  color: var(--error);
+}
+
+.slot-input-instruction {
+  width: 100%;
+  box-sizing: border-box;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--ink-secondary);
+  outline: none;
+  font-family: inherit;
+}
+
+.slot-input-instruction:focus {
+  background: #ffffff;
+  border-color: var(--indigo);
+}
+
+.slot-actions-bar {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.btn-slot-action {
+  flex: 1;
+  background: #f8fafc;
+  border: 1px dashed var(--border-strong);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.12s;
+  font-family: inherit;
+}
+
+.btn-slot-action:hover {
+  background: var(--indigo-light);
+  border-color: var(--indigo);
+  color: var(--indigo);
+}
+
+.btn-slot-action.btn-secondary {
+  flex: 0 0 auto;
+  border-style: solid;
+  border-color: var(--border);
+}
+
+.btn-slot-action.btn-secondary:hover {
+  background: #f1f5f9;
+  color: var(--ink-primary);
+  border-color: var(--border-strong);
 }
 
 /* Form Grid */

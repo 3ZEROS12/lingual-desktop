@@ -138,8 +138,8 @@
 
           <div class="switch-row">
             <div class="switch-info">
-              <div class="switch-title">自动发送 (Auto-Send)</div>
-              <div class="switch-desc">转换完成后直接自动提交；关闭则先在光标旁展开 HUD 选 [1] 或 [2] 确认。</div>
+              <div class="switch-title">直接自动发送 (Auto-Send)</div>
+              <div class="switch-desc">转换后直接自动替换并发送；关闭时仅悬浮视窗，按数字键确认发送。</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="check-auto-send" checked />
@@ -149,8 +149,8 @@
 
           <div class="switch-row">
             <div class="switch-info">
-              <div class="switch-title">3 秒物理撤销缓冲区 (Recall Buffer)</div>
-              <div class="switch-desc">自动发送后的 3 秒倒计时内按下 Esc 键，瞬间撤回并恢复原中文草稿。</div>
+              <div class="switch-title">撤销保护 (Esc 恢复草稿)</div>
+              <div class="switch-desc">自动发送后 3 秒内按 Esc 键可撤销并恢复原草稿。</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="check-recall-buffer" checked />
@@ -160,8 +160,8 @@
 
           <div class="switch-row">
             <div class="switch-info">
-              <div class="switch-title">开机静默启动 (Silent Startup)</div>
-              <div class="switch-desc">系统启动时自动最小化常驻托盘，不弹窗打扰日常操作。</div>
+              <div class="switch-title">开机自启动</div>
+              <div class="switch-desc">系统启动时自动在托盘中运行。</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="check-autostart" checked />
@@ -175,54 +175,29 @@
       <section id="tab-slots" class="tab-pane">
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title">全动态槽位架构 (Dual-Slot Architecture)</h2>
-            <p class="card-desc">所有输出全部抽象为独立槽位，针对你的工作场景随意增减与改名。</p>
+            <h2 class="card-title">输出槽位编排 (Active Slots)</h2>
+            <p class="card-desc">自由增减、改名、自定义角色与提示词（可彻底删除原文行）。</p>
           </div>
 
           <div class="preset-chips" id="slot-preset-chips">
-            <button class="chip active" data-preset="developer">💻 开发者协同</button>
-            <button class="chip" data-preset="social">🐦 出海推特运营</button>
-            <button class="chip" data-preset="japanese">🌸 日语双轨伴学</button>
-            <button class="chip" data-preset="academic">🎓 学术论文规范</button>
-            <button class="chip" data-preset="compact2">⚡ 双槽位极速</button>
+            <button class="chip active" data-preset="developer">💻 开发者</button>
+            <button class="chip" data-preset="social">🐦 推特 / 社媒</button>
+            <button class="chip" data-preset="japanese">🌸 日语伴学</button>
+            <button class="chip" data-preset="academic">🎓 学术论文</button>
+            <button class="chip" data-preset="compact2">⚡ 极简双槽</button>
           </div>
 
-          <div class="slot-table">
-            <div class="slot-row">
-              <div class="slot-left">
-                <input type="checkbox" id="check-slot-source" checked class="slot-checkbox" />
-                <span class="slot-idx">#0</span>
-                <span class="slot-name">母语原文 (Source)</span>
-              </div>
-              <input type="text" id="slot-0-label" class="slot-mini-input" value="原文" placeholder="标签" />
-            </div>
+          <div class="slot-list-container" id="slot-card-list">
+            <!-- 动态渲染的槽位卡片列表 (Dynamic Slot Cards) -->
+          </div>
 
-            <div class="slot-row">
-              <div class="slot-left">
-                <input type="checkbox" id="check-slot-1" checked class="slot-checkbox" />
-                <span class="slot-idx">#1</span>
-                <span class="slot-name">轻快 / 社交语域</span>
-              </div>
-              <input type="text" id="slot-1-label" class="slot-mini-input" value="口语" placeholder="标签" />
-            </div>
-
-            <div class="slot-row">
-              <div class="slot-left">
-                <input type="checkbox" id="check-slot-2" checked class="slot-checkbox" />
-                <span class="slot-idx">#2</span>
-                <span class="slot-name">正式 / 严谨语域</span>
-              </div>
-              <input type="text" id="slot-2-label" class="slot-mini-input" value="写作" placeholder="标签" />
-            </div>
-
-            <div class="slot-row">
-              <div class="slot-left">
-                <input type="checkbox" id="check-slot-vocab" checked class="slot-checkbox" />
-                <span class="slot-idx">#3</span>
-                <span class="slot-name">重点短语与词汇流</span>
-              </div>
-              <input type="text" id="slot-vocab-label" class="slot-mini-input" value="重点" placeholder="标签" />
-            </div>
+          <div class="slot-actions-bar">
+            <button type="button" class="btn-slot-action" id="btn-add-slot">
+              <span class="btn-icon">+</span> 添加自定义槽位 (Add Slot)
+            </button>
+            <button type="button" class="btn-slot-action btn-secondary" id="btn-reset-slots">
+              重置为默认 (Reset)
+            </button>
           </div>
         </div>
       </section>
@@ -231,8 +206,8 @@
       <section id="tab-model" class="tab-pane">
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title">大模型推理服务商</h2>
-            <p class="card-desc">支持极速云端 API 与本地私有 Ollama，单次生成延迟通常仅 150ms ~ 300ms。</p>
+            <h2 class="card-title">推理模型设置 (Model & Endpoints)</h2>
+            <p class="card-desc">未配置时自动使用免费免Key极速引擎保底；配置大模型可解锁深度语域对照。</p>
           </div>
 
           <div class="preset-chips" id="model-preset-chips">

@@ -12,6 +12,75 @@ export { shouldTriggerTranslation };
 
 export interface DesktopTranslationResult extends LingualResponse {
   isOfflineOrFailed?: boolean;
+  isZeroKeyFallback?: boolean;
+}
+
+/**
+ * Layer 0: 免 Key 开箱即用极速翻译引擎 (Zero-Key Fast Translation Fallback)
+ * 解决新用户未配置 API Key 或本地模型离线时直接瘫痪的根本痛点。
+ * 0 配置、0 门槛、免任何 Key，首秒开箱即可打字翻译！
+ */
+export async function fetchZeroKeyTranslation(
+  text: string,
+  sourceLang = "zh",
+  targetLang = "en"
+): Promise<string | null> {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  try {
+    const sl = sourceLang === "zh" || sourceLang === "tw" ? "zh-CN" : sourceLang;
+    const tl = targetLang === "zh" || targetLang === "tw" ? "zh-CN" : targetLang;
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(trimmed)}`;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+
+    if (!res.ok) return null;
+    const json = (await res.json()) as any;
+    if (Array.isArray(json) && Array.isArray(json[0])) {
+      const translated = json[0]
+        .map((item: any) => (Array.isArray(item) ? item[0] : ""))
+        .filter(Boolean)
+        .join("");
+      return translated && translated.trim() ? translated.trim() : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Layer 1: 本地私有开源推理端点自动嗅探探测器 (500ms 快速探活)
+ */
+export async function detectLocalEndpoints(): Promise<{
+  ollama: boolean;
+  lmstudio: boolean;
+  vllm: boolean;
+}> {
+  const probe = async (port: number): Promise<boolean> => {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 500);
+      const res = await fetch(`http://127.0.0.1:${port}/`, { method: "HEAD", signal: controller.signal }).catch(() => null);
+      clearTimeout(timer);
+      return res !== null;
+    } catch {
+      return false;
+    }
+  };
+
+  const [ollama, lmstudio, vllm] = await Promise.all([
+    probe(11434),
+    probe(1234),
+    probe(8000),
+  ]);
+
+  return { ollama, lmstudio, vllm };
 }
 
 /**
@@ -110,10 +179,35 @@ export async function executeTranslation(
   };
 
   const res = await translateCore(req, { completer });
-  const isOfflineOrFailed = didFail() || (!res.shieldBypassed && !res.cached && res.spoken === text && res.written === text);
+  const isLlmFailed = didFail() || (!res.shieldBypassed && !res.cached && res.spoken === text && res.written === text);
+
+  // 若 LLM 调用失败（或用户初次使用未配置任何模型端点），平滑降级至 Layer 0 免 Key 极速保底引擎
+  if (isLlmFailed && !res.shieldBypassed) {
+    const fallbackText = await fetchZeroKeyTranslation(text, config.sourceLang, config.targetLang);
+    if (fallbackText) {
+      const dynamicSlots = effectiveSlots
+        ? effectiveSlots.map((s) => ({
+            id: s.id,
+            label: s.label,
+            role: s.role,
+            content: s.role === "source" ? text : fallbackText,
+          }))
+        : undefined;
+
+      return {
+        spoken: fallbackText,
+        written: fallbackText,
+        cached: false,
+        shieldBypassed: false,
+        isOfflineOrFailed: false, // 保底成功，不阻断心流！
+        isZeroKeyFallback: true,
+        slots: dynamicSlots,
+      };
+    }
+  }
 
   return {
     ...res,
-    isOfflineOrFailed,
+    isOfflineOrFailed: isLlmFailed,
   };
 }

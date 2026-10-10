@@ -275,14 +275,12 @@
       return;
     }
 
-    if (e.key === "1") {
+    // 动态数字键选择 (支持 1~9 任意槽位序号动态选择上屏)
+    const numKey = parseInt(e.key, 10);
+    if (!isNaN(numKey) && numKey >= 1 && numKey <= 9) {
       e.preventDefault();
       if (countdownTimer) clearInterval(countdownTimer);
-      window.lingualAPI?.selectTranslation(1);
-    } else if (e.key === "2") {
-      e.preventDefault();
-      if (countdownTimer) clearInterval(countdownTimer);
-      window.lingualAPI?.selectTranslation(2);
+      window.lingualAPI?.selectTranslation(numKey);
     } else if (e.key === "Escape") {
       e.preventDefault();
       // If escaping during the 3-second auto-send countdown, execute instant physical Undo
