@@ -441,8 +441,19 @@ function openSettingsWindow(): void {
     settingsWindow?.focus();
   });
 
+  settingsWindow.on("focus", () => {
+    try {
+      globalShortcut.unregister("Enter");
+    } catch {}
+  });
+
+  settingsWindow.on("blur", () => {
+    registerShortcuts(loadDesktopConfig());
+  });
+
   settingsWindow.on("closed", () => {
     settingsWindow = null;
+    registerShortcuts(loadDesktopConfig());
   });
 }
 
@@ -651,9 +662,12 @@ function setupIpc(): void {
   ipcMain.handle("lingual:ai-tune-slots", async (_event, promptText: string) => {
     try {
       const result = await generateSlotsFromUserIntent(promptText);
+      if (result && Array.isArray(result.slots) && result.slots.length > 0) {
+        saveDesktopConfig({ slots: result.slots });
+      }
       return { success: true, ...result };
     } catch (err: any) {
-      return { success: false, error: err.message || "生成失败" };
+      return { success: false, error: err.message || "Failed to generate layout" };
     }
   });
 

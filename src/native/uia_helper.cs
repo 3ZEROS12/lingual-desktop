@@ -1,8 +1,30 @@
 using System;
+using System.Diagnostics;
 using System.Text;
 using System.Windows.Automation;
 
 class Program {
+    static bool IsTerminalProcess(int pid) {
+        if (pid <= 0) return false;
+        try {
+            var proc = Process.GetProcessById(pid);
+            string name = (proc.ProcessName ?? "").ToLowerInvariant();
+            return (
+                name == "windowsterminal" ||
+                name == "powershell" ||
+                name == "pwsh" ||
+                name == "cmd" ||
+                name == "conhost" ||
+                name == "mintty" ||
+                name == "wezterm-gui" ||
+                name == "alacritty" ||
+                name == "openconsole"
+            );
+        } catch {
+            return false;
+        }
+    }
+
     [STAThread]
     static int Main(string[] args) {
         Console.OutputEncoding = new UTF8Encoding(false);
@@ -23,6 +45,12 @@ class Program {
             string cmd = args[0];
 
             if (cmd == "focused-text") {
+                // Never intercept or send Ctrl+A/Ctrl+C inside terminal emulators (where pi-lingual runs and Ctrl+C is SIGINT)
+                if (IsTerminalProcess(el.Current.ProcessId)) {
+                    Console.Write("NON_EDITABLE");
+                    return 0;
+                }
+
                 object patternObj;
                 if (el.TryGetCurrentPattern(ValuePattern.Pattern, out patternObj)) {
                     var vp = (ValuePattern)patternObj;

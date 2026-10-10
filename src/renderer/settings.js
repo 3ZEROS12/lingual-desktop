@@ -1,9 +1,12 @@
 // ============================================================================
 // Lingual Desktop Settings — Pure pi-lingual Parity Controller
 // - Enter-Driven Automatic Dispatch (Translate / Learn / Off)
-// - Clean Language Code Switcher (EN / ZH / TW / JA)
-// - Source & Target Language Chips (ZH / EN / JA / ES / DE / FR / KO)
-// - Live Card Preview & Natural Language Preset Tuner
+// - Persistent UI Language Switcher (EN / ZH / TW / JA)
+// - 3 Transparent Engine Modes:
+//     1. Reuse Local Pi Model ($0 extra)
+//     2. Free Web Translate (Google / MyMemory — $0, no key)
+//     3. Free-Tier LLM (GLM-4-Flash ¥0 / SiliconFlow Qwen ¥0 / Groq Free) or Custom Key
+// - Functional Natural Language Layout Tuner + Real-Time WYSIWYG Preview
 // - Instant Auto-Save on Every Action
 // ============================================================================
 
@@ -15,7 +18,7 @@
       nav_engine: "Engine",
       sec_mode_title: "Operating Mode",
       sec_mode_desc:
-        "Just press Enter in any input box. Lingual automatically detects natural language and dispatches to the configured model (commands, code, and Ctrl+Enter / Shift+Enter newlines pass through untouched). Cycle anytime with Alt + Q:",
+        "Just press Enter in any input box. Lingual automatically detects natural language and dispatches to the active engine (commands, code, terminals, and Ctrl+Enter / Shift+Enter newlines pass through untouched). Cycle anytime with Alt + Q:",
       mode_en_title: "Translate",
       mode_en_sub: "Press Enter ➔ Translates, replaces & submits + shows card",
       mode_orig_title: "Learn",
@@ -28,8 +31,8 @@
       sec_tlang_desc: "The target language to translate into:",
       preview_title: "Live Preview",
       preview_hint: 'Sample: "Can we release this feature tomorrow?"',
-      ai_tuner_title: "Natural Language Preset",
-      ai_tuner_desc: "Describe your preferred layout or select a preset below:",
+      ai_tuner_title: "Natural Language Layout Tuner",
+      ai_tuner_desc: "Type any custom instruction or click a preset below to reconfigure the card:",
       ai_tuner_placeholder: "e.g. Single line only for fast chat, no source row or vocab...",
       ai_tuner_btn: "Apply",
       wish_1: "Single line (Minimal)",
@@ -49,12 +52,17 @@
       adv_slots_summary: "Advanced slot configuration",
       btn_add_row: "+ Add Row",
       btn_reset_rows: "Reset Default",
-      banner_ready: "Fast cloud translation active. Zero configuration required.",
-      engine_choose_title: "Translation Provider",
-      emode_free_title: "Built-in Fast Cloud (Default)",
-      emode_free_desc: "Free zero-key translation. Instant out of the box with zero account setup.",
-      emode_cloud_title: "Custom LLM API Key",
-      emode_cloud_desc: "Enables dual tone comparisons (Casual + Formal) and vocabulary extraction:",
+      engine_choose_title: "Translation Engine (3 Ways to Run — Including $0 Options)",
+      engine_choose_desc: "Select how translations are powered:",
+      emode_pi_title: "1. Reuse Local Pi Model (Recommended · $0 Extra)",
+      emode_pi_desc:
+        "Automatically shares the model configured in ~/.pi/agent/models.json. Supports full dual-register comparison, vocabulary notes, and AI layout tuning with zero extra setup.",
+      emode_free_title: "2. Free Web Translate (Google / MyMemory · No Key Required)",
+      emode_free_desc:
+        "Uses public web translation APIs (Google Translate + MyMemory) with zero registration or API keys. Note: As standard machine translation (non-LLM), it provides 1 direct translation line without dual-tone comparison.",
+      emode_custom_title: "3. Free-Tier LLM or Custom API Key",
+      emode_custom_desc:
+        "Don't want to pay for tokens? Zhipu (GLM-4-Flash), SiliconFlow (Qwen2.5-7B), and Groq offer permanently free API tiers ($0 / 1M tokens) with full dual-register LLM capabilities:",
       btn_show: "Show",
       btn_hide: "Hide",
       btn_test: "Test",
@@ -73,7 +81,7 @@
       nav_engine: "引擎",
       sec_mode_title: "运行模式（与 pi-lingual 完全一致）",
       sec_mode_desc:
-        "在任何输入框打完字直接按回车 (Enter)，自动判断是否需要翻译并交给所配置的模型（代码、命令及 Ctrl+Enter / Shift+Enter 换行自动原样放行）。随时可按 Alt + Q 切换模式：",
+        "在任何输入框打完字直接按回车 (Enter)，自动判断是否需要翻译并交给所选引擎（代码、命令、终端窗口及 Ctrl+Enter / Shift+Enter 换行自动原样放行）。随时可按 Alt + Q 切换模式：",
       mode_en_title: "译文 (Translate)",
       mode_en_sub: "按回车 ➔ 自动翻译替换并发出 + 展开对照卡片",
       mode_orig_title: "伴学 (Learn)",
@@ -87,7 +95,7 @@
       preview_title: "实时预览",
       preview_hint: "示例：「这个功能明天能上线吗？」",
       ai_tuner_title: "一句话定制版式",
-      ai_tuner_desc: "输入你的日常用途或点选下方预设：",
+      ai_tuner_desc: "输入你的日常用途（支持任意自然语言描述）或直接点选下方预设：",
       ai_tuner_placeholder: "例如：只要一行极简译文，不显示原文和词汇...",
       ai_tuner_btn: "应用",
       wish_1: "单行极简（纯打字）",
@@ -107,12 +115,17 @@
       adv_slots_summary: "高级行项配置",
       btn_add_row: "+ 新增行",
       btn_reset_rows: "重置默认",
-      banner_ready: "内置高速云端翻译与本机模型已就绪，打字按回车即可触发。",
-      engine_choose_title: "翻译服务商",
-      emode_free_title: "内置高速云（默认）",
-      emode_free_desc: "免费免 Key 直连，无需配置账号即可直接打字翻译。",
-      emode_cloud_title: "自定义大模型 API Key",
-      emode_cloud_desc: "启用口语/书面双语气对比与词汇提取：",
+      engine_choose_title: "翻译驱动方式（含 3 种完全零成本白嫖方案）",
+      engine_choose_desc: "即使不想花一分钱买 API，也有以下三种方案可直接使用：",
+      emode_pi_title: "1. 直接复用本机 Pi 模型（推荐 · 零额外成本）",
+      emode_pi_desc:
+        "自动读取复用你电脑上 ~/.pi/agent/models.json 已配好的模型通道，无需重复填 Key，完整支持双语气对比、重点词汇与 AI 版式定制。",
+      emode_free_title: "2. 免注册基础网页翻译 (Google / MyMemory · 无需任何 Key)",
+      emode_free_desc:
+        "直接调用公共网页翻译接口（Google 翻译 + MyMemory 免费接口），无需注册账号或填 Key。注：属于传统机器翻译（非大模型），每次仅输出 1 行标准译文。",
+      emode_custom_title: "3. 永久免费大模型 API 或自定义密钥",
+      emode_custom_desc:
+        "不想付费买 Token？智谱 (GLM-4-Flash)、硅基流动 (Qwen2.5-7B) 与 Groq 均提供官方永久免费 API 额度（0 元 / 百万 Token），只需填免费 Key 即可享受完整大模型双轨能力：",
       btn_show: "显示",
       btn_hide: "隐藏",
       btn_test: "测试",
@@ -131,7 +144,7 @@
       nav_engine: "引擎",
       sec_mode_title: "運行模式（與 pi-lingual 完全一致）",
       sec_mode_desc:
-        "在任何輸入框打完字直接按 Enter，自動判斷是否需要翻譯並交給所配置的模型（代碼、命令及 Ctrl+Enter / Shift+Enter 換行自動原樣放行）。隨時可按 Alt + Q 切換模式：",
+        "在任何輸入框打完字直接按 Enter，自動判斷是否需要翻譯並交給所選引擎（代碼、命令、終端窗口及 Ctrl+Enter / Shift+Enter 換行自動原樣放行）。隨時可按 Alt + Q 切換模式：",
       mode_en_title: "譯文 (Translate)",
       mode_en_sub: "按 Enter ➔ 自動翻譯替換並發出 + 展開對照卡片",
       mode_orig_title: "伴學 (Learn)",
@@ -165,12 +178,17 @@
       adv_slots_summary: "高級行項配置",
       btn_add_row: "+ 新增行",
       btn_reset_rows: "重置默認",
-      banner_ready: "內置高速雲端翻譯與本機模型已就緒，打字按 Enter 即可觸發。",
-      engine_choose_title: "翻譯服務商",
-      emode_free_title: "內置高速雲（默認）",
-      emode_free_desc: "免費免 Key 直連，無需配置帳號即可直接打字翻譯。",
-      emode_cloud_title: "自定義大模型 API Key",
-      emode_cloud_desc: "啟用口語/書面雙語氣對比與詞彙提取：",
+      engine_choose_title: "翻譯驅動方式（含 3 種零成本方案）",
+      engine_choose_desc: "選擇你的翻譯驅動方式：",
+      emode_pi_title: "1. 直接複用本機 Pi 模型（推薦 · 零額外成本）",
+      emode_pi_desc:
+        "自動讀取複用你電腦上 ~/.pi/agent/models.json 已配好的模型通道，無需重複填 Key。",
+      emode_free_title: "2. 免註冊基礎網頁翻譯 (Google / MyMemory · 無需任何 Key)",
+      emode_free_desc:
+        "直接調用公共網頁翻譯接口（Google + MyMemory），無需註冊帳號。注：屬於傳統機器翻譯，每次僅輸出 1 行標準譯文。",
+      emode_custom_title: "3. 永久免費大模型 API 或自定義密鑰",
+      emode_custom_desc:
+        "智譜 (GLM-4-Flash)、硅基流動 (Qwen2.5-7B) 與 Groq 均提供官方免費 API 額度（0 元 / 百萬 Token）：",
       btn_show: "顯示",
       btn_hide: "隱藏",
       btn_test: "測試",
@@ -189,7 +207,7 @@
       nav_engine: "エンジン",
       sec_mode_title: "動作モード（pi-lingual と完全共通）",
       sec_mode_desc:
-        "入力欄で Enter を押すだけで、自然言語かどうかを自動判定して設定モデルへ送信します（コード、コマンド、Ctrl+Enter / Shift+Enter の改行はそのまま通過）。Alt + Q でモード切替：",
+        "入力欄で Enter を押すだけで、自然言語かどうかを自動判定して処理します（コード、コマンド、ターミナル、Ctrl+Enter / Shift+Enter の改行はそのまま通過）。Alt + Q でモード切替：",
       mode_en_title: "翻訳 (Translate)",
       mode_en_sub: "Enter ➔ 翻訳して置換・送信＋カード表示",
       mode_orig_title: "学習 (Learn)",
@@ -223,12 +241,17 @@
       adv_slots_summary: "詳細スロット設定",
       btn_add_row: "+ 行を追加",
       btn_reset_rows: "リセット",
-      banner_ready: "高速クラウド翻訳が有効です。Enter を押すだけで動作します。",
-      engine_choose_title: "翻訳プロバイダー",
-      emode_free_title: "内蔵高速クラウド（デフォルト）",
-      emode_free_desc: "APIキー不要で即座に利用可能。",
-      emode_cloud_title: "カスタム LLM API Key",
-      emode_cloud_desc: "2トーン比較と重要語彙の抽出を有効化：",
+      engine_choose_title: "翻訳エンジン（無料オプションを含む3つの方式）",
+      engine_choose_desc: "翻訳エンジンの駆動方式を選択：",
+      emode_pi_title: "1. ローカル Pi モデルを共有（推奨 · 追加費用 $0）",
+      emode_pi_desc:
+        "~/.pi/agent/models.json に設定済みのモデルを自動共有します。追加設定なしで2トーン比較・語彙解説を利用可能。",
+      emode_free_title: "2. 無料 Web 翻訳 (Google / MyMemory · キー不要)",
+      emode_free_desc:
+        "登録やAPIキー不要の公開Web翻訳API（Google + MyMemory）を使用します（標準翻訳1行のみ出力）。",
+      emode_custom_title: "3. 無料枠 LLM またはカスタム API Key",
+      emode_custom_desc:
+        "GLM-4-Flash、SiliconFlow (Qwen2.5-7B)、Groq などの無料API枠、または独自キーを設定：",
       btn_show: "表示",
       btn_hide: "隠す",
       btn_test: "テスト",
@@ -247,6 +270,7 @@
   let activeSourceLang = "zh";
   let activeTargetLang = "en";
   let activeCompanionMode = "english";
+  let activeEngineMode = "pi";
   let activeSlotPreset = "developer";
   let currentSlots = [];
   let isInitialLoading = true;
@@ -329,6 +353,7 @@
     opt.addEventListener("click", () => {
       setUiLangState(opt.dataset.lang);
       langPopover.classList.add("hidden");
+      autoSaveNow();
     });
   });
 
@@ -484,31 +509,6 @@
     },
   };
 
-  function normalizeSlotLabelsToEnglish(slots) {
-    const map = {
-      原话: "Source",
-      原文: "Source",
-      日常聊: "Casual",
-      口语: "Casual",
-      口語: "Casual",
-      正式写: "Formal",
-      写作: "Formal",
-      文面: "Formal",
-      敬語: "Formal",
-      地道译文: "Translation",
-      译文: "Translation",
-      訳文: "Translation",
-      顺便记词: "Vocab",
-      重点: "Vocab",
-      単語: "Vocab",
-    };
-    slots.forEach((s) => {
-      if (s.label && map[s.label]) {
-        s.label = map[s.label];
-      }
-    });
-  }
-
   function renderLiveHudPreview() {
     if (!liveHudPreview) return;
     const sample = PREVIEW_SAMPLES[activeTargetLang] || PREVIEW_SAMPLES.en;
@@ -663,14 +663,13 @@
 
       if (res && res.success && Array.isArray(res.slots)) {
         currentSlots = res.slots;
-        normalizeSlotLabelsToEnglish(currentSlots);
         syncSimpleTogglesFromSlots();
         renderLiveHudPreview();
         renderSlotCards();
         await autoSaveNow();
 
         if (aiTuneFeedback) {
-          aiTuneFeedback.textContent = t("footer_saved");
+          aiTuneFeedback.textContent = res.summary || t("footer_saved");
           aiTuneFeedback.classList.remove("hidden");
         }
       }
@@ -818,9 +817,10 @@
     });
   }
 
-  // 4. Tab 3: Translation Provider (Built-in Fast Cloud vs Custom LLM API Key)
+  // 4. Tab 3: Translation Engine (Pi Reuse vs Free Web vs Custom/Free-Tier LLM)
   const engineModeCards = document.querySelectorAll("#engine-mode-list .choice-card");
   const cloudConfigBox = document.getElementById("cloud-config-box");
+  const piModelBadge = document.getElementById("pi-model-badge");
 
   const modelPresetChips = document.querySelectorAll("#model-preset-chips .chip");
   const inputEndpoint = document.getElementById("input-endpoint");
@@ -832,17 +832,21 @@
   const testStatusText = document.getElementById("test-status-text");
 
   const MODEL_PRESETS = {
-    deepseek: {
-      endpoint: "https://api.deepseek.com/v1/chat/completions",
-      model: "deepseek-chat",
+    zhipu_free: {
+      endpoint: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+      model: "glm-4-flash",
     },
-    siliconflow: {
+    siliconflow_free: {
       endpoint: "https://api.siliconflow.cn/v1/chat/completions",
       model: "Qwen/Qwen2.5-7B-Instruct",
     },
-    groq: {
+    groq_free: {
       endpoint: "https://api.groq.com/openai/v1/chat/completions",
       model: "llama-3.3-70b-versatile",
+    },
+    deepseek: {
+      endpoint: "https://api.deepseek.com/v1/chat/completions",
+      model: "deepseek-chat",
     },
     openai: {
       endpoint: "https://api.openai.com/v1/chat/completions",
@@ -850,15 +854,13 @@
     },
   };
 
-  let activeEngineMode = "free";
-
   function setEngineModeUI(mode) {
-    activeEngineMode = mode;
+    activeEngineMode = mode || "pi";
     engineModeCards.forEach((card) => {
-      card.classList.toggle("active", card.dataset.emode === mode);
+      card.classList.toggle("active", card.dataset.emode === activeEngineMode);
     });
     if (cloudConfigBox) {
-      cloudConfigBox.style.display = mode === "cloud" ? "flex" : "none";
+      cloudConfigBox.style.display = activeEngineMode === "custom" ? "flex" : "none";
     }
   }
 
@@ -868,17 +870,9 @@
       const mode = card.dataset.emode;
       setEngineModeUI(mode);
 
-      if (mode === "free") {
-        inputEndpoint.value = "http://127.0.0.1:0/free";
-        inputApiKey.value = "";
-      } else if (mode === "cloud") {
-        if (!inputEndpoint.value || inputEndpoint.value.includes("127.0.0.1:0") || inputEndpoint.value.includes("11434")) {
-          inputEndpoint.value = MODEL_PRESETS.deepseek.endpoint;
-          inputModel.value = MODEL_PRESETS.deepseek.model;
-        }
-        if (inputApiKey.value === "ollama") {
-          inputApiKey.value = "";
-        }
+      if (mode === "custom" && (!inputEndpoint.value || inputEndpoint.value.includes("127.0.0.1"))) {
+        inputEndpoint.value = MODEL_PRESETS.zhipu_free.endpoint;
+        inputModel.value = MODEL_PRESETS.zhipu_free.model;
       }
       autoSaveNow();
     });
@@ -887,7 +881,7 @@
   modelPresetChips.forEach((chip) => {
     chip.addEventListener("click", (e) => {
       e.stopPropagation();
-      setEngineModeUI("cloud");
+      setEngineModeUI("custom");
       const presetKey = chip.dataset.preset;
       modelPresetChips.forEach((c) => c.classList.remove("active"));
       chip.classList.add("active");
@@ -938,7 +932,7 @@
           testStatusText.textContent = `Connected (${res.latencyMs}ms)`;
           await autoSaveNow();
         } else {
-          testStatusText.textContent = `Connection failed (${res?.error || "Check API Key"}). Built-in cloud fallback active.`;
+          testStatusText.textContent = `Connection failed (${res?.error || "Check API Key"}). Free web fallback active.`;
         }
       } catch (err) {
         testStatusText.textContent = `Error: ${err.message}`;
@@ -955,17 +949,22 @@
   async function autoSaveNow() {
     if (isInitialLoading) return;
     const patch = {
+      uiLang: activeUiLang,
+      engineProvider: activeEngineMode,
       mode: activeCompanionMode,
       sourceLang: activeSourceLang,
       targetLang: activeTargetLang,
-      endpoint: inputEndpoint ? inputEndpoint.value.trim() : "",
-      apiKey: inputApiKey ? inputApiKey.value.trim() : "",
-      model: inputModel ? inputModel.value.trim() : "",
       slotPreset: activeSlotPreset,
       slots: currentSlots,
       hotkeySubmit: "Enter",
       autoSend: true,
     };
+
+    if (activeEngineMode === "custom") {
+      patch.endpoint = inputEndpoint ? inputEndpoint.value.trim() : "";
+      patch.apiKey = inputApiKey ? inputApiKey.value.trim() : "";
+      patch.model = inputModel ? inputModel.value.trim() : "";
+    }
 
     try {
       await window.lingualSettingsAPI?.saveConfig(patch);
@@ -993,6 +992,7 @@
         setUiLangState("en");
         setSourceLangState("zh");
         setTargetLangState("en");
+        setEngineModeUI("pi");
         syncSimpleTogglesFromSlots();
         renderLiveHudPreview();
         renderSlotCards();
@@ -1005,25 +1005,25 @@
       setTargetLangState(cfg.targetLang || "en");
 
       currentSlots = Array.isArray(cfg.slots) && cfg.slots.length > 0 ? cfg.slots : getDefaultSlotsList();
-      normalizeSlotLabelsToEnglish(currentSlots);
-      setUiLangState("en");
+      setUiLangState(cfg.uiLang || "en");
       syncSimpleTogglesFromSlots();
       renderLiveHudPreview();
       renderSlotCards();
 
-      const cleanKey = cfg.apiKey === "ollama" ? "" : cfg.apiKey || "";
-      const cleanEndpoint =
-        cfg.endpoint && !cfg.endpoint.includes("11434") ? cfg.endpoint : "";
-      const cleanModel = cfg.model === "qwen2.5:3b" ? "" : cfg.model || "";
+      if (piModelBadge) {
+        if (cfg.piModelInfo && cfg.piModelInfo.model) {
+          piModelBadge.textContent = `Active: ${cfg.piModelInfo.model}`;
+        } else {
+          piModelBadge.textContent = "Auto-Fallback";
+        }
+      }
 
-      inputEndpoint.value = cleanEndpoint;
-      inputApiKey.value = cleanKey;
-      inputModel.value = cleanModel;
+      setEngineModeUI(cfg.engineProvider || (cfg.piModelInfo ? "pi" : "free"));
 
-      if (!cleanKey || cleanEndpoint.includes("127.0.0.1:0")) {
-        setEngineModeUI("free");
-      } else {
-        setEngineModeUI("cloud");
+      if (cfg.engineProvider === "custom") {
+        inputEndpoint.value = cfg.endpoint || "";
+        inputApiKey.value = cfg.apiKey || "";
+        inputModel.value = cfg.model || "";
       }
     } catch (e) {
       console.error("Failed to load config:", e);

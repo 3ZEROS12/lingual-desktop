@@ -57,7 +57,7 @@
         <div class="card">
           <div class="card-header">
             <h2 class="card-title" data-i18n="sec_mode_title">Operating Mode</h2>
-            <p class="card-desc" data-i18n="sec_mode_desc">Just press Enter in any input box. Lingual automatically detects natural language and dispatches to the configured model (commands, code, and Ctrl+Enter / Shift+Enter newlines pass through untouched). Cycle anytime with Alt + Q:</p>
+            <p class="card-desc" data-i18n="sec_mode_desc">Just press Enter in any input box. Lingual automatically detects natural language and dispatches to the active engine (commands, code, terminals, and Ctrl+Enter / Shift+Enter newlines pass through untouched). Cycle anytime with Alt + Q:</p>
           </div>
 
           <div class="segmented-control" id="companion-mode-segmented">
@@ -125,8 +125,8 @@
         <!-- 2. Conversational Intent Tuner -->
         <div class="card ai-tuner-card">
           <div class="card-header">
-            <h2 class="card-title" data-i18n="ai_tuner_title">Natural Language Preset</h2>
-            <p class="card-desc" data-i18n="ai_tuner_desc">Describe your preferred layout or select a preset below:</p>
+            <h2 class="card-title" data-i18n="ai_tuner_title">Natural Language Layout Tuner</h2>
+            <p class="card-desc" data-i18n="ai_tuner_desc">Type any custom instruction or click a preset below to reconfigure the card:</p>
           </div>
 
           <div class="ai-input-row">
@@ -143,7 +143,7 @@
           <div class="wish-chips" id="wish-bubbles">
             <button type="button" class="wish-chip" data-wish="Single clean translation line, no source text or vocab" data-i18n="wish_1">Single line (Minimal)</button>
             <button type="button" class="wish-chip" data-wish="Casual team chat and formal technical documentation with source text" data-i18n="wish_2">Casual + Formal</button>
-            <button type="button" class="wish-chip" data-wish="Polite customer support reply and concise follow-up" data-i18n="wish_3">Customer Support</button>
+            <button type="button" class="wish-chip" data-wish="Polite customer support reply and concise follow-up, no source text" data-i18n="wish_3">Customer Support</button>
             <button type="button" class="wish-chip" data-wish="Short punchy social hook and insightful community comment" data-i18n="wish_4">Social / X</button>
             <button type="button" class="wish-chip" data-wish="Casual spoken and polite business honorifics with vocabulary notes" data-i18n="wish_5">Language Study</button>
           </div>
@@ -206,49 +206,60 @@
 
       <!-- ==================== TAB 3: ENGINE ==================== -->
       <section id="tab-engine" class="tab-pane">
-        <div class="notice-banner">
-          <span data-i18n="banner_ready">Fast cloud translation active. Zero configuration required.</span>
-        </div>
-
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title" data-i18n="engine_choose_title">Translation Provider</h2>
+            <h2 class="card-title" data-i18n="engine_choose_title">Translation Engine (3 Ways to Run — Including $0 Options)</h2>
+            <p class="card-desc" data-i18n="engine_choose_desc">Select how translations are powered:</p>
           </div>
 
-          <div style="display: flex; flex-direction: column; gap: 8px;" id="engine-mode-list">
-            <!-- Free Built-in -->
-            <div class="choice-card" data-emode="free">
+          <div style="display: flex; flex-direction: column; gap: 10px;" id="engine-mode-list">
+            <!-- Option 1: Reuse Local Pi / Agent Credentials ($0 extra cost) -->
+            <div class="choice-card active" data-emode="pi">
               <div class="choice-top">
                 <span class="radio-dot"></span>
-                <span class="choice-title" data-i18n="emode_free_title">Built-in Fast Cloud (Default)</span>
+                <span class="choice-title" data-i18n="emode_pi_title">1. Reuse Local Pi Model (Recommended · $0 Extra)</span>
+                <span class="badge-subtle" id="pi-model-badge">Detected</span>
               </div>
-              <p class="choice-desc" data-i18n="emode_free_desc">
-                Free zero-key translation. Instant out of the box with zero account setup.
+              <p class="choice-desc" id="pi-model-desc" data-i18n="emode_pi_desc">
+                Automatically shares the model configured in ~/.pi/agent/models.json. Supports full dual-register comparison, vocabulary notes, and AI layout tuning with zero extra setup.
               </p>
             </div>
 
-            <!-- Custom LLM API Key -->
-            <div class="choice-card active" data-emode="cloud">
+            <!-- Option 2: Free Web Machine Translation (Google GTX / MyMemory — Zero API Key) -->
+            <div class="choice-card" data-emode="free">
               <div class="choice-top">
                 <span class="radio-dot"></span>
-                <span class="choice-title" data-i18n="emode_cloud_title">Custom LLM API Key</span>
+                <span class="choice-title" data-i18n="emode_free_title">2. Free Web Translate (Google / MyMemory · No Key Required)</span>
+                <span class="badge-subtle">100% Free</span>
               </div>
-              <p class="choice-desc" data-i18n="emode_cloud_desc">
-                Enables dual tone comparisons (Casual + Formal) and vocabulary extraction:
+              <p class="choice-desc" data-i18n="emode_free_desc">
+                Uses public web translation APIs (Google Translate + MyMemory) with zero registration or API keys. Note: As standard machine translation (non-LLM), it provides 1 direct translation line without dual-tone comparison.
+              </p>
+            </div>
+
+            <!-- Option 3: Free-Tier or Custom LLM API Key (Zhipu GLM-4-Flash Free / SiliconFlow Qwen Free / DeepSeek / OpenAI) -->
+            <div class="choice-card" data-emode="custom">
+              <div class="choice-top">
+                <span class="radio-dot"></span>
+                <span class="choice-title" data-i18n="emode_custom_title">3. Free-Tier LLM or Custom API Key</span>
+              </div>
+              <p class="choice-desc" data-i18n="emode_custom_desc">
+                Don't want to pay for tokens? Zhipu (GLM-4-Flash), SiliconFlow (Qwen2.5-7B), and Groq offer permanently free API tiers ($0 / 1M tokens) with full dual-register LLM capabilities:
               </p>
 
               <div id="cloud-config-box" style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px;">
                 <div class="chip-row" id="model-preset-chips">
+                  <button type="button" class="chip" data-preset="zhipu_free">GLM-4-Flash (Free ¥0)</button>
+                  <button type="button" class="chip" data-preset="siliconflow_free">SiliconFlow Qwen-7B (Free ¥0)</button>
+                  <button type="button" class="chip" data-preset="groq_free">Groq Llama-3.3 (Free Tier)</button>
                   <button type="button" class="chip" data-preset="deepseek">DeepSeek</button>
-                  <button type="button" class="chip" data-preset="siliconflow">SiliconFlow</button>
-                  <button type="button" class="chip" data-preset="groq">Groq</button>
                   <button type="button" class="chip" data-preset="openai">OpenAI</button>
                 </div>
 
                 <div class="form-field">
                   <label>API Key</label>
                   <div class="input-group">
-                    <input type="password" id="input-apikey" class="input-text" placeholder="sk-..." />
+                    <input type="password" id="input-apikey" class="input-text" placeholder="Paste API Key..." />
                     <button type="button" id="btn-toggle-key" class="btn-secondary" data-i18n="btn_show">Show</button>
                     <button type="button" id="btn-test-connection" class="btn-secondary" data-i18n="btn_test">Test</button>
                   </div>
@@ -263,11 +274,11 @@
                   <div class="advanced-body">
                     <div class="form-field">
                       <label>Endpoint URL</label>
-                      <input type="text" id="input-endpoint" class="input-text" placeholder="https://api.deepseek.com/v1/chat/completions" />
+                      <input type="text" id="input-endpoint" class="input-text" placeholder="https://open.bigmodel.cn/api/paas/v4/chat/completions" />
                     </div>
                     <div class="form-field">
                       <label>Model ID</label>
-                      <input type="text" id="input-model" class="input-text" placeholder="deepseek-chat" />
+                      <input type="text" id="input-model" class="input-text" placeholder="glm-4-flash" />
                     </div>
                   </div>
                 </details>

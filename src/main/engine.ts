@@ -255,13 +255,13 @@ export async function generateSlotsFromUserIntent(
 
   // 1. Parse boolean modifiers from natural language
   const hideSource = /不要原文|不要原话|不显示原话|不显示原文|不看原文|不看原话|去掉原文|去掉原话|删掉原文|隐藏原文|别显示原话|无需原文|no source|hide source|without source/i.test(raw);
-  const showSourceExplicit = /保留原文|保留原话|显示原文|显示原话|加上原文|带原文|keep source|show source/i.test(raw);
+  const showSourceExplicit = /保留原文|保留原话|显示原文|显示原话|加上原文|带原文|keep source|show source|with source/i.test(raw);
 
-  const hideVocab = /不要单词|不学单词|不要词汇|不看单词|去掉单词|别教单词|不要重点|纯打字|只是打字|只为了打字|no vocab|without vocab/i.test(raw);
-  const showVocabExplicit = /要单词|学单词|记单词|背单词|生词|好词|加上单词|带单词|vocab/i.test(raw);
+  const hideVocab = /不要单词|不学单词|不要词汇|不看单词|去掉单词|别教单词|不要重点|纯打字|只是打字|只为了打字|no vocab|without vocab|or vocab/i.test(raw);
+  const showVocabExplicit = /要单词|学单词|记单词|背单词|生词|好词|加上单词|带单词|with vocab|vocabulary notes/i.test(raw);
 
   const hideMeaning = /不要解释|不要微释义|不要括号|不看解释|去掉解释|只看外语|no meaning|no nuance/i.test(raw);
-  const singleLineOnly = /只要一行|只要一个|一个就够|一行就够|只出一行|极简|纯翻译|只要译文|直接翻译|普通翻译|只是为了打字|只为了打字|single line|just one/i.test(raw);
+  const singleLineOnly = /只要一行|只要一个|一个就够|一行就够|只出一行|极简|纯翻译|只要译文|直接翻译|普通翻译|只是为了打字|只为了打字|single.*line|just one|1 line/i.test(raw);
 
   const slots: SlotConfig[] = [];
   const summaryParts: string[] = [];
@@ -281,7 +281,7 @@ export async function generateSlotsFromUserIntent(
 
   const useMeaning = !hideMeaning && !singleLineOnly;
 
-  // 2. Match user scenario or custom tone requests
+  // 2. Match user scenario or custom tone requests (Bilingual EN + ZH + JA)
   if (singleLineOnly) {
     slots.push({
       id: "spoken",
@@ -291,12 +291,12 @@ export async function generateSlotsFromUserIntent(
       showMeaning: !hideMeaning && showSourceExplicit,
       enabled: true,
     });
-    summaryParts.push(isZh ? "只保留 1 行最干净的纯翻译（最适合纯粹打字聊天）" : "1 clean translation line");
-  } else if (/外贸|客服|电商|客户|跨境|催单|商务|售后|买家|卖家/.test(raw)) {
+    summaryParts.push(isZh ? "只保留 1 行最干净的纯翻译（最适合纯粹打字聊天）" : "Configured: 1 clean translation line");
+  } else if (/外贸|客服|电商|客户|跨境|催单|商务|售后|买家|卖家|customer support|polite.*reply|concise follow-up/i.test(raw)) {
     slots.push(
       {
         id: "spoken",
-        label: isZh ? "客气礼貌" : "Polite Reply",
+        label: isZh ? "客气礼貌" : "Polite",
         role: "translation",
         instruction: "Warm, polite, professional customer service and business communication tone.",
         showMeaning: useMeaning,
@@ -304,19 +304,19 @@ export async function generateSlotsFromUserIntent(
       },
       {
         id: "written",
-        label: isZh ? "简短干脆" : "Direct Follow-up",
+        label: isZh ? "简短干脆" : "Follow-up",
         role: "translation",
         instruction: "Concise, clear, action-oriented business follow-up or order confirmation.",
         showMeaning: useMeaning,
         enabled: true,
       }
     );
-    summaryParts.push(isZh ? "已定制「外贸/客服」专属：1行客气礼貌回复 + 1行简短干脆跟进" : "Business & Customer Support preset");
-  } else if (/游戏|队友|开黑|Steam|Discord|报点|联机|打团|竞技/i.test(raw)) {
+    summaryParts.push(isZh ? "已定制「外贸/客服」专属：1行客气礼貌回复 + 1行简短干脆跟进" : "Configured: Polite Reply + Direct Follow-up");
+  } else if (/游戏|队友|开黑|Steam|Discord|报点|联机|打团|竞技|gaming|callout|banter/i.test(raw)) {
     slots.push(
       {
         id: "spoken",
-        label: isZh ? "游戏短句" : "In-Game Chat",
+        label: isZh ? "游戏短句" : "Callout",
         role: "translation",
         instruction: "Ultra-short, punchy, authentic gamer slang and quick team callouts.",
         showMeaning: useMeaning,
@@ -324,19 +324,19 @@ export async function generateSlotsFromUserIntent(
       },
       {
         id: "written",
-        label: isZh ? "社区闲聊" : "Discord Chill",
+        label: isZh ? "社区闲聊" : "Banter",
         role: "translation",
         instruction: "Friendly, casual Discord community banter with fellow players.",
         showMeaning: useMeaning,
         enabled: true,
       }
     );
-    summaryParts.push(isZh ? "已定制「游戏联机」专属：1行极短游戏内沟通 + 1行社区闲聊" : "Gaming & Discord preset");
-  } else if (/推特|twitter|x\.com|发帖|小红书|社媒|运营|吸睛|病毒|网红|论坛|reddit/i.test(raw)) {
+    summaryParts.push(isZh ? "已定制「游戏联机」专属：1行极短游戏内沟通 + 1行社区闲聊" : "Configured: Gaming Callout + Community Banter");
+  } else if (/推特|twitter|x\.com|发帖|小红书|社媒|运营|吸睛|病毒|网红|论坛|reddit|punchy.*hook|community comment/i.test(raw)) {
     slots.push(
       {
         id: "spoken",
-        label: isZh ? "吸睛短句" : "Punchy Hook",
+        label: isZh ? "吸睛短句" : "Hook",
         role: "translation",
         instruction: "Engaging, native social media post or tweet under 280 chars with natural hook.",
         showMeaning: useMeaning,
@@ -344,19 +344,19 @@ export async function generateSlotsFromUserIntent(
       },
       {
         id: "written",
-        label: isZh ? "深度讨论" : "Insightful Reply",
+        label: isZh ? "深度讨论" : "Insight",
         role: "translation",
         instruction: "Thoughtful, high-signal community comment or thread expansion.",
         showMeaning: useMeaning,
         enabled: true,
       }
     );
-    summaryParts.push(isZh ? "已定制「推特/社媒」专属：1行吸睛短句 + 1行有深度的评论" : "Social Media & X preset");
-  } else if (/论文|学术|导师|教授|留学|科研|期刊|审稿|邮件|email/i.test(raw)) {
+    summaryParts.push(isZh ? "已定制「推特/社媒」专属：1行吸睛短句 + 1行有深度的评论" : "Configured: Social Hook + Insightful Reply");
+  } else if (/论文|学术|导师|教授|留学|科研|期刊|审稿|邮件|email|academic|research/i.test(raw)) {
     slots.push(
       {
         id: "spoken",
-        label: isZh ? "得体邮件" : "Polite Email",
+        label: isZh ? "得体邮件" : "Email",
         role: "translation",
         instruction: "Respectful, clear email communication suitable for professors, colleagues, or clients.",
         showMeaning: useMeaning,
@@ -364,19 +364,19 @@ export async function generateSlotsFromUserIntent(
       },
       {
         id: "written",
-        label: isZh ? "学术严谨" : "Academic Prose",
+        label: isZh ? "学术严谨" : "Academic",
         role: "translation",
         instruction: "Formal, objective academic prose suitable for research papers and technical reports.",
         showMeaning: useMeaning,
         enabled: true,
       }
     );
-    summaryParts.push(isZh ? "已定制「邮件与学术」专属：1行得体礼貌邮件 + 1行严谨学术书面语" : "Academic & Email preset");
-  } else if (/日语|敬语|口语|日本|日企|动漫|朋友/.test(raw) && /敬语|口语|礼貌|日语/.test(raw)) {
+    summaryParts.push(isZh ? "已定制「邮件与学术」专属：1行得体礼貌邮件 + 1行严谨学术书面语" : "Configured: Polite Email + Academic Prose");
+  } else if ((/日语|敬语|口语|日本|日企|动漫|朋友/.test(raw) && /敬语|口语|礼貌|日语/.test(raw)) || /honorifics|keigo|language study|immersion/i.test(raw)) {
     slots.push(
       {
         id: "spoken",
-        label: isZh ? "朋友口语" : "口語 (タメ口)",
+        label: isZh ? "朋友口语" : "Casual",
         role: "translation",
         instruction: "Natural, casual spoken tone used among close friends and peers.",
         showMeaning: useMeaning,
@@ -384,19 +384,19 @@ export async function generateSlotsFromUserIntent(
       },
       {
         id: "written",
-        label: isZh ? "礼貌敬语" : "敬語 (ビジネス)",
+        label: isZh ? "礼貌敬语" : "Polite",
         role: "translation",
         instruction: "Polite, natural workplace honorifics (Desu/Masu & Keigo).",
         showMeaning: useMeaning,
         enabled: true,
       }
     );
-    summaryParts.push(isZh ? "已定制「口语+敬语」对照：1行朋友随和口语 + 1行职场礼貌敬语" : "Casual vs Polite Keigo preset");
-  } else if (/代码|程序员|开发|github|issue|pr|开源|技术/i.test(raw)) {
+    summaryParts.push(isZh ? "已定制「口语+敬语」对照：1行朋友随和口语 + 1行职场礼貌敬语" : "Configured: Casual Spoken + Polite Honorifics");
+  } else if (/代码|程序员|开发|github|issue|pr|开源|技术|同事群聊|正式文档|casual.*team.*chat|formal.*technical/i.test(raw)) {
     slots.push(
       {
         id: "spoken",
-        label: isZh ? "日常群聊" : "Team Chat",
+        label: isZh ? "日常群聊" : "Casual",
         role: "translation",
         instruction: "Natural, fluent spoken flow for Slack, daily standups, and quick team chat.",
         showMeaning: useMeaning,
@@ -404,16 +404,57 @@ export async function generateSlotsFromUserIntent(
       },
       {
         id: "written",
-        label: isZh ? "技术文档" : "PR / Issue",
+        label: isZh ? "技术文档" : "Formal",
         role: "translation",
         instruction: "Clear, precise technical written prose for GitHub PRs, Issues, and RFC docs.",
         showMeaning: useMeaning,
         enabled: true,
       }
     );
-    summaryParts.push(isZh ? "已定制「开发者沟通」：1行群聊口语 + 1行 GitHub/文档正式书面语" : "Developer preset");
+    summaryParts.push(isZh ? "已定制「开发者沟通」：1行群聊口语 + 1行正式书面语" : "Configured: Casual Team Chat + Formal Documentation");
   } else {
-    // Custom free-form user request! Extract user's own description as custom style
+    // 3. Free-form custom intent: Try active LLM first if available!
+    const { completer } = createHttpCompleter(config);
+    let llmGenerated: SlotConfig[] | null = null;
+    try {
+      const sysPrompt = `You are a layout configurator for a translation companion card.
+Convert the user's request into a JSON array of slot objects.
+Each object must have:
+- "id": short string ("source", "slot1", "slot2", "vocab")
+- "label": concise 1-2 word English or Chinese tag (e.g. "Source", "Casual", "Formal", "Humorous", "Concise", "Vocab")
+- "role": one of "source" | "translation" | "vocab"
+- "instruction": clear English prompt instruction for how to translate this row
+- "showMeaning": boolean
+- "enabled": true
+Output ONLY valid JSON array, no markdown fences.`;
+      const llmRaw = await completer(raw, sysPrompt);
+      if (llmRaw) {
+        const cleanedJson = llmRaw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+        const parsed = JSON.parse(cleanedJson);
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].role) {
+          llmGenerated = parsed.map((item: any, idx: number) => ({
+            id: String(item.id || `slot_${idx}`),
+            label: String(item.label || "Custom").slice(0, 12),
+            role: ["source", "translation", "vocab", "custom"].includes(item.role) ? item.role : "translation",
+            instruction: String(item.instruction || "Translate naturally."),
+            showMeaning: item.showMeaning !== false,
+            enabled: true,
+          }));
+        }
+      }
+    } catch {
+      llmGenerated = null;
+    }
+
+    if (llmGenerated && llmGenerated.length > 0) {
+      const labels = llmGenerated.map((s) => `[${s.label}]`).join(" + ");
+      return {
+        slots: llmGenerated,
+        summary: isZh ? `AI 已为您生成定制版式：${labels}` : `Configured custom layout: ${labels}`,
+      };
+    }
+
+    // Fallback if offline: create custom slot from user's own text
     const cleanedDesc = raw
       .replace(/不要原文|不要原话|不显示原话|不要单词|不学单词|不要解释|保留原文|加上单词/g, "")
       .trim();
@@ -421,18 +462,18 @@ export async function generateSlotsFromUserIntent(
     if (cleanedDesc.length >= 2) {
       slots.push({
         id: "spoken",
-        label: isZh ? "定制表达" : "Custom Style",
+        label: isZh ? "定制" : "Custom",
         role: "translation",
         instruction: `Translate according to the user's preferred style and scenario: ${cleanedDesc}`,
         showMeaning: useMeaning,
         enabled: true,
       });
-      summaryParts.push(isZh ? `已按您的描述定制专属风格：「${cleanedDesc.slice(0, 18)}」` : `Custom style: ${cleanedDesc}`);
+      summaryParts.push(isZh ? `已按描述定制专属风格：「${cleanedDesc.slice(0, 18)}」` : `Configured custom style: ${cleanedDesc.slice(0, 24)}`);
     } else {
       slots.push(
         {
           id: "spoken",
-          label: isZh ? "日常聊天" : "Casual Chat",
+          label: isZh ? "日常聊" : "Casual",
           role: "translation",
           instruction: "Natural, conversational everyday phrasing.",
           showMeaning: useMeaning,
@@ -440,14 +481,14 @@ export async function generateSlotsFromUserIntent(
         },
         {
           id: "written",
-          label: isZh ? "正式书面" : "Formal Written",
+          label: isZh ? "正式写" : "Formal",
           role: "translation",
           instruction: "Polite, clear, well-structured written expression.",
           showMeaning: useMeaning,
           enabled: true,
         }
       );
-      summaryParts.push(isZh ? "已设置为「日常聊天 + 正式书面」双版本对照" : "Casual + Formal dual view");
+      summaryParts.push(isZh ? "已设置为「日常 + 正式」双版本对照" : "Configured: Casual + Formal");
     }
   }
 
