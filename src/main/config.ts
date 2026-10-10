@@ -35,13 +35,15 @@ export const DEFAULT_DESKTOP_CONFIG: LingualDesktopConfig = {
   autoSend: true,
   showCapsule: true,
   hotkeyToggleMode: "Alt+Q",
-  hotkeySubmit: "Ctrl+Enter",
-  hotkeyRewrite: "Alt+E",
+  hotkeySubmit: "Alt+E",
+  hotkeyRewrite: "Alt+R",
   hotkeySpotlight: "Alt+Space",
 };
 
 export function getConfigDir(): string {
-  const dir = path.join(os.homedir(), ".lingual");
+  const dir = isTestEnvironment()
+    ? path.join(os.tmpdir(), "lingual-desktop-test-sandbox")
+    : path.join(os.homedir(), ".lingual");
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -64,6 +66,33 @@ function isTestEnvironment(): boolean {
 
 export function getSharedLingualConfigPath(): string {
   return path.join(os.homedir(), ".pi", "agent", "lingual.json");
+}
+
+function discoverPiModelConfig(): { endpoint: string; apiKey: string; model: string } | null {
+  try {
+    const modelsPath = path.join(os.homedir(), ".pi", "agent", "models.json");
+    if (!fs.existsSync(modelsPath)) return null;
+    const raw = JSON.parse(fs.readFileSync(modelsPath, "utf8"));
+    const providers = raw?.providers;
+    if (!providers || typeof providers !== "object") return null;
+
+    for (const p of Object.values(providers) as any[]) {
+      if (p && typeof p.baseUrl === "string" && Array.isArray(p.models) && p.models.length > 0) {
+        const base = p.baseUrl.replace(/\/+$/, "");
+        const endpoint = base.endsWith("/chat/completions") ? base : `${base}/chat/completions`;
+        const preferred =
+          p.models.find((m: any) => /flash|mini|haiku|fast/i.test(m.id)) || p.models[0];
+        return {
+          endpoint,
+          apiKey: p.apiKey || "",
+          model: preferred.id,
+        };
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 export function loadDesktopConfig(): LingualDesktopConfig {
@@ -105,13 +134,36 @@ export function loadDesktopConfig(): LingualDesktopConfig {
       ? desktopRaw.slots
       : getDefaultSlots(effectiveSourceLang);
 
+  const piDiscovered = !isTestEnvironment() ? discoverPiModelConfig() : null;
+
+  const rawSubmitKey = desktopRaw.hotkeySubmit || DEFAULT_DESKTOP_CONFIG.hotkeySubmit;
+  // Never allow hijacking standard Enter or Ctrl+Enter (which users need for normal typing & newlines!)
+  const safeHotkeySubmit =
+    rawSubmitKey.toLowerCase() === "enter" || rawSubmitKey.toLowerCase() === "ctrl+enter"
+      ? "Alt+E"
+      : rawSubmitKey;
+
   return {
     ...DEFAULT_DESKTOP_CONFIG,
     ...desktopRaw,
-    // 共享核心键对齐
-    endpoint: sharedRaw.endpoint || desktopRaw.endpoint || DEFAULT_DESKTOP_CONFIG.endpoint,
-    apiKey: sharedRaw.apiKey || desktopRaw.apiKey || DEFAULT_DESKTOP_CONFIG.apiKey,
-    model: sharedRaw.selectedModel || sharedRaw.model || desktopRaw.model || DEFAULT_DESKTOP_CONFIG.model,
+    hotkeySubmit: safeHotkeySubmit,
+    // 共享核心键对齐（若未手动指定外部模型，优先自动继承本机 Pi 的可用模型配置！）
+    endpoint:
+      sharedRaw.endpoint ||
+      (desktopRaw.endpoint && desktopRaw.endpoint !== "http://127.0.0.1:11434/v1/chat/completions"
+        ? desktopRaw.endpoint
+        : piDiscovered?.endpoint || desktopRaw.endpoint || DEFAULT_DESKTOP_CONFIG.endpoint),
+    apiKey:
+      sharedRaw.apiKey ||
+      (desktopRaw.apiKey && desktopRaw.apiKey !== "ollama"
+        ? desktopRaw.apiKey
+        : piDiscovered?.apiKey || desktopRaw.apiKey || DEFAULT_DESKTOP_CONFIG.apiKey),
+    model:
+      sharedRaw.selectedModel ||
+      sharedRaw.model ||
+      (desktopRaw.model && desktopRaw.model !== "qwen2.5:3b"
+        ? desktopRaw.model
+        : piDiscovered?.model || desktopRaw.model || DEFAULT_DESKTOP_CONFIG.model),
     sourceLang: effectiveSourceLang,
     targetLang: effectiveTargetLang,
     mode: effectiveMode,

@@ -105,11 +105,12 @@ body {
   background: transparent;
   border: none;
   border-radius: var(--radius-pill);
-  padding: 5px 14px;
+  padding: 6px 14px;
   font-size: 12px;
   font-weight: 500;
   color: var(--ink-secondary);
   cursor: pointer;
+  white-space: nowrap;
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -128,25 +129,25 @@ body {
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 120px;
+  gap: 8px;
   justify-content: flex-end;
 }
 
-/* 2-Column Language Switcher Pill (Exact Antigravity Spec) */
+/* Language Switcher Pill */
 .lang-dropdown-wrapper {
   position: relative;
 }
 
 .btn-lang-pill {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
   background: #f1f5f9;
   border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
   cursor: pointer;
   transition: all 0.15s ease;
 }

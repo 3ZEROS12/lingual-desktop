@@ -71,6 +71,24 @@ export function triggerSelectAll(): void {
   }
 }
 
+export function triggerCopyAll(): void {
+  try {
+    const helper = getHelperPath("win32_helper.exe");
+    execFileSync(helper, ["copy-all"], { timeout: 2000 });
+  } catch (err) {
+    console.error("[win32] Failed to trigger copy-all:", err);
+  }
+}
+
+export function triggerEnter(): void {
+  try {
+    const helper = getHelperPath("win32_helper.exe");
+    execFileSync(helper, ["send-enter"], { timeout: 2000 });
+  } catch (err) {
+    console.error("[win32] Failed to trigger enter:", err);
+  }
+}
+
 /**
  * Checks if the foreground application's input method is currently composing text (e.g. typing pinyin)
  * If true, our companion MUST NOT intercept submission or touch input!
@@ -194,12 +212,46 @@ export async function captureSelectedText(
 }
 
 /**
+ * Capture entire input field via atomic Ctrl+A -> Ctrl+C when UIA is unsupported
+ * (e.g. web browser search boxes, Electron chat inputs, custom canvas inputs)
+ */
+export async function captureAllInputText(
+  clipboard: ClipboardLike
+): Promise<{ text: string; backup: string } | null> {
+  const backup = clipboard.readText();
+  const sentinel = `__LINGUAL_CLIP_${Date.now()}_${Math.random()}__`;
+  clipboard.writeText(sentinel);
+
+  triggerCopyAll();
+
+  const start = Date.now();
+  let captured = "";
+  while (Date.now() - start < 220) {
+    await new Promise((r) => setTimeout(r, 20));
+    const current = clipboard.readText();
+    if (current && current !== sentinel) {
+      captured = current;
+      break;
+    }
+  }
+
+  if (!captured || captured === sentinel) {
+    clipboard.writeText(backup);
+    return null;
+  }
+
+  return { text: captured, backup };
+}
+
+/**
  * Hybrid Text Capture:
  * 1. Attempts UI Automation first (0ms, 0 clipboard pollution).
- * 2. If UIA unsupported, smoothly falls back to Atomic Clipboard Guard.
+ * 2. Attempts copying currently highlighted selection (Ctrl+C).
+ * 3. If nothing was highlighted and allowSelectAll is true (submit hotkey), executes Ctrl+A -> Ctrl+C to grab the whole input draft!
  */
 export async function captureActiveInputText(
-  clipboard: ClipboardLike
+  clipboard: ClipboardLike,
+  allowSelectAll = true
 ): Promise<{ text: string; backup: string; method: "uia" | "clipboard" } | null> {
   const uiaText = getFocusedElementText();
   if (uiaText && uiaText.trim()) {
@@ -211,12 +263,23 @@ export async function captureActiveInputText(
   }
 
   const clipCaptured = await captureSelectedText(clipboard);
-  if (clipCaptured) {
+  if (clipCaptured && clipCaptured.text.trim()) {
     return {
       text: clipCaptured.text,
       backup: clipCaptured.backup,
       method: "clipboard",
     };
+  }
+
+  if (allowSelectAll) {
+    const allCaptured = await captureAllInputText(clipboard);
+    if (allCaptured && allCaptured.text.trim()) {
+      return {
+        text: allCaptured.text,
+        backup: allCaptured.backup,
+        method: "clipboard",
+      };
+    }
   }
 
   return null;
@@ -226,20 +289,27 @@ export async function captureActiveInputText(
  * Hybrid Text Injection:
  * 1. Attempts UI Automation SetValue first (0ms, 0 clipboard pollution).
  * 2. If UIA unsupported, restores focus and triggers delayed-rollback Clipboard Paste.
+ * 3. If submitAfter is true, sends native VK_RETURN keystroke after replacing text.
  */
 export async function injectTextToTarget(
   replacementText: string,
   targetHwnd: string,
   backup: string,
-  clipboard: ClipboardLike
+  clipboard: ClipboardLike,
+  submitAfter = false
 ): Promise<"uia" | "clipboard"> {
   const uiaSuccess = setFocusedElementText(replacementText);
   if (uiaSuccess) {
+    if (submitAfter) {
+      restoreFocus(targetHwnd);
+      await new Promise((r) => setTimeout(r, 25));
+      triggerEnter();
+    }
     return "uia";
   }
 
   // Fallback to clipboard transaction
-  await injectReplacementText(replacementText, targetHwnd, backup, clipboard);
+  await injectReplacementText(replacementText, targetHwnd, backup, clipboard, submitAfter);
   return "clipboard";
 }
 
@@ -251,7 +321,8 @@ export async function injectReplacementText(
   replacementText: string,
   targetHwnd: string,
   backup: string,
-  clipboard: ClipboardLike
+  clipboard: ClipboardLike,
+  submitAfter = false
 ): Promise<void> {
   clipboard.writeText(replacementText);
   restoreFocus(targetHwnd);
@@ -260,6 +331,11 @@ export async function injectReplacementText(
   triggerSelectAll();
   await new Promise((r) => setTimeout(r, 20));
   triggerPaste();
+
+  if (submitAfter) {
+    await new Promise((r) => setTimeout(r, 35));
+    triggerEnter();
+  }
 
   setTimeout(() => {
     try {

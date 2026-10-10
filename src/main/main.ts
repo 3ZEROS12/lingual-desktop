@@ -10,6 +10,7 @@ import {
   captureActiveInputText,
   injectTextToTarget,
   triggerPaste,
+  triggerEnter,
   isImeComposing,
 } from "./win32.js";
 import {
@@ -215,41 +216,87 @@ function cycleCompanionMode(): void {
   console.log(`[lingual-desktop] Mode cycled to: ${currentMode}`);
 }
 
-async function handleSubmitInterception(): Promise<void> {
+let isSubmittingSyntheticEnter = false;
+
+function sendNativeEnterSafe(config: LingualDesktopConfig): void {
+  const isEnterHotkey = (config.hotkeySubmit || "").toLowerCase() === "enter";
+  isSubmittingSyntheticEnter = true;
+  if (isEnterHotkey) {
+    try {
+      globalShortcut.unregister("Enter");
+    } catch {}
+  }
+  triggerEnter();
+  setTimeout(() => {
+    isSubmittingSyntheticEnter = false;
+    if (isEnterHotkey) {
+      registerShortcuts(loadDesktopConfig());
+    }
+  }, 80);
+}
+
+async function handleSubmitInterception(allowSelectAll = true, fromEnterKey = false): Promise<void> {
+  if (isSubmittingSyntheticEnter) return;
+
+  const config = loadDesktopConfig();
+
+  // Do not hijack Enter inside our own Settings window (e.g. typing in AI wish input box)
+  if (settingsWindow && !settingsWindow.isDestroyed() && settingsWindow.isFocused()) {
+    if (fromEnterKey) sendNativeEnterSafe(config);
+    return;
+  }
+
   const targetHwnd = getActiveWindowHwnd();
   activeTargetHwnd = targetHwnd;
 
-  if (currentMode === "off") return;
+  if (currentMode === "off") {
+    if (fromEnterKey) sendNativeEnterSafe(config);
+    return;
+  }
 
   // IME Composition Guard:
   // If input method is currently composing text (e.g. typing pinyin or candidate list open),
   // 0ms pass-through immediately, NEVER intercept or interfere!
   if (isImeComposing()) {
+    if (fromEnterKey) sendNativeEnterSafe(config);
     return;
   }
 
-  const captured = await captureActiveInputText(clipboard);
+  const captured = await captureActiveInputText(clipboard, allowSelectAll);
   if (!captured || !captured.text.trim()) {
+    if (fromEnterKey) sendNativeEnterSafe(config);
     return;
   }
 
   activeBackupText = captured.backup;
-  const config = loadDesktopConfig();
 
-  // Check if natural language should trigger translation
-  if (!shouldTriggerTranslation(captured.text, config.sourceLang)) {
+  // Smart Chinese / Native Language Detection:
+  // Even if config.sourceLang was left as "en" or "ja" from an old config (like "Native: EN" in screenshot),
+  // if the user actually typed Chinese characters and targetLang is not Chinese, always trigger translation!
+  const hasChinese = /[\u4e00-\u9fff]/.test(captured.text);
+  const effectiveSourceLang =
+    hasChinese && config.targetLang !== "zh" ? "zh" : config.sourceLang || "zh";
+
+  if (!hasChinese && !shouldTriggerTranslation(captured.text, effectiveSourceLang)) {
+    if (fromEnterKey) sendNativeEnterSafe(config);
     return;
   }
+
+  const effectiveConfig = { ...config, sourceLang: effectiveSourceLang };
 
   const caret = getCaretPosition();
   const cursor = screen.getCursorScreenPoint();
   const pos = caret || cursor;
 
   // Determine active dynamic multi-slot configuration
-  const configuredSlots = config.slots && Array.isArray(config.slots) ? config.slots : getDefaultSlots(config.sourceLang || "zh");
+  const configuredSlots =
+    effectiveConfig.slots && Array.isArray(effectiveConfig.slots)
+      ? effectiveConfig.slots
+      : getDefaultSlots(effectiveSourceLang);
 
   // Mode A: Original Mode (0ms pass-through, HUD explains in background without stealing focus)
   if (currentMode === "original") {
+    if (fromEnterKey) sendNativeEnterSafe(effectiveConfig);
     switchToHudView(pos.x, pos.y, true);
     if (companionWindow) {
       companionWindow.webContents.send("lingual:data", {
@@ -260,7 +307,7 @@ async function handleSubmitInterception(): Promise<void> {
       });
     }
 
-    executeTranslation(captured.text, config, undefined, configuredSlots)
+    executeTranslation(captured.text, effectiveConfig, undefined, configuredSlots)
       .then((res) => {
         currentTranslationResponse = res;
         if (companionWindow && companionWindow.isVisible()) {
@@ -278,18 +325,18 @@ async function handleSubmitInterception(): Promise<void> {
   }
 
   // Mode B: English Mode (Intercept -> Translate -> Replace & Send / Confirm)
-  switchToHudView(pos.x, pos.y, config.autoSend);
+  switchToHudView(pos.x, pos.y, effectiveConfig.autoSend);
   if (companionWindow) {
     companionWindow.webContents.send("lingual:data", {
       loading: true,
       sourceText: captured.text,
-      autoSent: config.autoSend,
+      autoSent: effectiveConfig.autoSend,
       modeLabel: "English",
     });
   }
 
   try {
-    const res = await executeTranslation(captured.text, config, undefined, configuredSlots);
+    const res = await executeTranslation(captured.text, effectiveConfig, undefined, configuredSlots);
     currentTranslationResponse = res;
 
     // OFFLINE CIRCUIT BREAKER:
@@ -310,11 +357,11 @@ async function handleSubmitInterception(): Promise<void> {
 
     const replacement = res.written || res.spoken;
 
-    if (config.autoSend) {
-      // Auto-Send Pipeline:
-      // injectTextToTarget already handles atomic replacement & paste; eliminated double-paste bug!
+    if (effectiveConfig.autoSend) {
+      // Auto-Replace Pipeline:
+      // Directly replace the input draft with translated text in-place (leaving normal Enter to the user!)
       if (replacement) {
-        await injectTextToTarget(replacement, targetHwnd, activeBackupText, clipboard);
+        await injectTextToTarget(replacement, targetHwnd, activeBackupText, clipboard, false);
       }
       if (companionWindow && companionWindow.isVisible()) {
         companionWindow.webContents.send("lingual:data", {
@@ -353,19 +400,17 @@ function registerShortcuts(config: LingualDesktopConfig): void {
     cycleCompanionMode();
   });
 
-  // 2. Submit interceptor shortcut (Ctrl+Enter)
-  const submitKey = config.hotkeySubmit || "Ctrl+Enter";
+  // 2. Translation trigger shortcut (Default: Alt+E — strictly never hijacks Enter or Ctrl+Enter!)
+  const rawKey = config.hotkeySubmit || "Alt+E";
+  const submitKey =
+    rawKey.toLowerCase() === "enter" || rawKey.toLowerCase() === "ctrl+enter"
+      ? "Alt+E"
+      : rawKey;
   globalShortcut.register(submitKey, () => {
-    handleSubmitInterception();
+    handleSubmitInterception(true, false);
   });
 
-  // 3. Selection rewrite shortcut (Alt+E)
-  const rewriteKey = config.hotkeyRewrite || "Alt+E";
-  globalShortcut.register(rewriteKey, () => {
-    handleSubmitInterception();
-  });
-
-  // 4. Spotlight capsule shortcut (Alt+Space)
+  // 3. Spotlight capsule shortcut (Alt+Space)
   const spotlightKey = config.hotkeySpotlight || "Alt+Space";
   globalShortcut.register(spotlightKey, () => {
     switchToSpotlightView();
@@ -389,11 +434,13 @@ function openSettingsWindow(): void {
     : "Lingual Companion Settings";
 
   settingsWindow = new BrowserWindow({
-    width: 520,
-    height: 660,
+    width: 680,
+    height: 720,
+    minWidth: 620,
+    minHeight: 600,
     title: winTitle,
-    resizable: false,
-    minimizable: false,
+    resizable: true,
+    minimizable: true,
     maximizable: false,
     autoHideMenuBar: true,
     show: false,

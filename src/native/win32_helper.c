@@ -30,6 +30,20 @@ static void send_key_combination(WORD modifier_vk, WORD key_vk) {
     SendInput(4, inputs, sizeof(INPUT));
 }
 
+static void send_single_key(WORD key_vk) {
+    INPUT inputs[2];
+    ZeroMemory(inputs, sizeof(inputs));
+
+    inputs[0].type = INPUT_KEYBOARD;
+    inputs[0].ki.wVk = key_vk;
+
+    inputs[1].type = INPUT_KEYBOARD;
+    inputs[1].ki.wVk = key_vk;
+    inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
+
+    SendInput(2, inputs, sizeof(INPUT));
+}
+
 static void restore_focus(HWND target_hwnd) {
     if (!target_hwnd || !IsWindow(target_hwnd)) return;
 
@@ -86,6 +100,18 @@ int main(int argc, char* argv[]) {
 
     if (strcmp(cmd, "select-all") == 0) {
         send_key_combination(VK_CONTROL, 'A');
+        return 0;
+    }
+
+    if (strcmp(cmd, "copy-all") == 0) {
+        send_key_combination(VK_CONTROL, 'A');
+        Sleep(25);
+        send_key_combination(VK_CONTROL, 'C');
+        return 0;
+    }
+
+    if (strcmp(cmd, "send-enter") == 0) {
+        send_single_key(VK_RETURN);
         return 0;
     }
 

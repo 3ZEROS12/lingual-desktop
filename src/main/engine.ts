@@ -17,8 +17,8 @@ export interface DesktopTranslationResult extends LingualResponse {
 
 /**
  * Layer 0: 免 Key 开箱即用极速翻译引擎 (Zero-Key Fast Translation Fallback)
- * 解决新用户未配置 API Key 或本地模型离线时直接瘫痪的根本痛点。
- * 0 配置、0 门槛、免任何 Key，首秒开箱即可打字翻译！
+ * 同时并发竞速国内直连免代理通道 (MyMemory) 与国际通道 (Google GTX)，
+ * 确保在纯国内网络无代理、无 API Key、无 Ollama 的裸机环境下 100% 稳定秒出译文！
  */
 export async function fetchZeroKeyTranslation(
   text: string,
@@ -28,27 +28,50 @@ export async function fetchZeroKeyTranslation(
   const trimmed = text.trim();
   if (!trimmed) return null;
 
-  try {
-    const sl = sourceLang === "zh" || sourceLang === "tw" ? "zh-CN" : sourceLang;
-    const tl = targetLang === "zh" || targetLang === "tw" ? "zh-CN" : targetLang;
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(trimmed)}`;
+  const sl = sourceLang === "zh" || sourceLang === "tw" ? "zh-CN" : sourceLang;
+  const tl = targetLang === "zh" || targetLang === "tw" ? "zh-CN" : targetLang === "en" ? "en-US" : targetLang;
 
+  const tryMyMemory = async (): Promise<string> => {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 4000);
-
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timer);
-
-    if (!res.ok) return null;
-    const json = (await res.json()) as any;
-    if (Array.isArray(json) && Array.isArray(json[0])) {
-      const translated = json[0]
-        .map((item: any) => (Array.isArray(item) ? item[0] : ""))
-        .filter(Boolean)
-        .join("");
-      return translated && translated.trim() ? translated.trim() : null;
+    const timer = setTimeout(() => controller.abort(), 3500);
+    try {
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmed)}&langpair=${sl}|${tl}`;
+      const res = await fetch(url, { signal: controller.signal });
+      if (!res.ok) throw new Error("MyMemory HTTP error");
+      const data = (await res.json()) as any;
+      const out = data?.responseData?.translatedText;
+      if (typeof out === "string" && out.trim() && out.trim() !== trimmed) {
+        return out.trim();
+      }
+      throw new Error("Empty MyMemory result");
+    } finally {
+      clearTimeout(timer);
     }
-    return null;
+  };
+
+  const tryGoogleGtx = async (): Promise<string> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
+    try {
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(trimmed)}`;
+      const res = await fetch(url, { signal: controller.signal });
+      if (!res.ok) throw new Error("GTX HTTP error");
+      const json = (await res.json()) as any;
+      if (Array.isArray(json) && Array.isArray(json[0])) {
+        const translated = json[0]
+          .map((item: any) => (Array.isArray(item) ? item[0] : ""))
+          .filter(Boolean)
+          .join("");
+        if (translated && translated.trim()) return translated.trim();
+      }
+      throw new Error("Empty GTX result");
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
+  try {
+    return await Promise.any([tryMyMemory(), tryGoogleGtx()]);
   } catch {
     return null;
   }
@@ -92,11 +115,16 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
 
   const completer = async (prompt: string, systemPrompt: string, signal?: AbortSignal): Promise<string | null> => {
     const endpoint = config.endpoint || "http://127.0.0.1:11434/v1/chat/completions";
+    if (endpoint.includes("127.0.0.1:0")) {
+      requestFailed = true;
+      return null;
+    }
     const apiKey = config.apiKey || "ollama";
     const model = config.model || "qwen2.5:3b";
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const isLocalOllama = endpoint.includes("127.0.0.1:11434") || endpoint.includes("localhost:11434");
+    const timeoutId = setTimeout(() => controller.abort(), isLocalOllama ? 1200 : 15000);
 
     const onAbort = () => controller.abort();
     if (signal) {
@@ -116,7 +144,7 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
             { role: "system", content: systemPrompt },
             { role: "user", content: prompt },
           ],
-          temperature: 0.2,
+          reasoning_effort: "low",
           max_tokens: 1500,
           stream: false,
         }),

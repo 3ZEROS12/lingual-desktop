@@ -18,7 +18,7 @@ test("config: loadDesktopConfig returns valid configuration object with companio
   assert.equal(cfg.autoSend, true);
   assert.equal(cfg.showCapsule, true);
   assert.equal(cfg.hotkeyToggleMode, "Alt+Q");
-  assert.equal(cfg.hotkeySubmit, "Ctrl+Enter");
+  assert.equal(cfg.hotkeySubmit, "Alt+E");
 });
 
 test("config: saveDesktopConfig writes mode and autoSend to user config and reloads cleanly", () => {
