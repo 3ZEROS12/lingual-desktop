@@ -8,6 +8,9 @@ const __dirname = path.dirname(__filename);
 
 function getHelperPath(helperName: "win32_helper.exe" | "uia_helper.exe" = "win32_helper.exe"): string {
   const candidates = [
+    // 1. Packaged Electron production runtime path (asarUnpack)
+    path.join(process.resourcesPath || "", "app.asar.unpacked/bin", helperName),
+    // 2. Development & test runtime paths
     path.join(__dirname, "../../bin", helperName),
     path.join(__dirname, "../bin", helperName),
     path.join(process.cwd(), "bin", helperName),

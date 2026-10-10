@@ -510,6 +510,16 @@ const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
 } else {
+  app.on("second-instance", () => {
+    // If user double-clicks Lingual.exe while already running, wake the companion
+    if (tray) {
+      tray.displayBalloon({
+        title: "Lingual 语言伴侣已在运行",
+        content: "常驻于系统托盘。快捷键：Alt+Q 切换模式，Ctrl+Enter 翻译并发送，Alt+Space 灵感盒。",
+      });
+    }
+  });
+
   app.whenReady().then(() => {
     const config = loadDesktopConfig();
     currentMode = config.mode || "english";
@@ -519,6 +529,24 @@ if (!gotTheLock) {
     setupTray();
     setupIpc();
     startCaretTracking();
+
+    // Enable Windows autostart on boot (silent mode)
+    try {
+      app.setLoginItemSettings({
+        openAtLogin: true,
+        args: ["--hidden"],
+      });
+    } catch {
+      // Ignore login item setting errors on non-packaged runs
+    }
+
+    const isSilent = process.argv.includes("--hidden");
+    if (!isSilent && tray) {
+      tray.displayBalloon({
+        title: "Lingual 伴侣已启动",
+        content: "模式：[" + currentMode.toUpperCase() + "]。快捷键：Alt+Q 切模式，Ctrl+Enter 发送并翻译。",
+      });
+    }
 
     console.log(`[lingual-desktop] Initialized ambient companion in [${currentMode}] mode.`);
   });

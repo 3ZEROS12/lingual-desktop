@@ -9,7 +9,50 @@
     "build:main": "tsup src/main/main.ts src/main/preload.ts --out-dir dist/main --format esm --external electron",
     "build": "npm run build:native && npm run build:main",
     "start": "electron .",
+    "dist": "npm run build && electron-builder --win",
+    "dist:dir": "npm run build && electron-builder --win --dir",
+    "dist:portable": "npm run build && electron-builder --win portable",
     "test": "npx tsx --test --test-concurrency=1 tests/**/*.test.ts"
+  },
+  "build": {
+    "appId": "dev.lingual.desktop",
+    "productName": "Lingual",
+    "copyright": "Copyright © 2026 Jason Song",
+    "asarUnpack": [
+      "bin/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "src/renderer/**/*",
+      "bin/win32_helper.exe",
+      "bin/uia_helper.exe",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   },
   "dependencies": {
     "pi-lingual": "file:../pi-lingua"
@@ -17,6 +60,7 @@
   "devDependencies": {
     "@types/node": "^26.6.2",
     "electron": "^41.2.0",
+    "electron-builder": "^26.15.3",
     "tsup": "^8.5.1",
     "tsx": "^4.23.15",
     "typescript": "^5.8.2"
