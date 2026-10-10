@@ -6,174 +6,282 @@
   <link rel="stylesheet" href="settings.css">
 </head>
 <body>
-  <div class="settings-window">
-    <!-- Gabriel-style Header -->
-    <header class="header">
-      <div class="brand">
-        <div class="brand-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <div class="app-shell">
+    <!-- Top Navigation Bar (Antigravity Tools & Gabriel Clean Header) -->
+    <header class="navbar">
+      <!-- Left: Brand Logo -->
+      <div class="nav-brand">
+        <div class="brand-spark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#533afd"/>
           </svg>
         </div>
-        <div>
-          <h1 class="brand-title">Lingual 伴侣设置</h1>
-          <p class="brand-subtitle">Gabriel Design v4 · 随身外挂语言伴侣控制中心</p>
-        </div>
+        <span class="brand-name">Lingual</span>
       </div>
-      <button id="btn-window-close" class="btn-icon" title="关闭">✕</button>
+
+      <!-- Center: Pill Navigation Tabs -->
+      <nav class="nav-tabs">
+        <button class="nav-pill active" data-tab="tab-flow">伴写心流</button>
+        <button class="nav-pill" data-tab="tab-slots">语域槽位</button>
+        <button class="nav-pill" data-tab="tab-model">模型引擎</button>
+      </nav>
+
+      <!-- Right: Actions (Language Pill Switcher & Window Close) -->
+      <div class="nav-actions">
+        <!-- 2-Column Language Dropdown (Antigravity Tools Exact Spec) -->
+        <div class="lang-dropdown-wrapper">
+          <button id="btn-lang-trigger" class="btn-lang-pill" title="切换语言 / Switch Language">
+            <span id="lang-current-short" class="lang-current-short">ZH</span>
+          </button>
+          
+          <!-- Floating 2-Column Monospace Language Popover -->
+          <div id="lang-popover" class="lang-popover hidden">
+            <!-- 12-Language Golden Matrix -->
+            <button class="lang-option active" data-lang="zh" data-short="ZH">
+              <span class="opt-code">ZH</span>
+              <span class="opt-name">简体中文</span>
+              <span class="opt-dot">•</span>
+            </button>
+            <button class="lang-option" data-lang="zh-TW" data-short="TW">
+              <span class="opt-code">TW</span>
+              <span class="opt-name">繁體中文</span>
+              <span class="opt-dot"></span>
+            </button>
+            <button class="lang-option" data-lang="en" data-short="EN">
+              <span class="opt-code">EN</span>
+              <span class="opt-name">English</span>
+              <span class="opt-dot"></span>
+            </button>
+            <button class="lang-option" data-lang="ja" data-short="JA">
+              <span class="opt-code">JA</span>
+              <span class="opt-name">日本語</span>
+              <span class="opt-dot"></span>
+            </button>
+            <button class="lang-option" data-lang="tr" data-short="TR">
+              <span class="opt-code">TR</span>
+              <span class="opt-name">Türkçe</span>
+              <span class="opt-dot"></span>
+            </button>
+            <button class="lang-option" data-lang="vi" data-short="VI">
+              <span class="opt-code">VI</span>
+              <span class="opt-name">Tiếng Việt</span>
+              <span class="opt-dot"></span>
+            </button>
+            <button class="lang-option" data-lang="pt" data-short="PT">
+              <span class="opt-code">PT</span>
+              <span class="opt-name">Português</span>
+              <span class="opt-dot"></span>
+            </button>
+            <button class="lang-option" data-lang="ko" data-short="KO">
+              <span class="opt-code">KO</span>
+              <span class="opt-name">한국어</span>
+              <span class="opt-dot"></span>
+            </button>
+            <button class="lang-option" data-lang="ru" data-short="RU">
+              <span class="opt-code">RU</span>
+              <span class="opt-name">Русский</span>
+              <span class="opt-dot"></span>
+            </button>
+            <button class="lang-option" data-lang="ar" data-short="AR">
+              <span class="opt-code">AR</span>
+              <span class="opt-name">العربية</span>
+              <span class="opt-dot"></span>
+            </button>
+            <button class="lang-option" data-lang="es" data-short="ES">
+              <span class="opt-code">ES</span>
+              <span class="opt-name">Español</span>
+              <span class="opt-dot"></span>
+            </button>
+            <button class="lang-option" data-lang="my" data-short="MY">
+              <span class="opt-code">MY</span>
+              <span class="opt-name">Bahasa Melayu</span>
+              <span class="opt-dot"></span>
+            </button>
+          </div>
+        </div>
+
+        <button id="btn-window-close" class="btn-close-pill" title="关闭窗口">✕</button>
+      </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="content">
-      <!-- 1. Model Provider Section -->
-      <section class="card">
-        <h2 class="section-title">大模型推理服务商</h2>
-        <div class="field">
-          <label for="select-preset">快速预设</label>
-          <select id="select-preset" class="select-input">
-            <option value="deepseek">DeepSeek 官方 (性价比之王)</option>
-            <option value="siliconflow">SiliconFlow 硅基流动 (国内极速)</option>
-            <option value="groq">Groq 极速云 (超低延迟 500 T/s)</option>
-            <option value="openai">OpenAI 官方 (GPT-4o mini)</option>
-            <option value="ollama">本地 Ollama (0费用 · 离线私有)</option>
-            <option value="custom">自定义服务商 (OpenAI 兼容)</option>
-          </select>
-        </div>
+    <!-- Main Content Tabs Container -->
+    <main class="main-body">
+      <!-- TAB 1: 伴写心流 (Flow & Triggers) -->
+      <section id="tab-flow" class="tab-pane active">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">触发与发送按键</h2>
+            <p class="card-desc">配置在输入框中打字完成后，哪种操作触发自动拦截与双轨转换。</p>
+          </div>
 
-        <div class="field">
-          <label for="input-endpoint">API 端点 URL</label>
-          <input type="text" id="input-endpoint" class="text-input" placeholder="https://api.deepseek.com/v1" />
-        </div>
-
-        <div class="field">
-          <label for="input-apikey">API 密钥 (API Key)</label>
-          <div class="input-with-button">
-            <input type="password" id="input-apikey" class="text-input" placeholder="sk-..." />
-            <button type="button" id="btn-toggle-key" class="btn-small">显示</button>
+          <div class="segmented-control" id="trigger-segmented">
+            <button class="seg-btn active" data-val="Ctrl+Enter">
+              <span class="seg-title">Ctrl + Enter</span>
+              <span class="seg-sub">默认推荐 · 多行/发帖通用</span>
+            </button>
+            <button class="seg-btn" data-val="Enter">
+              <span class="seg-title">Enter</span>
+              <span class="seg-sub">单回车 · 微信/Slack直接发</span>
+            </button>
+            <button class="seg-btn" data-val="Alt+E">
+              <span class="seg-title">Alt + E</span>
+              <span class="seg-sub">显式快捷键 · 仅对选中文字</span>
+            </button>
           </div>
         </div>
 
-        <div class="field">
-          <label for="input-model">模型代号 (Model ID)</label>
-          <input type="text" id="input-model" class="text-input" placeholder="deepseek-chat" />
-        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">伴写行为策略</h2>
+            <p class="card-desc">控制译文上屏后的自动化程度与容错保护。</p>
+          </div>
 
-        <div class="test-row">
-          <button type="button" id="btn-test-connection" class="btn-outline">
-            <span class="icon-spark">⚡</span> 测试连接并测速
-          </button>
-          <div id="test-status" class="test-status hidden">
-            <span class="status-dot"></span>
-            <span id="test-status-text">就绪</span>
+          <div class="switch-row">
+            <div class="switch-info">
+              <div class="switch-title">自动发送 (Auto-Send)</div>
+              <div class="switch-desc">转换完成后直接自动提交；关闭则先在光标旁展开 HUD 选 [1] 或 [2] 确认。</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="check-auto-send" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="switch-row">
+            <div class="switch-info">
+              <div class="switch-title">3 秒物理撤销缓冲区 (Recall Buffer)</div>
+              <div class="switch-desc">自动发送后的 3 秒倒计时内按下 Esc 键，瞬间撤回并恢复原中文草稿。</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="check-recall-buffer" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="switch-row">
+            <div class="switch-info">
+              <div class="switch-title">开机静默启动 (Silent Startup)</div>
+              <div class="switch-desc">系统启动时自动最小化常驻托盘，不弹窗打扰日常操作。</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="check-autostart" checked />
+              <span class="slider"></span>
+            </label>
           </div>
         </div>
       </section>
 
-      <!-- 2. Dual-Register Slot Customization & Arranger -->
-      <section class="card">
-        <h2 class="section-title">全动态槽位架构编排 (Slot Arranger)</h2>
-        <div class="field">
-          <label for="select-slot-preset">预设语域方案</label>
-          <select id="select-slot-preset" class="select-input">
-            <option value="developer">💻 开发者协同 (默认 4 槽 · 原文 + 硅谷口语 + RFC规范 + 重点)</option>
-            <option value="social">🐦 出海推特运营 (针对X推广 4 槽 · 原文 + 爆款Hook + 深度干货 + 重点)</option>
-            <option value="japanese">🌸 日语双轨伴学 (4 槽 · 原文 + 日常口语 + 商务敬语 + 重点)</option>
-            <option value="academic">🎓 学术科研论文 (4 槽 · 原文 + 研讨口语 + 顶级期刊 + 重点)</option>
-            <option value="compact2">⚡ 超紧凑极速 (2 槽 · 原文 + 译文)</option>
-            <option value="custom">🛠️ 自定义槽位编排</option>
-          </select>
-          <span class="field-hint">将所有输出统一抽象为动态槽位：随意开关、随意增减、随心调整语域风格。</span>
-        </div>
-
-        <div id="slot-list-container" class="slot-list">
-          <div class="slot-item">
-            <label class="slot-checkbox-label">
-              <input type="checkbox" id="check-slot-source" checked disabled />
-              <span class="slot-title">槽位 0: 原文 [Original] (固定)</span>
-            </label>
-            <input type="text" id="input-slot-source-label" class="slot-label-input" value="原文" disabled />
+      <!-- TAB 2: 语域槽位 (Slot Arranger) -->
+      <section id="tab-slots" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">全动态槽位架构 (Dual-Slot Architecture)</h2>
+            <p class="card-desc">所有输出全部抽象为独立槽位，针对你的工作场景随意增减与改名。</p>
           </div>
 
-          <div class="slot-item">
-            <label class="slot-checkbox-label">
-              <input type="checkbox" id="check-slot-1" checked />
-              <span class="slot-title">槽位 1 (轻快 / 社交):</span>
-            </label>
-            <input type="text" id="input-slot-1-label" class="slot-label-input" value="口语" placeholder="标签名 (如: Hook)" />
+          <div class="preset-chips" id="slot-preset-chips">
+            <button class="chip active" data-preset="developer">💻 开发者协同</button>
+            <button class="chip" data-preset="social">🐦 出海推特运营</button>
+            <button class="chip" data-preset="japanese">🌸 日语双轨伴学</button>
+            <button class="chip" data-preset="academic">🎓 学术论文规范</button>
+            <button class="chip" data-preset="compact2">⚡ 双槽位极速</button>
           </div>
 
-          <div class="slot-item">
-            <label class="slot-checkbox-label">
-              <input type="checkbox" id="check-slot-2" checked />
-              <span class="slot-title">槽位 2 (正式 / 严谨):</span>
-            </label>
-            <input type="text" id="input-slot-2-label" class="slot-label-input" value="写作" placeholder="标签名 (如: Deep)" />
-          </div>
+          <div class="slot-table">
+            <div class="slot-row fixed-row">
+              <div class="slot-left">
+                <span class="slot-idx">#0</span>
+                <span class="slot-name">原文 (Source)</span>
+                <span class="badge-fixed">固定</span>
+              </div>
+              <input type="text" id="slot-0-label" class="slot-mini-input" value="原文" disabled />
+            </div>
 
-          <div class="slot-item">
-            <label class="slot-checkbox-label">
-              <input type="checkbox" id="check-slot-vocab" checked />
-              <span class="slot-title">槽位 3 (高光词汇流):</span>
-            </label>
-            <input type="text" id="input-slot-vocab-label" class="slot-label-input" value="重点" placeholder="标签名 (如: 重点)" />
+            <div class="slot-row">
+              <div class="slot-left">
+                <input type="checkbox" id="check-slot-1" checked class="slot-checkbox" />
+                <span class="slot-idx">#1</span>
+                <span class="slot-name">轻快 / 社交语域</span>
+              </div>
+              <input type="text" id="slot-1-label" class="slot-mini-input" value="口语" placeholder="标签" />
+            </div>
+
+            <div class="slot-row">
+              <div class="slot-left">
+                <input type="checkbox" id="check-slot-2" checked class="slot-checkbox" />
+                <span class="slot-idx">#2</span>
+                <span class="slot-name">正式 / 严谨语域</span>
+              </div>
+              <input type="text" id="slot-2-label" class="slot-mini-input" value="写作" placeholder="标签" />
+            </div>
+
+            <div class="slot-row">
+              <div class="slot-left">
+                <input type="checkbox" id="check-slot-vocab" checked class="slot-checkbox" />
+                <span class="slot-idx">#3</span>
+                <span class="slot-name">重点短语与词汇流</span>
+              </div>
+              <input type="text" id="slot-vocab-label" class="slot-mini-input" value="重点" placeholder="标签" />
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- 3. Interaction & Trigger Flow -->
-      <section class="card">
-        <h2 class="section-title">按键习惯与伴写心流</h2>
-        <div class="field">
-          <label for="select-trigger">推荐触发动作</label>
-          <select id="select-trigger" class="select-input">
-            <option value="Ctrl+Enter">Ctrl + Enter (默认推荐 · 兼容多行)</option>
-            <option value="Enter">Enter (直接发送 · 针对微信/Slack)</option>
-            <option value="Alt+E">Alt + E (划选重写模式)</option>
-          </select>
-          <span class="field-hint">打中文时，光标旁微胶囊常驻浮动，敲击触发键立即自动转换并发出。</span>
-        </div>
-
-        <div class="toggle-row">
-          <div>
-            <div class="toggle-label">自动发送 (Auto-Send)</div>
-            <div class="toggle-desc">翻译完成后直接替我发出；关闭则先弹窗选 [1] 口语或 [2] 书面确认。</div>
+      <!-- TAB 3: 模型引擎 (Model & Endpoints) -->
+      <section id="tab-model" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">大模型推理服务商</h2>
+            <p class="card-desc">支持极速云端 API 与本地私有 Ollama，单次生成延迟通常仅 150ms ~ 300ms。</p>
           </div>
-          <label class="switch">
-            <input type="checkbox" id="check-auto-send" checked />
-            <span class="slider"></span>
-          </label>
-        </div>
 
-        <div class="toggle-row">
-          <div>
-            <div class="toggle-label">3 秒物理撤销缓冲区 (Recall Buffer)</div>
-            <div class="toggle-desc">自动发送后的 3 秒倒计时内，按下 Esc 键瞬间撤回并恢复原中文草稿。</div>
+          <div class="preset-chips" id="model-preset-chips">
+            <button class="chip active" data-preset="deepseek">DeepSeek 官方</button>
+            <button class="chip" data-preset="siliconflow">SiliconFlow 硅基流动</button>
+            <button class="chip" data-preset="groq">Groq 极速云 (500 T/s)</button>
+            <button class="chip" data-preset="openai">OpenAI (GPT-4o mini)</button>
+            <button class="chip" data-preset="ollama">本地 Ollama (0费用)</button>
           </div>
-          <label class="switch">
-            <input type="checkbox" id="check-recall-buffer" checked />
-            <span class="slider"></span>
-          </label>
-        </div>
 
-        <div class="toggle-row">
-          <div>
-            <div class="toggle-label">开机静默启动 (Silent Startup)</div>
-            <div class="toggle-desc">Windows 启动时自动最小化常驻系统托盘，不弹窗打扰工作。</div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label>API 端点 URL</label>
+              <input type="text" id="input-endpoint" class="input-text" placeholder="https://api.deepseek.com/v1" />
+            </div>
+
+            <div class="form-field">
+              <label>API 密钥 (API Key)</label>
+              <div class="input-password-group">
+                <input type="password" id="input-apikey" class="input-text" placeholder="sk-..." />
+                <button type="button" id="btn-toggle-key" class="btn-subtle">显示</button>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>模型名称 (Model ID)</label>
+              <input type="text" id="input-model" class="input-text" placeholder="deepseek-chat" />
+            </div>
           </div>
-          <label class="switch">
-            <input type="checkbox" id="check-autostart" checked />
-            <span class="slider"></span>
-          </label>
+
+          <div class="test-probe-row">
+            <button type="button" id="btn-test-connection" class="btn-probe">
+              <span class="probe-bolt">⚡</span> 测试连接并测速
+            </button>
+            <div id="test-status" class="probe-result hidden">
+              <span class="probe-dot"></span>
+              <span id="test-status-text">就绪</span>
+            </div>
+          </div>
         </div>
       </section>
     </main>
 
-    <!-- Footer Actions -->
-    <footer class="footer">
-      <div class="footer-status" id="save-status"></div>
-      <div class="footer-buttons">
-        <button id="btn-cancel" class="btn-outline">取消</button>
-        <button id="btn-save" class="btn-primary">保存并即刻生效</button>
+    <!-- Bottom Footer Actions -->
+    <footer class="bottom-bar">
+      <div id="save-status" class="save-status"></div>
+      <div class="footer-actions">
+        <button id="btn-cancel" class="btn-secondary">取消</button>
+        <button id="btn-save" class="btn-primary">保存配置并即刻生效</button>
       </div>
     </footer>
   </div>
