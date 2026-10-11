@@ -25,10 +25,12 @@
       mode_orig_sub: "Press Enter ➔ Submits original immediately + shows card",
       mode_off_title: "Off",
       mode_off_sub: "Inactive; no translation or popup",
-      sec_slang_title: "Source Language",
+      sec_slang_title: "Source:",
       sec_slang_desc: "The primary language you type in:",
-      sec_tlang_title: "Target Language",
+      sec_tlang_title: "Target:",
       sec_tlang_desc: "The target language to translate into:",
+      sec_lang_pair_title: "Language Pair",
+      sec_lang_pair_desc: "Source language you type in ➔ Target language to translate into:",
       sec_widget_title: "Top Floating Island",
       sec_widget_desc: "A minimal status island anchored at the top edge of your screen:",
       tog_widget_title: "Show Top Floating Island (⇄ EN)",
@@ -74,8 +76,8 @@
       footer_hint: "Changes save automatically",
       footer_saved: "Saved · Active immediately",
       btn_logs: "View Logs",
-      btn_close: "Close",
-      btn_done: "Done",
+      btn_close: "Cancel",
+      btn_done: "Save",
       meta_orig: "Original input",
       meta_key: "Key {n}",
       meta_vocab: "Key terms",
@@ -93,10 +95,12 @@
       mode_orig_sub: "按回车 ➔ 原文直接发出 + 后台展开对照卡片",
       mode_off_title: "关闭 (Off)",
       mode_off_sub: "静默待机，不触发任何翻译或弹窗",
-      sec_slang_title: "源语言 (Source)",
+      sec_slang_title: "源语言:",
       sec_slang_desc: "你日常打字输入的母语：",
-      sec_tlang_title: "目标语言 (Target)",
+      sec_tlang_title: "目标语言:",
       sec_tlang_desc: "希望转换成的目标外语：",
+      sec_lang_pair_title: "语言对设置",
+      sec_lang_pair_desc: "输入母语 ➔ 目标外语：",
       sec_widget_title: "屏幕顶端悬浮岛",
       sec_widget_desc: "常驻屏幕最顶部中央的极简状态胶囊，实时显示模式状态并支持拖拽位置：",
       tog_widget_title: "显示屏幕顶端悬浮岛 (⇄ EN)",
@@ -142,8 +146,8 @@
       footer_hint: "所有改动自动保存并即时生效",
       footer_saved: "已保存 · 即时生效",
       btn_logs: "查看日志",
-      btn_close: "关闭",
-      btn_done: "完成",
+      btn_close: "取消",
+      btn_done: "确定",
       meta_orig: "输入原文",
       meta_key: "按 {n} 选择",
       meta_vocab: "重点短语",
@@ -161,10 +165,12 @@
       mode_orig_sub: "按 Enter ➔ 原文直接發出 + 後台展開對照卡片",
       mode_off_title: "關閉 (Off)",
       mode_off_sub: "靜默待機，不觸發任何翻譯或彈窗",
-      sec_slang_title: "源語言 (Source)",
+      sec_slang_title: "源語言:",
       sec_slang_desc: "你日常打字輸入的母語：",
-      sec_tlang_title: "目標語言 (Target)",
+      sec_tlang_title: "目標語言:",
       sec_tlang_desc: "希望轉換成的目標外語：",
+      sec_lang_pair_title: "語言對設置",
+      sec_lang_pair_desc: "輸入母語 ➔ 目標外語：",
       sec_widget_title: "螢幕頂端懸浮島",
       sec_widget_desc: "常駐螢幕頂部的極簡狀態膠囊，即時顯示模式狀態並支援拖拽位置：",
       tog_widget_title: "顯示螢幕頂端懸浮島 (⇄ EN)",
@@ -210,8 +216,8 @@
       footer_hint: "所有改動自動保存並即時生效",
       footer_saved: "已保存 · 即時生效",
       btn_logs: "查看日誌",
-      btn_close: "關閉",
-      btn_done: "完成",
+      btn_close: "取消",
+      btn_done: "確定",
       meta_orig: "輸入原文",
       meta_key: "按 {n} 選擇",
       meta_vocab: "重點短語",
@@ -229,10 +235,12 @@
       mode_orig_sub: "Enter ➔ 原文をそのまま即送信＋カード表示",
       mode_off_title: "オフ (Off)",
       mode_off_sub: "待機状態（翻訳・ポップアップなし）",
-      sec_slang_title: "ソース言語 (Source)",
+      sec_slang_title: "入力言語:",
       sec_slang_desc: "普段入力する言語：",
-      sec_tlang_title: "ターゲット言語 (Target)",
+      sec_tlang_title: "翻訳先言語:",
       sec_tlang_desc: "翻訳先の言語：",
+      sec_lang_pair_title: "言語ペア設定",
+      sec_lang_pair_desc: "入力言語 ➔ 翻訳先言語：",
       sec_widget_title: "画面上部フローティングアイランド",
       sec_widget_desc: "画面上部に常駐するミニマルなカプセルで、動作状態を一目で確認：",
       tog_widget_title: "画面上部フローティングアイランドを表示 (⇄ EN)",
@@ -278,15 +286,15 @@
       footer_hint: "変更は自動的に保存・反映されます",
       footer_saved: "保存済み · 即時反映",
       btn_logs: "ログを表示",
-      btn_close: "閉じる",
-      btn_done: "完了",
+      btn_close: "キャンセル",
+      btn_done: "確定",
       meta_orig: "入力原文",
       meta_key: "{n} キーで選択",
       meta_vocab: "重要語彙",
     },
   };
 
-  let activeUiLang = "en";
+  let activeUiLang = "zh";
   let activeSourceLang = "zh";
   let activeTargetLang = "en";
   let activeCompanionMode = "english";
@@ -1036,7 +1044,7 @@
       const cfg = await window.lingualSettingsAPI?.getConfig();
       if (!cfg) {
         currentSlots = getDefaultSlotsList();
-        setUiLangState("en");
+        setUiLangState("zh");
         setSourceLangState("zh");
         setTargetLangState("en");
         setEngineModeUI("pi");
@@ -1055,7 +1063,7 @@
       }
 
       currentSlots = Array.isArray(cfg.slots) && cfg.slots.length > 0 ? cfg.slots : getDefaultSlotsList();
-      setUiLangState(cfg.uiLang || "en");
+      setUiLangState(cfg.uiLang || "zh");
       syncSimpleTogglesFromSlots();
       renderLiveHudPreview();
       renderSlotCards();

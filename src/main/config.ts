@@ -29,7 +29,7 @@ export interface LingualDesktopConfig {
 }
 
 export const DEFAULT_DESKTOP_CONFIG: LingualDesktopConfig = {
-  uiLang: "en",
+  uiLang: "zh",
   engineProvider: "pi",
   endpoint: "",
   apiKey: "",

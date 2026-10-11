@@ -57,70 +57,68 @@
         <div class="card">
           <div class="card-header">
             <h2 class="card-title" data-i18n="sec_mode_title">Operating Mode</h2>
-            <p class="card-desc" data-i18n="sec_mode_desc">Just press Enter in any input box. Lingual automatically detects natural language and dispatches to the active engine (commands, code, terminals, and Ctrl+Enter / Shift+Enter newlines pass through untouched). Cycle anytime with Alt + Q:</p>
+            <p class="card-desc" data-i18n="sec_mode_desc">Passively detects input drafts without occupying or blocking any keyboard shortcuts.</p>
           </div>
 
           <div class="segmented-control" id="companion-mode-segmented">
             <button type="button" class="seg-btn active" data-mode="english">
               <span class="seg-title" data-i18n="mode_en_title">Translate</span>
-              <span class="seg-sub" data-i18n="mode_en_sub">Press Enter ➔ Translates, replaces & submits + shows card</span>
+              <span class="seg-sub" data-i18n="mode_en_sub">Translate & show comparison card</span>
             </button>
             <button type="button" class="seg-btn" data-mode="original">
               <span class="seg-title" data-i18n="mode_orig_title">Learn</span>
-              <span class="seg-sub" data-i18n="mode_orig_sub">Press Enter ➔ Submits original immediately + shows card</span>
+              <span class="seg-sub" data-i18n="mode_orig_sub">Keep original & show card</span>
             </button>
             <button type="button" class="seg-btn" data-mode="off">
               <span class="seg-title" data-i18n="mode_off_title">Off</span>
-              <span class="seg-sub" data-i18n="mode_off_sub">Inactive; no translation or popup</span>
+              <span class="seg-sub" data-i18n="mode_off_sub">Mute companion</span>
             </button>
           </div>
         </div>
 
-        <!-- 2. Source Language -->
+        <!-- 2. Language Pair Settings -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title" data-i18n="sec_slang_title">Source Language</h2>
-            <p class="card-desc" data-i18n="sec_slang_desc">The primary language you type in:</p>
+            <h2 class="card-title" data-i18n="sec_lang_pair_title">Language Pair</h2>
+            <p class="card-desc" data-i18n="sec_lang_pair_desc">Source language you type in ➔ Target language to translate into:</p>
           </div>
-          <div class="chip-row" id="source-lang-chips">
-            <button type="button" class="chip active" data-slang="zh">ZH</button>
-            <button type="button" class="chip" data-slang="en">EN</button>
-            <button type="button" class="chip" data-slang="ja">JA</button>
-            <button type="button" class="chip" data-slang="es">ES</button>
-            <button type="button" class="chip" data-slang="de">DE</button>
-            <button type="button" class="chip" data-slang="fr">FR</button>
-            <button type="button" class="chip" data-slang="ko">KO</button>
+          
+          <div class="lang-pair-block">
+            <div class="lang-sub-row">
+              <span class="lang-sub-lbl" data-i18n="sec_slang_title">Source:</span>
+              <div class="chip-row" id="source-lang-chips">
+                <button type="button" class="chip active" data-slang="zh">ZH</button>
+                <button type="button" class="chip" data-slang="en">EN</button>
+                <button type="button" class="chip" data-slang="ja">JA</button>
+                <button type="button" class="chip" data-slang="es">ES</button>
+                <button type="button" class="chip" data-slang="de">DE</button>
+                <button type="button" class="chip" data-slang="fr">FR</button>
+                <button type="button" class="chip" data-slang="ko">KO</button>
+              </div>
+            </div>
+
+            <div class="lang-sub-row">
+              <span class="lang-sub-lbl" data-i18n="sec_tlang_title">Target:</span>
+              <div class="chip-row" id="target-lang-chips">
+                <button type="button" class="chip active" data-tlang="en">EN</button>
+                <button type="button" class="chip" data-tlang="ja">JA</button>
+                <button type="button" class="chip" data-tlang="zh">ZH</button>
+                <button type="button" class="chip" data-tlang="es">ES</button>
+                <button type="button" class="chip" data-tlang="de">DE</button>
+                <button type="button" class="chip" data-tlang="fr">FR</button>
+                <button type="button" class="chip" data-tlang="ko">KO</button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- 3. Target Language -->
+        <!-- 3. Top Floating Island -->
         <div class="card">
-          <div class="card-header">
-            <h2 class="card-title" data-i18n="sec_tlang_title">Target Language</h2>
-            <p class="card-desc" data-i18n="sec_tlang_desc">The target language to translate into:</p>
-          </div>
-          <div class="chip-row" id="target-lang-chips">
-            <button type="button" class="chip active" data-tlang="en">EN</button>
-            <button type="button" class="chip" data-tlang="ja">JA</button>
-            <button type="button" class="chip" data-tlang="zh">ZH</button>
-            <button type="button" class="chip" data-tlang="es">ES</button>
-            <button type="button" class="chip" data-tlang="de">DE</button>
-            <button type="button" class="chip" data-tlang="fr">FR</button>
-            <button type="button" class="chip" data-tlang="ko">KO</button>
-          </div>
-        </div>
-
-        <!-- 4. Floating Desktop Widget (Doubao-Style Corner Pebble) -->
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title" data-i18n="sec_widget_title">Floating Desktop Widget</h2>
-            <p class="card-desc" data-i18n="sec_widget_desc">A compact draggable pebble at the screen corner showing active mode at a glance:</p>
-          </div>
           <label class="toggle-item">
             <input type="checkbox" id="check-show-capsule" checked />
             <div class="toggle-text">
-              <strong data-i18n="tog_widget_title">Show Corner Floating Pebble (⇄ EN)</strong>
-              <span data-i18n="tog_widget_desc">Always shows whether Lingual is running. Click to cycle mode; drag to move anywhere.</span>
+              <strong data-i18n="tog_widget_title">Show Top Floating Island (⇄ EN)</strong>
+              <span data-i18n="tog_widget_desc">Anchored at screen top edge. Click to cycle mode; drag to move anywhere.</span>
             </div>
           </label>
         </div>

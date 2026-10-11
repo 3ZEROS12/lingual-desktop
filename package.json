@@ -1,6 +1,6 @@
 {
   "name": "lingual-desktop",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "description": "Universal Windows dual-register writing companion & in-situ language bridge",
   "main": "dist/main/main.js",
   "type": "module",
@@ -36,11 +36,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.ico"
@@ -55,7 +59,7 @@
     }
   },
   "dependencies": {
-    "pi-lingual": "file:../pi-lingua"
+    "pi-lingual": "file:../pi-lingual"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",

@@ -406,11 +406,12 @@ function openSettingsWindow(): void {
   }
 
   settingsWindow = new BrowserWindow({
-    width: 680,
-    height: 700,
-    minWidth: 620,
-    minHeight: 580,
+    width: 640,
+    height: 620,
+    minWidth: 580,
+    minHeight: 520,
     title: "Lingual Settings",
+    center: true,
     resizable: true,
     minimizable: true,
     maximizable: false,
