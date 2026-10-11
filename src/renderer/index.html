@@ -2,26 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Lingual Desktop Companion</title>
+  <title>Lingual HUD</title>
   <link rel="stylesheet" href="hud.css">
 </head>
 <body>
-  <!-- 1. Ambient Micro-Capsule View (shown when typing normally) -->
-  <div id="view-capsule" class="view-capsule">
-    <div id="capsule-pill" class="capsule-pill" title="Click or Alt+Q to toggle mode">
-      <span class="capsule-totem">⇄</span>
-      <span id="capsule-mode-label" class="capsule-label">EN</span>
-    </div>
-  </div>
-
-  <!-- 2. Left-Rail HUD View (expands when translation triggers) -->
-  <div id="view-hud" class="view-hud hidden">
+  <!-- In-Situ Roof-Docked HUD Card (Appears directly above the active text input box) -->
+  <div id="view-hud" class="view-hud">
     <div id="hud-container" class="hud-container">
       <!-- Header bar with totem and mode info -->
       <div class="hud-header">
         <div class="totem"><span class="totem-icon">⇄</span> [zh ⇄ en]</div>
         <div class="header-badges">
-          <span id="badge-mode" class="badge">English</span>
+          <span id="badge-mode" class="badge">Translating</span>
           <button id="btn-close" class="btn-close" title="Dismiss (Esc)">✕</button>
         </div>
       </div>
@@ -42,26 +34,26 @@
         <!-- Source anchor -->
         <div class="branch-row branch-source">
           <span class="tree-bullet">·</span>
-          <span class="tag tag-source">[Original]</span>
+          <span class="tag tag-source">[Source]</span>
           <span id="text-source" class="branch-text"></span>
         </div>
 
-        <!-- Slot 1: Spoken / Hook / Custom 1 -->
+        <!-- Slot 1: Spoken / Casual -->
         <div id="slot1-row" class="branch-row branch-slot branch-spoken interactive-slot" data-slot="1">
           <div class="key-badge">1</div>
           <span class="tree-glyph">┌</span>
-          <span id="tag-slot1" class="tag tag-spoken">[Spoken]</span>
+          <span id="tag-slot1" class="tag tag-spoken">[Casual]</span>
           <div class="text-group">
             <div id="text-spoken" class="branch-text main-text"></div>
             <div id="meaning-spoken" class="sub-nuance"></div>
           </div>
         </div>
 
-        <!-- Slot 2: Written / Tech / Custom 2 -->
+        <!-- Slot 2: Written / Formal -->
         <div id="slot2-row" class="branch-row branch-slot branch-written interactive-slot" data-slot="2">
           <div class="key-badge">2</div>
           <span class="tree-glyph">├</span>
-          <span id="tag-slot2" class="tag tag-written">[Written]</span>
+          <span id="tag-slot2" class="tag tag-written">[Formal]</span>
           <div class="text-group">
             <div id="text-written" class="branch-text main-text"></div>
             <div id="meaning-written" class="sub-nuance"></div>
@@ -84,9 +76,9 @@
           <span class="auto-timer">Auto-closing in <span id="countdown-num">3</span>s</span>
         </div>
         <div id="footer-confirm-hint" class="footer-hint hidden">
-          <span class="hint-item"><kbd>1</kbd> Spoken</span>
+          <span class="hint-item"><kbd>1</kbd> Casual</span>
           <span class="hint-sep">·</span>
-          <span class="hint-item"><kbd>2</kbd> Written</span>
+          <span class="hint-item"><kbd>2</kbd> Formal</span>
           <span class="hint-sep">·</span>
           <span class="hint-item"><kbd>Esc</kbd> Cancel</span>
         </div>

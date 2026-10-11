@@ -33,46 +33,22 @@ let currentMode: CompanionMode = "english";
 let activeTargetHwnd = "0";
 let activeBackupText = "";
 let currentTranslationResponse: any = null;
-let viewState: "capsule" | "hud" | "spotlight" = "capsule";
+let viewState: "idle" | "hud" | "spotlight" = "idle";
 
-const CAPSULE_WIDTH = 84;
-const CAPSULE_HEIGHT = 30;
 const HUD_WIDTH = 540;
 const HUD_HEIGHT = 280;
 
-let currentCapsulePos = { x: 0, y: 0 };
-
-function getInitialCapsulePos(config: LingualDesktopConfig): { x: number; y: number } {
-  if (config.capsulePos && typeof config.capsulePos.x === "number" && typeof config.capsulePos.y === "number") {
-    return { x: Math.round(config.capsulePos.x), y: Math.round(config.capsulePos.y) };
-  }
-  try {
-    const primary = screen.getPrimaryDisplay();
-    return {
-      x: Math.round(primary.workArea.x + primary.workArea.width - CAPSULE_WIDTH - 24),
-      y: Math.round(primary.workArea.y + 40),
-    };
-  } catch {
-    return { x: 100, y: 100 };
-  }
-}
-
 function createCompanionWindow(): BrowserWindow {
-  const config = loadDesktopConfig();
-  currentCapsulePos = getInitialCapsulePos(config);
-
   const win = new BrowserWindow({
-    width: CAPSULE_WIDTH,
-    height: CAPSULE_HEIGHT,
-    x: currentCapsulePos.x,
-    y: currentCapsulePos.y,
+    width: HUD_WIDTH,
+    height: 180,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
     show: false,
     resizable: false,
-    focusable: false, // Never steal typing focus in capsule state!
+    focusable: false,
     hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -84,60 +60,77 @@ function createCompanionWindow(): BrowserWindow {
   const rendererHtml = path.join(__dirname, "../../src/renderer/index.html");
   win.loadFile(rendererHtml);
 
-  // When in HUD state and losing focus, auto-dismiss back to capsule
+  // When in HUD state and losing focus, auto-dismiss back to idle
   win.on("blur", () => {
     if (viewState === "hud" || viewState === "spotlight") {
-      switchToCapsuleView();
+      switchToIdleView();
       restoreFocus(activeTargetHwnd);
-    }
-  });
-
-  win.once("ready-to-show", () => {
-    if (config.showCapsule !== false && currentMode !== "off") {
-      win.showInactive();
     }
   });
 
   return win;
 }
 
-function switchToCapsuleView(): void {
+function switchToIdleView(): void {
   if (!companionWindow) return;
-  viewState = "capsule";
+  viewState = "idle";
   companionWindow.setFocusable(false);
-  companionWindow.setSize(CAPSULE_WIDTH, CAPSULE_HEIGHT);
-  companionWindow.setPosition(currentCapsulePos.x, currentCapsulePos.y);
-  companionWindow.webContents.send("lingual:view-state", "capsule");
-  if (currentMode !== "off") {
-    companionWindow.showInactive();
-  } else {
-    companionWindow.hide();
-  }
+  companionWindow.hide();
+  companionWindow.webContents.send("lingual:view-state", "idle");
 }
 
-function getClampedPosition(targetPhysicalX: number, targetPhysicalY: number, winWidth: number, winHeight: number, preferAbove = true): { x: number; y: number } {
-  // Convert physical screen coordinates to Electron DIP coordinate space to prevent 1.5x coordinate drift on High-DPI screens
-  const display = screen.getDisplayNearestPoint({ x: targetPhysicalX, y: targetPhysicalY });
+/**
+ * Deterministic In-Situ Roof-Docking directly above the active text input box:
+ * 1. Probes UIA focused element rectangle (pixel-perfect bounding box of input/textarea).
+ * 2. Clamps horizontally against screen right-edge boundary (never overflows right edge).
+ * 3. Docks directly above the input box (roof-docking, 8px gap). If too close to screen top, flips below.
+ * 4. Fallback chain: caret position -> cursor position -> primary display center.
+ */
+function calculateRoofDockingPosition(winWidth: number, winHeight: number): { x: number; y: number } {
+  const focusedRect = getFocusedElementRect();
+  const caret = getCaretPosition();
+  const cursor = screen.getCursorScreenPoint();
+
+  let targetX = 0;
+  let targetY = 0;
+  let targetH = 24;
+
+  if (focusedRect && focusedRect.width > 0 && focusedRect.height > 0) {
+    targetX = focusedRect.x;
+    targetY = focusedRect.y;
+    targetH = focusedRect.height;
+  } else if (caret) {
+    targetX = caret.x;
+    targetY = caret.y;
+    targetH = 20;
+  } else {
+    targetX = cursor.x;
+    targetY = cursor.y;
+    targetH = 20;
+  }
+
+  const display = screen.getDisplayNearestPoint({ x: targetX, y: targetY });
   const scale = display.scaleFactor || 1.0;
-  const dipTargetX = targetPhysicalX / scale;
-  const dipTargetY = targetPhysicalY / scale;
-  const { workArea } = display; // workArea operates strictly in DIPs
+  const dipX = targetX / scale;
+  const dipY = targetY / scale;
+  const dipH = targetH / scale;
+  const { workArea } = display;
 
-  // 1. Horizontal Clamping (prevent sticking off the right or left edge)
-  let x = dipTargetX + 10;
+  // 1. Horizontal Alignment & Right-Edge Screen Boundary Clamping
+  let x = dipX;
   if (x + winWidth > workArea.x + workArea.width - 12) {
-    // Flip to the left of target point if right edge is exceeded
-    x = Math.max(workArea.x + 12, dipTargetX - winWidth - 10);
+    x = workArea.x + workArea.width - winWidth - 12;
+  }
+  if (x < workArea.x + 12) {
+    x = workArea.x + 12;
   }
 
-  // 2. Vertical Positioning (Roof-Docking: prefer above the caret to strictly avoid IME candidate box overlap!)
-  let y = preferAbove ? dipTargetY - winHeight - 8 : dipTargetY + 20;
-
-  // If above goes past top edge, flip to below
+  // 2. Vertical Roof-Docking (Directly above the input box)
+  let y = dipY - winHeight - 8;
   if (y < workArea.y + 12) {
-    y = dipTargetY + 24;
+    // If too close to screen top, flip directly below the input box
+    y = dipY + dipH + 8;
   }
-  // If below goes past bottom edge, clamp inside
   if (y + winHeight > workArea.y + workArea.height - 12) {
     y = workArea.y + workArea.height - winHeight - 12;
   }
@@ -147,7 +140,7 @@ function getClampedPosition(targetPhysicalX: number, targetPhysicalY: number, wi
 
 let lastAnchorPos = { x: 0, y: 0 };
 
-function switchToHudView(targetX: number, targetY: number, autoSent = true): void {
+function switchToHudView(autoSent = true): void {
   if (!companionWindow) return;
   viewState = "hud";
 
@@ -160,12 +153,8 @@ function switchToHudView(targetX: number, targetY: number, autoSent = true): voi
   const initialHeight = 180;
   companionWindow.setSize(HUD_WIDTH, initialHeight);
 
-  // If a valid caret coordinate was captured, dock near caret; otherwise anchor from current draggable capsule position
-  const anchorX = targetX > 0 ? targetX : currentCapsulePos.x;
-  const anchorY = targetY > 0 ? targetY : currentCapsulePos.y;
-  lastAnchorPos = { x: anchorX, y: anchorY };
-
-  const pos = getClampedPosition(anchorX, anchorY, HUD_WIDTH, initialHeight, true);
+  const pos = calculateRoofDockingPosition(HUD_WIDTH, initialHeight);
+  lastAnchorPos = pos;
   companionWindow.setPosition(pos.x, pos.y);
 
   if (autoSent) {
@@ -247,6 +236,21 @@ function cycleCompanionMode(): void {
     companionWindow.webContents.send("lingual:mode-changed", currentMode);
   }
   updateTrayMenu();
+  if (tray) {
+    const title =
+      currentMode === "english"
+        ? "Translate Mode"
+        : currentMode === "original"
+        ? "Learn Mode"
+        : "Off";
+    const desc =
+      currentMode === "english"
+        ? "Press Enter to translate & replace in-place"
+        : currentMode === "original"
+        ? "Press Enter to submit original + pop up card"
+        : "Companion paused";
+    tray.displayBalloon({ title, content: desc });
+  }
   console.log(`[lingual-desktop] Mode cycled to: ${currentMode}`);
 }
 
@@ -324,7 +328,7 @@ async function handleSubmitInterception(allowSelectAll = true, fromEnterKey = fa
   // Mode A: Learn / Original Mode (0ms pass-through Enter, HUD explains in background)
   if (currentMode === "original") {
     if (fromEnterKey) sendNativeEnterSafe();
-    switchToHudView(pos.x, pos.y, true);
+    switchToHudView(true);
     if (companionWindow) {
       companionWindow.webContents.send("lingual:data", {
         loading: true,
@@ -352,7 +356,7 @@ async function handleSubmitInterception(allowSelectAll = true, fromEnterKey = fa
   }
 
   // Mode B: Translate Mode (Intercept Enter -> Translate -> Replace & Submit Enter + HUD)
-  switchToHudView(pos.x, pos.y, true);
+  switchToHudView(true);
   if (companionWindow) {
     companionWindow.webContents.send("lingual:data", {
       loading: true,
@@ -405,7 +409,7 @@ async function handleSubmitInterception(allowSelectAll = true, fromEnterKey = fa
     }
   } catch (err: any) {
     console.error("[main] Translation interception error:", err);
-    switchToCapsuleView();
+    switchToIdleView();
     restoreFocus(targetHwnd);
   }
 }
@@ -588,11 +592,8 @@ function setupIpc(): void {
     const clampedHeight = Math.max(140, Math.min(340, Math.ceil(measuredHeight)));
     companionWindow.setSize(HUD_WIDTH, clampedHeight);
 
-    // Re-dock with Roof-Docking respecting new height
-    if (lastAnchorPos.x > 0 || lastAnchorPos.y > 0) {
-      const pos = getClampedPosition(lastAnchorPos.x, lastAnchorPos.y, HUD_WIDTH, clampedHeight, true);
-      companionWindow.setPosition(pos.x, pos.y);
-    }
+    const pos = calculateRoofDockingPosition(HUD_WIDTH, clampedHeight);
+    companionWindow.setPosition(pos.x, pos.y);
   });
 
   ipcMain.on("lingual:toggle-mode", () => {
@@ -623,7 +624,7 @@ function setupIpc(): void {
         : currentTranslationResponse.written;
     }
 
-    switchToCapsuleView();
+    switchToIdleView();
 
     if (selectedText) {
       await injectTextToTarget(selectedText, activeTargetHwnd, activeBackupText, clipboard);
@@ -717,12 +718,12 @@ function setupIpc(): void {
     if (activeBackupText && activeTargetHwnd !== "0") {
       await injectTextToTarget(activeBackupText, activeTargetHwnd, "", clipboard);
     }
-    switchToCapsuleView();
+    switchToIdleView();
     restoreFocus(activeTargetHwnd);
   });
 
   ipcMain.on("lingual:dismiss", () => {
-    switchToCapsuleView();
+    switchToIdleView();
     restoreFocus(activeTargetHwnd);
   });
 
