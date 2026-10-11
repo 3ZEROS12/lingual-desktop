@@ -3,7 +3,7 @@
 > **The zero-friction desktop writing companion that lives alongside your existing IME.**  
 > Type naturally with your preferred input method (Microsoft Pinyin, WeChat IME, Sogou, Rime) in any Windows app (X/Twitter, Slack, Discord, Chrome, Notion, WeChat, Email). Upon pressing Enter, `lingual-desktop` automatically detects natural language, translates via your chosen engine, and delivers authentic spoken flow or technical precision—while keeping you in complete flow state.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 19/19 Pass](https://img.shields.io/badge/Tests-19%2F19%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 24/24 Pass](https://img.shields.io/badge/Tests-24%2F24%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
 
 **English** | [简体中文](README_zh.md)
 
@@ -114,7 +114,7 @@ npm run build:native
 # Compile Electron main process and preload bundle
 npm run build:main
 
-# Run full physical unit test suite (19/19 Pass)
+# Run full physical unit test suite (24/24 Pass)
 npm test
 ```
 

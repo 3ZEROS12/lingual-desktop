@@ -3,7 +3,7 @@
 > **不替代你的输入法 · 回车即发即翻 · 常驻可自由拖拽微胶囊 · 剪贴板历史零污染**  
 > 你完全照旧使用最顺手的**微软拼音、微信输入法、搜狗或 Rime**，在任何软件（X/推特、Slack、Discord、必应/谷歌搜索、Notion、微信、邮件）中打字。打完敲回车（Enter），`lingual-desktop` 自动判断自然语言并按模式分流，直接发出地道外语或原文，并就地展开双轨伴学视窗。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 19/19 Pass](https://img.shields.io/badge/Tests-19%2F19%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 24/24 Pass](https://img.shields.io/badge/Tests-24%2F24%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
 
 [English](README.md) | **简体中文**
 
@@ -114,7 +114,7 @@ npm run build:native
 # 编译 Electron 主进程与 Preload 脚本
 npm run build:main
 
-# 运行全量单元测试套件 (19/19 Pass)
+# 运行全量单元测试套件 (24/24 Pass)
 npm test
 ```
 
