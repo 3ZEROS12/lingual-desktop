@@ -36,12 +36,14 @@ let activeBackupText = "";
 let currentTranslationResponse: any = null;
 let viewState: "idle" | "hud" | "spotlight" = "idle";
 
-const CAPSULE_WIDTH = 84;
-const CAPSULE_HEIGHT = 34;
+const CAPSULE_WIDTH = 76;
+const CAPSULE_HEIGHT = 26;
 const HUD_WIDTH = 540;
 const HUD_HEIGHT = 280;
 
 let currentCapsulePos = { x: 0, y: 0 };
+let inputTrackerInterval: NodeJS.Timeout | null = null;
+let lastPebblePos = { x: 0, y: 0 };
 
 function getInitialCapsulePos(config: LingualDesktopConfig): { x: number; y: number } {
   if (config.capsulePos && typeof config.capsulePos.x === "number" && typeof config.capsulePos.y === "number") {
@@ -59,9 +61,9 @@ function getInitialCapsulePos(config: LingualDesktopConfig): { x: number; y: num
 }
 
 /**
- * 1. Dedicated Doubao-Style Corner Floating Pebble (常驻微挂件)
- * Stays quietly at screen corner; gives user immediate peace of mind that Lingual is running;
- * Click to cycle mode (EN / LEARN / OFF), drag to move anywhere along screen, right-click for settings.
+ * In-Situ Roof-Docked Floating Pebble (聚焦输入框时浮现在光标/输入框正上方)
+ * 平时不打字时静默隐藏；聚焦到任意输入框时，在输入框正上方轻巧浮现 (⇄ EN)；
+ * 左键点击切换模式，右键点击打开设置。
  */
 function createCapsuleWindow(): BrowserWindow {
   const config = loadDesktopConfig();
@@ -76,7 +78,7 @@ function createCapsuleWindow(): BrowserWindow {
     transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
-    show: false,
+    show: false, // 平时不打字时静默，由 inputTracker 在检测到输入框时浮现
     resizable: false,
     focusable: false,
     hasShadow: false,
@@ -90,14 +92,92 @@ function createCapsuleWindow(): BrowserWindow {
   const capsuleHtml = path.join(__dirname, "../../src/renderer/capsule.html");
   win.loadFile(capsuleHtml);
 
-  win.once("ready-to-show", () => {
-    if (config.showCapsule !== false) {
-      win.showInactive();
-      win.webContents.send("lingual:mode-changed", currentMode);
-    }
-  });
-
   return win;
+}
+
+/**
+ * 测算微圆标在当前输入框/光标正上方的停靠坐标 (Roof-Docked Pebble Position)
+ */
+function calculatePebblePosition(pebbleW = 76, pebbleH = 26): { x: number; y: number } | null {
+  const focusedRect = getFocusedElementRect();
+  const caret = getCaretPosition();
+
+  let targetX = 0;
+  let targetY = 0;
+  let targetH = 24;
+
+  if (focusedRect && focusedRect.width > 0 && focusedRect.height > 0) {
+    targetX = focusedRect.x;
+    targetY = focusedRect.y;
+    targetH = focusedRect.height;
+  } else if (caret) {
+    targetX = caret.x;
+    targetY = caret.y;
+    targetH = 20;
+  } else {
+    return null;
+  }
+
+  const display = screen.getDisplayNearestPoint({ x: targetX, y: targetY });
+  const scale = display.scaleFactor || 1.0;
+  const dipX = targetX / scale;
+  const dipY = targetY / scale;
+  const dipH = targetH / scale;
+  const { workArea } = display;
+
+  // 水平靠齐输入框左上边缘
+  let x = dipX;
+  if (x + pebbleW > workArea.x + workArea.width - 8) {
+    x = workArea.x + workArea.width - pebbleW - 8;
+  }
+  if (x < workArea.x + 8) {
+    x = workArea.x + 8;
+  }
+
+  // 垂直顶在输入框正上方 6px (若贴顶则翻转到正下方)
+  let y = dipY - pebbleH - 6;
+  if (y < workArea.y + 8) {
+    y = dipY + dipH + 6;
+  }
+
+  return { x: Math.round(x), y: Math.round(y) };
+}
+
+/**
+ * 实时聚焦探测器：检测用户是否处于可编辑输入框中
+ * - 处于输入框打字：在正上方轻巧浮现小圆标；
+ * - 离开输入框/点击桌面：自动淡出隐去，保持桌面 100% 干净。
+ */
+function startInputTracker(): void {
+  if (inputTrackerInterval) clearInterval(inputTrackerInterval);
+
+  inputTrackerInterval = setInterval(() => {
+    if (viewState !== "idle" || currentMode === "off" || !capsuleWindow || capsuleWindow.isDestroyed()) {
+      return;
+    }
+
+    const config = loadDesktopConfig();
+    if (config.showCapsule === false) {
+      if (capsuleWindow.isVisible()) capsuleWindow.hide();
+      return;
+    }
+
+    const pos = calculatePebblePosition(76, 26);
+    if (pos) {
+      if (Math.abs(pos.x - lastPebblePos.x) > 3 || Math.abs(pos.y - lastPebblePos.y) > 3) {
+        capsuleWindow.setPosition(pos.x, pos.y);
+        lastPebblePos = pos;
+      }
+      if (!capsuleWindow.isVisible()) {
+        capsuleWindow.showInactive();
+        capsuleWindow.webContents.send("lingual:mode-changed", currentMode);
+      }
+    } else {
+      if (capsuleWindow.isVisible()) {
+        capsuleWindow.hide();
+      }
+    }
+  }, 250);
 }
 
 /**
@@ -308,6 +388,11 @@ async function handleSubmitInterception(allowSelectAll = true, fromEnterKey = fa
   if (currentMode === "off") {
     if (fromEnterKey) sendNativeEnterSafe();
     return;
+  }
+
+  // 触发翻译时，先隐去光标微圆标，避免与 3 秒大卡片重叠
+  if (capsuleWindow && !capsuleWindow.isDestroyed() && capsuleWindow.isVisible()) {
+    capsuleWindow.hide();
   }
 
   // IME Composition Guard:
@@ -826,6 +911,7 @@ if (!gotTheLock) {
     registerShortcuts(config);
     setupTray();
     setupIpc();
+    startInputTracker();
 
     // Enable Windows autostart on boot (silent mode)
     try {
@@ -850,6 +936,7 @@ if (!gotTheLock) {
   });
 
   app.on("will-quit", () => {
+    if (inputTrackerInterval) clearInterval(inputTrackerInterval);
     globalShortcut.unregisterAll();
   });
 

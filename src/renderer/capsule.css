@@ -1,6 +1,7 @@
 /* ==========================================================================
-   Lingual Floating Pebble — Doubao-Style Corner Floating Widget
-   Paper & Stone tactile design: #fbfaf8 paper, #1c1917 charcoal ink, subtle shadow.
+   Lingual In-Situ Floating Pebble — Paper & Stone Theme
+   Appears directly above the active text input box while typing.
+   Left-click: Toggle mode | Right-click: Settings
    ========================================================================== */
 
 * {
@@ -33,13 +34,13 @@ body {
 .capsule-pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   background: #fbfaf8;
   border: 1px solid #d3cfc9;
   border-radius: 999px;
-  padding: 4px 10px;
-  cursor: grab;
-  box-shadow: 0 4px 12px rgba(28, 25, 23, 0.15), 0 1px 3px rgba(28, 25, 23, 0.08);
+  padding: 3px 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(28, 25, 23, 0.12), 0 1px 2px rgba(28, 25, 23, 0.06);
   transition: transform 0.1s ease, background 0.12s ease, border-color 0.12s ease;
 }
 
@@ -49,9 +50,7 @@ body {
   transform: translateY(-1px);
 }
 
-.capsule-pill:active,
-body.dragging .capsule-pill {
-  cursor: grabbing !important;
+.capsule-pill:active {
   transform: scale(0.96);
   background: #f5f4ef;
 }
@@ -59,27 +58,27 @@ body.dragging .capsule-pill {
 .capsule-symbol {
   color: #57534e;
   font-weight: 600;
-  font-size: 11.5px;
+  font-size: 11px;
 }
 
 .capsule-label {
   color: #1c1917;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.04em;
 }
 
-/* Learn mode styling */
+/* Learn mode */
 .mode-original .capsule-pill {
   background: #f5f4ef;
-  border-color: #8c857f;
+  border-color: #a8a29e;
 }
 .mode-original .capsule-label {
   color: #44403c;
 }
 
-/* Off mode styling */
+/* Off mode */
 .mode-off .capsule-pill {
   opacity: 0.6;
   border-color: #e7e5e1;
