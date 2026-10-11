@@ -29,6 +29,10 @@
       sec_slang_desc: "The primary language you type in:",
       sec_tlang_title: "Target Language",
       sec_tlang_desc: "The target language to translate into:",
+      sec_widget_title: "Floating Desktop Widget",
+      sec_widget_desc: "A compact draggable pebble at the screen corner showing active mode at a glance:",
+      tog_widget_title: "Show Corner Floating Pebble (⇄ EN)",
+      tog_widget_desc: "Always shows whether Lingual is running. Click to cycle mode; drag to move anywhere.",
       preview_title: "Live Preview",
       preview_hint: 'Sample: "Can we release this feature tomorrow?"',
       ai_tuner_title: "Natural Language Layout Tuner",
@@ -92,6 +96,10 @@
       sec_slang_desc: "你日常打字输入的母语：",
       sec_tlang_title: "目标语言 (Target)",
       sec_tlang_desc: "希望转换成的目标外语：",
+      sec_widget_title: "桌面常驻悬浮挂件",
+      sec_widget_desc: "像豆包一样在屏幕边缘常驻一个小巧微挂件，一眼看清当前运行状态：",
+      tog_widget_title: "显示右下角微悬浮挂件 (⇄ EN)",
+      tog_widget_desc: "随时确认软件是否运行。点击切换模式，按住可随意拖拽到屏幕任意角落。",
       preview_title: "实时预览",
       preview_hint: "示例：「这个功能明天能上线吗？」",
       ai_tuner_title: "一句话定制版式",
@@ -155,6 +163,10 @@
       sec_slang_desc: "你日常打字輸入的母語：",
       sec_tlang_title: "目標語言 (Target)",
       sec_tlang_desc: "希望轉換成的目標外語：",
+      sec_widget_title: "桌面常駐懸浮掛件",
+      sec_widget_desc: "在螢幕邊緣常駐一個小巧微掛件，一眼看清當前運行狀態：",
+      tog_widget_title: "顯示右下角微懸浮掛件 (⇄ EN)",
+      tog_widget_desc: "隨時確認軟體是否運行。點擊切換模式，按住可隨意拖拽到螢幕任意角落。",
       preview_title: "即時預覽",
       preview_hint: "示例：「這個功能明天能上線嗎？」",
       ai_tuner_title: "一句話定制版式",
@@ -218,6 +230,10 @@
       sec_slang_desc: "普段入力する言語：",
       sec_tlang_title: "ターゲット言語 (Target)",
       sec_tlang_desc: "翻訳先の言語：",
+      sec_widget_title: "デスクトップ常駐ウィジェット",
+      sec_widget_desc: "画面端にコンパクトな小石型ウィジェットを常駐させ、動作状態を一目で確認：",
+      tog_widget_title: "画面端のフローティングウィジェットを表示 (⇄ EN)",
+      tog_widget_desc: "起動中かどうかが一目で分かります。クリックでモード切替、ドラッグで自由移動。",
       preview_title: "プレビュー",
       preview_hint: "例：「この機能、明日リリースできる？」",
       ai_tuner_title: "自然言語プリセット",
@@ -361,6 +377,11 @@
   const modeSegButtons = document.querySelectorAll("#companion-mode-segmented .seg-btn");
   const sourceLangChips = document.querySelectorAll("#source-lang-chips .chip");
   const targetLangChips = document.querySelectorAll("#target-lang-chips .chip");
+  const checkShowCapsule = document.getElementById("check-show-capsule");
+
+  if (checkShowCapsule) {
+    checkShowCapsule.addEventListener("change", () => autoSaveNow());
+  }
 
   function setCompanionModeState(mode) {
     activeCompanionMode = mode || "english";
@@ -958,6 +979,7 @@
       slots: currentSlots,
       hotkeySubmit: "Enter",
       autoSend: true,
+      showCapsule: checkShowCapsule ? checkShowCapsule.checked : true,
     };
 
     if (activeEngineMode === "custom") {
@@ -1003,6 +1025,9 @@
       setCompanionModeState(cfg.mode || "english");
       setSourceLangState(cfg.sourceLang || "zh");
       setTargetLangState(cfg.targetLang || "en");
+      if (checkShowCapsule) {
+        checkShowCapsule.checked = cfg.showCapsule !== false;
+      }
 
       currentSlots = Array.isArray(cfg.slots) && cfg.slots.length > 0 ? cfg.slots : getDefaultSlotsList();
       setUiLangState(cfg.uiLang || "en");

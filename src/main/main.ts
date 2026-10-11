@@ -25,7 +25,8 @@ import { resolveLabelsForLang } from "pi-lingual";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let companionWindow: BrowserWindow | null = null;
+let capsuleWindow: BrowserWindow | null = null;
+let hudWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 
@@ -35,10 +36,75 @@ let activeBackupText = "";
 let currentTranslationResponse: any = null;
 let viewState: "idle" | "hud" | "spotlight" = "idle";
 
+const CAPSULE_WIDTH = 84;
+const CAPSULE_HEIGHT = 34;
 const HUD_WIDTH = 540;
 const HUD_HEIGHT = 280;
 
-function createCompanionWindow(): BrowserWindow {
+let currentCapsulePos = { x: 0, y: 0 };
+
+function getInitialCapsulePos(config: LingualDesktopConfig): { x: number; y: number } {
+  if (config.capsulePos && typeof config.capsulePos.x === "number" && typeof config.capsulePos.y === "number") {
+    return { x: Math.round(config.capsulePos.x), y: Math.round(config.capsulePos.y) };
+  }
+  try {
+    const primary = screen.getPrimaryDisplay();
+    return {
+      x: Math.round(primary.workArea.x + primary.workArea.width - CAPSULE_WIDTH - 20),
+      y: Math.round(primary.workArea.y + primary.workArea.height - CAPSULE_HEIGHT - 60),
+    };
+  } catch {
+    return { x: 100, y: 100 };
+  }
+}
+
+/**
+ * 1. Dedicated Doubao-Style Corner Floating Pebble (常驻微挂件)
+ * Stays quietly at screen corner; gives user immediate peace of mind that Lingual is running;
+ * Click to cycle mode (EN / LEARN / OFF), drag to move anywhere along screen, right-click for settings.
+ */
+function createCapsuleWindow(): BrowserWindow {
+  const config = loadDesktopConfig();
+  currentCapsulePos = getInitialCapsulePos(config);
+
+  const win = new BrowserWindow({
+    width: CAPSULE_WIDTH,
+    height: CAPSULE_HEIGHT,
+    x: currentCapsulePos.x,
+    y: currentCapsulePos.y,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    show: false,
+    resizable: false,
+    focusable: false,
+    hasShadow: false,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  const capsuleHtml = path.join(__dirname, "../../src/renderer/capsule.html");
+  win.loadFile(capsuleHtml);
+
+  win.once("ready-to-show", () => {
+    if (config.showCapsule !== false) {
+      win.showInactive();
+      win.webContents.send("lingual:mode-changed", currentMode);
+    }
+  });
+
+  return win;
+}
+
+/**
+ * 2. In-Situ Roof-Docked Translation Card Window (输入框正上方 3 秒卡片)
+ * Pops up directly above the active text box when Enter is pressed; auto-dismisses after 3s.
+ */
+function createHudWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: HUD_WIDTH,
     height: 180,
@@ -57,10 +123,9 @@ function createCompanionWindow(): BrowserWindow {
     },
   });
 
-  const rendererHtml = path.join(__dirname, "../../src/renderer/index.html");
-  win.loadFile(rendererHtml);
+  const hudHtml = path.join(__dirname, "../../src/renderer/index.html");
+  win.loadFile(hudHtml);
 
-  // When in HUD state and losing focus, auto-dismiss back to idle
   win.on("blur", () => {
     if (viewState === "hud" || viewState === "spotlight") {
       switchToIdleView();
@@ -72,11 +137,11 @@ function createCompanionWindow(): BrowserWindow {
 }
 
 function switchToIdleView(): void {
-  if (!companionWindow) return;
+  if (!hudWindow) return;
   viewState = "idle";
-  companionWindow.setFocusable(false);
-  companionWindow.hide();
-  companionWindow.webContents.send("lingual:view-state", "idle");
+  hudWindow.setFocusable(false);
+  hudWindow.hide();
+  hudWindow.webContents.send("lingual:view-state", "idle");
 }
 
 /**
@@ -141,88 +206,46 @@ function calculateRoofDockingPosition(winWidth: number, winHeight: number): { x:
 let lastAnchorPos = { x: 0, y: 0 };
 
 function switchToHudView(autoSent = true): void {
-  if (!companionWindow) return;
+  if (!hudWindow) return;
   viewState = "hud";
 
   if (autoSent) {
-    companionWindow.setFocusable(false);
+    hudWindow.setFocusable(false);
   } else {
-    companionWindow.setFocusable(true);
+    hudWindow.setFocusable(true);
   }
 
   const initialHeight = 180;
-  companionWindow.setSize(HUD_WIDTH, initialHeight);
+  hudWindow.setSize(HUD_WIDTH, initialHeight);
 
   const pos = calculateRoofDockingPosition(HUD_WIDTH, initialHeight);
   lastAnchorPos = pos;
-  companionWindow.setPosition(pos.x, pos.y);
+  hudWindow.setPosition(pos.x, pos.y);
 
   if (autoSent) {
-    companionWindow.showInactive();
+    hudWindow.showInactive();
   } else {
-    companionWindow.show();
-    companionWindow.focus();
+    hudWindow.show();
+    hudWindow.focus();
   }
-  companionWindow.webContents.send("lingual:view-state", "hud");
+  hudWindow.webContents.send("lingual:view-state", "hud");
 }
 
 function switchToSpotlightView(): void {
-  if (!companionWindow) return;
+  if (!hudWindow) return;
   viewState = "spotlight";
-  companionWindow.setFocusable(true);
-  companionWindow.setSize(HUD_WIDTH, HUD_HEIGHT);
+  hudWindow.setFocusable(true);
+  hudWindow.setSize(HUD_WIDTH, HUD_HEIGHT);
 
   const cursor = screen.getCursorScreenPoint();
   const display = screen.getDisplayNearestPoint(cursor);
   const x = Math.round(display.workArea.x + (display.workArea.width - HUD_WIDTH) / 2);
   const y = Math.round(display.workArea.y + display.workArea.height * 0.25);
 
-  companionWindow.setPosition(x, y);
-  companionWindow.show();
-  companionWindow.focus();
-  companionWindow.webContents.send("lingual:view-state", "spotlight");
-}
-
-/**
- * Ambient Caret Tracker:
- * Periodically checks caret position using purely native C helper (<0.2ms)
- * Strictly avoids spawning .NET CLR uia_helper.exe in high-frequency loop to prevent laptop battery cremation
- */
-function startCaretTracking(): void {
-  if (caretPollInterval) clearInterval(caretPollInterval);
-
-  caretPollInterval = setInterval(() => {
-    if (viewState !== "capsule" || !companionWindow) return;
-
-    const config = loadDesktopConfig();
-    if (!config.showCapsule || currentMode === "off") {
-      if (companionWindow.isVisible()) companionWindow.hide();
-      return;
-    }
-
-    // Pure lightweight Win32 probe: 0.1ms, zero CLR allocation, 0.0% idle CPU
-    const caret = getCaretPosition();
-    if (caret) {
-      const display = screen.getDisplayNearestPoint(caret);
-      const scale = display.scaleFactor || 1.0;
-      const dipX = caret.x / scale;
-      const dipY = caret.y / scale;
-
-      const x = Math.min(dipX + 8, display.workArea.x + display.workArea.width - CAPSULE_WIDTH - 4);
-      const y = Math.max(display.workArea.y + 4, dipY - CAPSULE_HEIGHT - 4);
-
-      companionWindow.setPosition(Math.round(x), Math.round(y));
-      if (!companionWindow.isVisible()) {
-        companionWindow.showInactive();
-      }
-      return;
-    }
-
-    // If caret is not reported (e.g. non-editing window or browser chrome), gracefully hide capsule
-    if (companionWindow.isVisible()) {
-      companionWindow.hide();
-    }
-  }, 350);
+  hudWindow.setPosition(x, y);
+  hudWindow.show();
+  hudWindow.focus();
+  hudWindow.webContents.send("lingual:view-state", "spotlight");
 }
 
 function cycleCompanionMode(): void {
@@ -232,8 +255,8 @@ function cycleCompanionMode(): void {
   saveDesktopConfig({ mode: currentMode });
   registerShortcuts(loadDesktopConfig());
 
-  if (companionWindow) {
-    companionWindow.webContents.send("lingual:mode-changed", currentMode);
+  if (capsuleWindow && !capsuleWindow.isDestroyed()) {
+    capsuleWindow.webContents.send("lingual:mode-changed", currentMode);
   }
   updateTrayMenu();
   if (tray) {
@@ -329,8 +352,8 @@ async function handleSubmitInterception(allowSelectAll = true, fromEnterKey = fa
   if (currentMode === "original") {
     if (fromEnterKey) sendNativeEnterSafe();
     switchToHudView(true);
-    if (companionWindow) {
-      companionWindow.webContents.send("lingual:data", {
+    if (hudWindow && !hudWindow.isDestroyed()) {
+      hudWindow.webContents.send("lingual:data", {
         loading: true,
         sourceText: captured.text,
         autoSent: true,
@@ -341,8 +364,8 @@ async function handleSubmitInterception(allowSelectAll = true, fromEnterKey = fa
     executeTranslation(captured.text, effectiveConfig, undefined, configuredSlots)
       .then((res) => {
         currentTranslationResponse = res;
-        if (companionWindow && companionWindow.isVisible()) {
-          companionWindow.webContents.send("lingual:data", {
+        if (hudWindow && !hudWindow.isDestroyed() && hudWindow.isVisible()) {
+          hudWindow.webContents.send("lingual:data", {
             ...res,
             sourceText: captured.text,
             autoSent: true,
@@ -357,8 +380,8 @@ async function handleSubmitInterception(allowSelectAll = true, fromEnterKey = fa
 
   // Mode B: Translate Mode (Intercept Enter -> Translate -> Replace & Submit Enter + HUD)
   switchToHudView(true);
-  if (companionWindow) {
-    companionWindow.webContents.send("lingual:data", {
+  if (hudWindow && !hudWindow.isDestroyed()) {
+    hudWindow.webContents.send("lingual:data", {
       loading: true,
       sourceText: captured.text,
       autoSent: true,
@@ -371,8 +394,8 @@ async function handleSubmitInterception(allowSelectAll = true, fromEnterKey = fa
     currentTranslationResponse = res;
 
     if (res.isOfflineOrFailed) {
-      if (companionWindow && companionWindow.isVisible()) {
-        companionWindow.webContents.send("lingual:data", {
+      if (hudWindow && !hudWindow.isDestroyed() && hudWindow.isVisible()) {
+        hudWindow.webContents.send("lingual:data", {
           sourceText: captured.text,
           spoken: captured.text,
           written: captured.text,
@@ -398,8 +421,8 @@ async function handleSubmitInterception(allowSelectAll = true, fromEnterKey = fa
       }, 80);
     }
 
-    if (companionWindow && companionWindow.isVisible()) {
-      companionWindow.webContents.send("lingual:data", {
+    if (hudWindow && !hudWindow.isDestroyed() && hudWindow.isVisible()) {
+      hudWindow.webContents.send("lingual:data", {
         ...res,
         sourceText: captured.text,
         autoSent: true,
@@ -522,7 +545,9 @@ function updateTrayMenu(): void {
         currentMode = "english";
         saveDesktopConfig({ mode: "english" });
         registerShortcuts(loadDesktopConfig());
-        if (companionWindow) companionWindow.webContents.send("lingual:mode-changed", "english");
+        if (capsuleWindow && !capsuleWindow.isDestroyed()) {
+          capsuleWindow.webContents.send("lingual:mode-changed", "english");
+        }
         updateTrayMenu();
       },
     },
@@ -534,7 +559,9 @@ function updateTrayMenu(): void {
         currentMode = "original";
         saveDesktopConfig({ mode: "original" });
         registerShortcuts(loadDesktopConfig());
-        if (companionWindow) companionWindow.webContents.send("lingual:mode-changed", "original");
+        if (capsuleWindow && !capsuleWindow.isDestroyed()) {
+          capsuleWindow.webContents.send("lingual:mode-changed", "original");
+        }
         updateTrayMenu();
       },
     },
@@ -546,7 +573,9 @@ function updateTrayMenu(): void {
         currentMode = "off";
         saveDesktopConfig({ mode: "off" });
         registerShortcuts(loadDesktopConfig());
-        if (companionWindow) companionWindow.webContents.send("lingual:mode-changed", "off");
+        if (capsuleWindow && !capsuleWindow.isDestroyed()) {
+          capsuleWindow.webContents.send("lingual:mode-changed", "off");
+        }
         updateTrayMenu();
       },
     },
@@ -588,12 +617,12 @@ function setupTray(): void {
 
 function setupIpc(): void {
   ipcMain.on("lingual:resize-hud", (_event, measuredHeight: number) => {
-    if (viewState !== "hud" || !companionWindow) return;
+    if (viewState !== "hud" || !hudWindow) return;
     const clampedHeight = Math.max(140, Math.min(340, Math.ceil(measuredHeight)));
-    companionWindow.setSize(HUD_WIDTH, clampedHeight);
+    hudWindow.setSize(HUD_WIDTH, clampedHeight);
 
     const pos = calculateRoofDockingPosition(HUD_WIDTH, clampedHeight);
-    companionWindow.setPosition(pos.x, pos.y);
+    hudWindow.setPosition(pos.x, pos.y);
   });
 
   ipcMain.on("lingual:toggle-mode", () => {
@@ -649,8 +678,13 @@ function setupIpc(): void {
     currentMode = updated.mode || currentMode;
     registerShortcuts(updated);
     updateTrayMenu();
-    if (companionWindow && !companionWindow.isDestroyed()) {
-      companionWindow.webContents.send("lingual:mode-changed", currentMode);
+    if (capsuleWindow && !capsuleWindow.isDestroyed()) {
+      capsuleWindow.webContents.send("lingual:mode-changed", currentMode);
+      if (updated.showCapsule !== false) {
+        capsuleWindow.showInactive();
+      } else {
+        capsuleWindow.hide();
+      }
     }
     console.log("[lingual-desktop] Config updated and hot-reloaded:", patch);
     return { success: true };
@@ -728,11 +762,11 @@ function setupIpc(): void {
   });
 
   ipcMain.on("lingual:drag-move", (_event, { dx, dy }) => {
-    if (!companionWindow) return;
-    const [x, y] = companionWindow.getPosition();
+    if (!capsuleWindow || capsuleWindow.isDestroyed()) return;
+    const [x, y] = capsuleWindow.getPosition();
     const nextX = Math.round(x + dx);
     const nextY = Math.round(y + dy);
-    companionWindow.setPosition(nextX, nextY);
+    capsuleWindow.setPosition(nextX, nextY);
     currentCapsulePos = { x: nextX, y: nextY };
   });
 
@@ -750,8 +784,8 @@ function setupIpc(): void {
     try {
       const res = await executeTranslation(input);
       currentTranslationResponse = res;
-      if (companionWindow && companionWindow.isVisible()) {
-        companionWindow.webContents.send("lingual:data", {
+      if (hudWindow && !hudWindow.isDestroyed() && hudWindow.isVisible()) {
+        hudWindow.webContents.send("lingual:data", {
           ...res,
           sourceText: input,
           autoSent: false,
@@ -787,7 +821,8 @@ if (!gotTheLock) {
     const config = loadDesktopConfig();
     currentMode = config.mode || "english";
 
-    companionWindow = createCompanionWindow();
+    capsuleWindow = createCapsuleWindow();
+    hudWindow = createHudWindow();
     registerShortcuts(config);
     setupTray();
     setupIpc();
