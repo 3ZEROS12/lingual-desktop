@@ -125,11 +125,14 @@ export function getCaretPosition(): { x: number; y: number } | null {
   }
 }
 
-export function probeFocusedElement(): { isEditable: boolean; text: string | null } {
+export function probeFocusedElement(): { isEditable: boolean; text: string | null; isTerminal?: boolean } {
   try {
     const helper = getHelperPath("uia_helper.exe");
     const out = execFileSync(helper, ["focused-text"], { encoding: "utf8", timeout: 2000 });
     const trimmed = out ? out.trim() : "";
+    if (trimmed === "TERMINAL") {
+      return { isEditable: false, text: null, isTerminal: true };
+    }
     if (trimmed === "NONE" || trimmed === "NON_EDITABLE") {
       return { isEditable: false, text: null };
     }
@@ -356,6 +359,13 @@ export async function captureActiveInputText(
   allowSelectAll = true
 ): Promise<{ text: string; backup: string; method: "uia" | "clipboard" } | null> {
   const probe = probeFocusedElement();
+
+  // If the active control is inside a terminal emulator, NEVER hijack Ctrl+A/Ctrl+C
+  if (probe.isTerminal) {
+    return null;
+  }
+
+  // 1. Try UIA direct text read (0ms, zero clipboard pollution)
   if (probe.text && probe.text.trim()) {
     return {
       text: probe.text,
@@ -364,13 +374,7 @@ export async function captureActiveInputText(
     };
   }
 
-  // If UIA explicitly reports the focused element is NOT editable (e.g. a button, desktop, folder)
-  // and there is no Win32 text caret, do not run clipboard shortcuts!
-  const hasCaret = getCaretPosition() !== null;
-  if (!probe.isEditable && !hasCaret) {
-    return null;
-  }
-
+  // 2. Try currently highlighted selection (Ctrl+C)
   const clipCaptured = await captureSelectedText(clipboard);
   if (clipCaptured && clipCaptured.text.trim()) {
     return {
@@ -380,7 +384,9 @@ export async function captureActiveInputText(
     };
   }
 
-  if (allowSelectAll && (probe.isEditable || hasCaret)) {
+  // 3. For all desktop applications (Chrome, Edge, WeChat, Slack, Discord, Notepad, etc.):
+  // When allowSelectAll is true (Enter trigger), execute atomic Ctrl+A -> Ctrl+C with sentinel restore guard!
+  if (allowSelectAll) {
     const allCaptured = await captureAllInputText(clipboard);
     if (allCaptured && allCaptured.text.trim()) {
       return {

@@ -100,11 +100,32 @@ function createCapsuleWindow(): BrowserWindow {
   return win;
 }
 
+function isForegroundLingualWindow(): boolean {
+  const fgHwnd = getActiveWindowHwnd();
+  if (!fgHwnd || fgHwnd === "0") return false;
+
+  for (const win of [capsuleWindow, hudWindow, settingsWindow]) {
+    if (win && !win.isDestroyed()) {
+      try {
+        const handleBuf = win.getNativeWindowHandle();
+        const winHwnd = String(handleBuf.readUInt32LE(0));
+        if (winHwnd === fgHwnd) return true;
+      } catch {}
+    }
+  }
+  return false;
+}
+
 /**
  * 测算微圆标在当前输入框/光标正上方的停靠坐标 (Roof-Docked Pebble Position)
  * 100% 异步非阻塞探针，零阻塞 Node.js 事件循环！
  */
 async function calculatePebblePositionAsync(pebbleW = CAPSULE_WIDTH, pebbleH = CAPSULE_HEIGHT): Promise<{ x: number; y: number } | null> {
+  // Never track Lingual's own windows (eliminates jitter and self-tracking loop)
+  if (isForegroundLingualWindow()) {
+    return null;
+  }
+
   const focusedRect = await getFocusedElementRectAsync();
   const caret = !focusedRect ? await getCaretPositionAsync() : null;
 
@@ -112,7 +133,8 @@ async function calculatePebblePositionAsync(pebbleW = CAPSULE_WIDTH, pebbleH = C
   let targetY = 0;
   let targetH = 24;
 
-  if (focusedRect && focusedRect.width > 0 && focusedRect.height > 0) {
+  // Filter out giant full-window rectangles (height > 160 means full window/canvas, not an input box)
+  if (focusedRect && focusedRect.width > 0 && focusedRect.height > 0 && focusedRect.height < 160) {
     targetX = focusedRect.x;
     targetY = focusedRect.y;
     targetH = focusedRect.height;
@@ -154,6 +176,7 @@ async function calculatePebblePositionAsync(pebbleW = CAPSULE_WIDTH, pebbleH = C
  * - 处于输入框打字：在正上方轻巧浮现小圆标；
  * - 离开输入框/点击桌面：自动淡出隐去，保持桌面 100% 干净；
  * - 伴学关闭(OFF)或配置关闭(showCapsule=false)：100% 隐藏，绝不残留；
+ * - 聚焦在 Lingual 自己的窗口时：绝不自追踪，杜绝上下抖动！
  * - 100% 非阻塞异步探针，零阻塞 Node.js 主事件循环，彻底消除卡顿！
  */
 function startInputTracker(): void {
@@ -178,11 +201,8 @@ function startInputTracker(): void {
       return;
     }
 
-    // 2. 如果当前聚焦的是本软件自己的设置窗口，不显示小标
-    if (settingsWindow && !settingsWindow.isDestroyed() && settingsWindow.isFocused()) {
-      if (capsuleWindow.isVisible()) {
-        capsuleWindow.hide();
-      }
+    // 2. 如果当前聚焦的是本软件自己的任意窗口（设置中心、微圆标自身、HUD），不自追踪
+    if (isForegroundLingualWindow()) {
       return;
     }
 
@@ -193,7 +213,7 @@ function startInputTracker(): void {
     try {
       const pos = await calculatePebblePositionAsync(CAPSULE_WIDTH, CAPSULE_HEIGHT);
       if (pos) {
-        if (Math.abs(pos.x - lastPebblePos.x) > 3 || Math.abs(pos.y - lastPebblePos.y) > 3) {
+        if (Math.abs(pos.x - lastPebblePos.x) > 6 || Math.abs(pos.y - lastPebblePos.y) > 6) {
           capsuleWindow.setPosition(pos.x, pos.y);
           lastPebblePos = pos;
         }
@@ -274,7 +294,7 @@ function calculateRoofDockingPosition(winWidth: number, winHeight: number): { x:
   let targetY = 0;
   let targetH = 24;
 
-  if (focusedRect && focusedRect.width > 0 && focusedRect.height > 0) {
+  if (focusedRect && focusedRect.width > 0 && focusedRect.height > 0 && focusedRect.height < 160) {
     targetX = focusedRect.x;
     targetY = focusedRect.y;
     targetH = focusedRect.height;

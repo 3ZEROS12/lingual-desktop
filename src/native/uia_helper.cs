@@ -47,7 +47,7 @@ class Program {
             if (cmd == "focused-text") {
                 // Never intercept or send Ctrl+A/Ctrl+C inside terminal emulators (where pi-lingual runs and Ctrl+C is SIGINT)
                 if (IsTerminalProcess(el.Current.ProcessId)) {
-                    Console.Write("NON_EDITABLE");
+                    Console.Write("TERMINAL");
                     return 0;
                 }
 
@@ -104,6 +104,11 @@ class Program {
             }
 
             if (cmd == "focused-rect") {
+                if (IsTerminalProcess(el.Current.ProcessId)) {
+                    Console.WriteLine("NONE");
+                    return 0;
+                }
+
                 var rect = el.Current.BoundingRectangle;
                 if (rect.IsEmpty || double.IsInfinity(rect.X) || double.IsInfinity(rect.Y)) {
                     Console.WriteLine("NONE");
