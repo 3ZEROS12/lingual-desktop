@@ -27,12 +27,9 @@
 
   const footerAutoHint = document.getElementById("footer-auto-hint");
   const footerConfirmHint = document.getElementById("footer-confirm-hint");
-  const countdownNum = document.getElementById("countdown-num");
+  const footerStatusBadge = document.getElementById("footer-status-badge");
 
   let currentData = null;
-  let countdownTimer = null;
-  let secondsLeft = 6;
-  let isHoverPaused = false;
 
   function escapeHtml(str) {
     return String(str ?? "")
@@ -43,46 +40,8 @@
       .replace(/'/g, "&#39;");
   }
 
-  function startAutoDismissCountdown(initialSec = 6) {
-    secondsLeft = initialSec;
-    isHoverPaused = false;
-    if (countdownNum) countdownNum.textContent = String(secondsLeft);
-    if (countdownTimer) clearInterval(countdownTimer);
-
-    countdownTimer = setInterval(() => {
-      if (isHoverPaused) return;
-      secondsLeft--;
-      if (secondsLeft <= 0) {
-        clearInterval(countdownTimer);
-        countdownTimer = null;
-        window.lingualAPI?.dismiss();
-      } else {
-        if (countdownNum) countdownNum.textContent = String(secondsLeft);
-      }
-    }, 1000);
-  }
-
-  // Hover-to-Pause: keep HUD open as long as user's mouse is hovering over the card
-  hudContainer?.addEventListener("mouseenter", () => {
-    isHoverPaused = true;
-    if (countdownNum) countdownNum.textContent = "Paused";
-  });
-
-  hudContainer?.addEventListener("mouseleave", () => {
-    if (isHoverPaused) {
-      isHoverPaused = false;
-      if (secondsLeft < 2) secondsLeft = 3;
-      if (countdownNum) countdownNum.textContent = String(secondsLeft);
-    }
-  });
-
   // Listen for view state changes
   window.lingualAPI?.onViewState((state) => {
-    if (countdownTimer && state !== "hud") {
-      clearInterval(countdownTimer);
-      countdownTimer = null;
-    }
-
     if (state === "spotlight") {
       spotlightBox.classList.remove("hidden");
       cardContent.classList.add("hidden");
@@ -118,14 +77,14 @@
       footerAutoHint.classList.add("hidden");
       footerConfirmHint.classList.remove("hidden");
     } else {
-      badgeMode.textContent = payload.modeLabel || (payload.autoSent ? "Submitted" : "Ready");
+      badgeMode.textContent = payload.modeLabel || (payload.autoSent ? "Ready" : "Ready");
+      if (footerStatusBadge) {
+        footerStatusBadge.textContent = "✓ Ready";
+      }
 
       if (payload.autoSent) {
         footerAutoHint.classList.remove("hidden");
         footerConfirmHint.classList.add("hidden");
-        const totalChars = (payload.spoken || "").length + (payload.written || "").length + (payload.vocab || "").length;
-        const dynamicSeconds = Math.max(6, Math.min(12, Math.ceil(totalChars / 22)));
-        startAutoDismissCountdown(dynamicSeconds);
       } else {
         footerAutoHint.classList.add("hidden");
         footerConfirmHint.classList.remove("hidden");
@@ -187,7 +146,8 @@
           `;
 
           row.addEventListener("click", () => {
-            if (countdownTimer) clearInterval(countdownTimer);
+            if (badgeMode) badgeMode.textContent = `Copied #${num} ✓`;
+            if (footerStatusBadge) footerStatusBadge.textContent = `✓ Copied #${num}`;
             window.lingualAPI?.selectTranslation(num);
           });
         } else if (slot.role === "vocab") {
@@ -232,17 +192,16 @@
 
   // Slot clicks
   slot1Row?.addEventListener("click", () => {
-    if (countdownTimer) clearInterval(countdownTimer);
+    if (badgeMode) badgeMode.textContent = "Copied #1 ✓";
     window.lingualAPI?.selectTranslation(1);
   });
 
   slot2Row?.addEventListener("click", () => {
-    if (countdownTimer) clearInterval(countdownTimer);
+    if (badgeMode) badgeMode.textContent = "Copied #2 ✓";
     window.lingualAPI?.selectTranslation(2);
   });
 
   btnClose?.addEventListener("click", () => {
-    if (countdownTimer) clearInterval(countdownTimer);
     window.lingualAPI?.dismiss();
   });
 
@@ -270,18 +229,10 @@
     const numKey = parseInt(e.key, 10);
     if (!isNaN(numKey) && numKey >= 1 && numKey <= 9) {
       e.preventDefault();
-      if (countdownTimer) clearInterval(countdownTimer);
       window.lingualAPI?.selectTranslation(numKey);
     } else if (e.key === "Escape") {
       e.preventDefault();
-      if (countdownTimer && currentData?.autoSent) {
-        clearInterval(countdownTimer);
-        countdownTimer = null;
-        window.lingualAPI?.undo();
-      } else {
-        if (countdownTimer) clearInterval(countdownTimer);
-        window.lingualAPI?.dismiss();
-      }
+      window.lingualAPI?.dismiss();
     }
   });
 })();

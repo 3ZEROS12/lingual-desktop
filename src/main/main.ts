@@ -176,7 +176,7 @@ function createHudWindow(): BrowserWindow {
   });
 
   win.on("blur", () => {
-    if (viewState === "hud" || viewState === "spotlight") {
+    if (viewState === "spotlight") {
       switchToIdleView();
       restoreFocus(activeTargetHwnd);
     }
@@ -194,48 +194,30 @@ function switchToIdleView(): void {
 }
 
 /**
- * Deterministic In-Situ Roof-Docking directly above the active text input box:
- * 1. Probes UIA focused element rectangle (pixel-perfect bounding box of input/textarea).
- * 2. Clamps horizontally against screen right-edge boundary (never overflows right edge).
- * 3. Docks directly above the input box (roof-docking, 8px gap). If too close to screen top, flips below.
- * 4. Fallback chain: caret position -> cursor position -> primary display center.
+ * Dynamic Island In-Situ Expansion (灵动岛原位展开):
+ * Always expands directly beneath (or above, if near screen bottom) the Top Floating Island (`capsuleWindow`).
+ * 100% predictable position, zero eye-hunting across the screen, and never covers bottom chat input history!
  */
 function calculateRoofDockingPosition(
   winWidth: number,
   winHeight: number,
-  overrideRect?: { x: number; y: number; width: number; height: number } | null
+  _overrideRect?: { x: number; y: number; width: number; height: number } | null
 ): { x: number; y: number } {
-  const focusedRect = overrideRect && overrideRect.width > 0 && overrideRect.height > 0 ? overrideRect : getFocusedElementRect();
-  const caret = !focusedRect ? getCaretPosition() : null;
-  const cursor = screen.getCursorScreenPoint();
-
-  let targetX = 0;
-  let targetY = 0;
-  let targetH = 24;
-
-  if (focusedRect && focusedRect.width > 0 && focusedRect.height > 0 && focusedRect.height < 260) {
-    targetX = focusedRect.x;
-    targetY = focusedRect.y;
-    targetH = focusedRect.height;
-  } else if (caret) {
-    targetX = caret.x;
-    targetY = caret.y;
-    targetH = 20;
-  } else {
-    targetX = cursor.x;
-    targetY = cursor.y;
-    targetH = 20;
+  let capX = currentCapsulePos.x;
+  let capY = currentCapsulePos.y;
+  if (capsuleWindow && !capsuleWindow.isDestroyed()) {
+    try {
+      const [cx, cy] = capsuleWindow.getPosition();
+      capX = cx;
+      capY = cy;
+    } catch {}
   }
 
-  const display = screen.getDisplayNearestPoint({ x: targetX, y: targetY });
-  const scale = display.scaleFactor || 1.0;
-  const dipX = targetX / scale;
-  const dipY = targetY / scale;
-  const dipH = targetH / scale;
+  const display = screen.getDisplayNearestPoint({ x: capX, y: capY });
   const { workArea } = display;
 
-  // 1. Horizontal Alignment & Right-Edge Screen Boundary Clamping
-  let x = dipX;
+  // 1. Center horizontally beneath the Top Floating Island, clamped cleanly within screen workArea
+  let x = capX + Math.round((CAPSULE_WIDTH - winWidth) / 2);
   if (x + winWidth > workArea.x + workArea.width - 12) {
     x = workArea.x + workArea.width - winWidth - 12;
   }
@@ -243,14 +225,10 @@ function calculateRoofDockingPosition(
     x = workArea.x + 12;
   }
 
-  // 2. Vertical Roof-Docking (Directly above the input box)
-  let y = dipY - winHeight - 8;
-  if (y < workArea.y + 12) {
-    // If too close to screen top, flip directly below the input box
-    y = dipY + dipH + 8;
-  }
+  // 2. Expand 6px directly below the Top Floating Island (or flip 6px above if island is near screen bottom)
+  let y = capY + CAPSULE_HEIGHT + 6;
   if (y + winHeight > workArea.y + workArea.height - 12) {
-    y = workArea.y + workArea.height - winHeight - 12;
+    y = Math.max(workArea.y + 12, capY - winHeight - 6);
   }
 
   return { x: Math.round(x), y: Math.round(y) };
@@ -643,7 +621,7 @@ function setupIpc(): void {
       }
     }
 
-    switchToIdleView();
+    // Keep persistent HUD card visible after copying row; restore focus to target app
     restoreFocus(activeTargetHwnd);
   });
 
@@ -749,10 +727,16 @@ function setupIpc(): void {
   ipcMain.on("lingual:drag-move", (_event, { dx, dy }) => {
     if (!capsuleWindow || capsuleWindow.isDestroyed()) return;
     const [x, y] = capsuleWindow.getPosition();
-    const nextX = Math.round(x + dx);
-    const nextY = Math.round(y + dy);
-    capsuleWindow.setPosition(nextX, nextY);
-    currentCapsulePos = { x: nextX, y: nextY };
+    const clamped = clampCapsuleToScreen(x + dx, y + dy);
+    capsuleWindow.setPosition(clamped.x, clamped.y);
+    currentCapsulePos = clamped;
+
+    // If HUD card is currently expanded, smoothly follow the Top Floating Island in real time!
+    if (viewState === "hud" && hudWindow && !hudWindow.isDestroyed() && hudWindow.isVisible()) {
+      const [hw, hh] = hudWindow.getSize();
+      const hudPos = calculateRoofDockingPosition(hw, hh);
+      hudWindow.setPosition(hudPos.x, hudPos.y);
+    }
   });
 
   ipcMain.on("lingual:save-capsule-pos", () => {
