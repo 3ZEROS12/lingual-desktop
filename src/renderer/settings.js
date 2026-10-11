@@ -37,8 +37,11 @@
       tog_widget_desc: "Anchored at screen top edge. Click to cycle mode; drag to move anywhere.",
       preview_title: "Live Preview",
       preview_hint: 'Sample: "Can we release this feature tomorrow?"',
-      ai_tuner_title: "Natural Language Layout Tuner",
-      ai_tuner_desc: "Type any custom instruction or click a preset below to reconfigure the card:",
+      free_engine_card_notice:
+        "⚠️ <strong>Active Engine: Free Web Translate (Non-LLM)</strong> — Standard machine translation outputs <strong>1 direct translation line</strong> only (only the Source row toggle applies below). To enable Natural Language Layout Tuning, dual-register comparison, and vocabulary extraction, switch to <strong>1. Local Pi Model</strong> or <strong>3. Custom LLM API</strong> in the Engine tab.",
+      ai_tuner_title: "Natural Language Layout Tuner (LLM Only)",
+      ai_tuner_desc:
+        "Rewrites the LLM system prompt to customize what rows appear on your card and their exact writing style (e.g. switching from Casual+Formal to Customer Support, X/Twitter hooks, or Single-Line Minimal):",
       ai_tuner_placeholder: "e.g. Single line only for fast chat, no source row or vocab...",
       ai_tuner_btn: "Apply",
       wish_1: "Single line (Minimal)",
@@ -58,17 +61,17 @@
       adv_slots_summary: "Advanced slot configuration",
       btn_add_row: "+ Add Row",
       btn_reset_rows: "Reset Default",
-      engine_choose_title: "Translation Engine Options",
-      engine_choose_desc: "Select how translations are powered:",
-      emode_pi_title: "1. Reuse Local Pi Model (Recommended · $0 Setup)",
+      engine_choose_title: "Translation Engine & Trade-offs",
+      engine_choose_desc: "Compare capabilities, accuracy, and token costs across the 3 engines:",
+      emode_pi_title: "1. Reuse Local Pi Model (Zero Setup)",
       emode_pi_desc:
-        "Automatically shares the model configured in ~/.pi/agent/models.json. Supports full dual-register comparison, vocabulary notes, and AI layout tuning with zero extra setup.",
+        "✔ Pros: Shares ~/.pi/agent/models.json automatically; full LLM accuracy, dual-tone comparison, vocab notes & layout tuning.<br>⚠️ Caveat: Consumes your Pi model's API quota. If your Pi session uses a high-cost flagship model (e.g. Claude Opus/Sonnet), frequent typing will incur token costs.",
       emode_free_title: "2. Free Web Translate (Google / MyMemory · No Key)",
       emode_free_desc:
-        "Uses public web translation APIs (Google Translate + MyMemory) with zero registration or API keys. Note: As standard machine translation (non-LLM), it provides 1 direct translation line without dual-tone comparison.",
-      emode_custom_title: "3. Custom LLM API Key (GLM-4 / SiliconFlow / Groq / OpenAI)",
+        "✔ Pros: 100% free, zero API keys, zero token usage.<br>⚠️ Caveat: Traditional machine translation (non-LLM) — phrasing can be stiff/literal, and it CANNOT support layout tuning, dual-tone comparison, or vocabulary extraction (outputs 1 basic line only).",
+      emode_custom_title: "3. Dedicated LLM API Key (GLM-4 / SiliconFlow / Groq / OpenAI)",
       emode_custom_desc:
-        "Connect to high-tier reasoning or lightweight models via standard OpenAI-compatible endpoints:",
+        "✔ Pros: Completely isolated from your Pi quota. Using free-tier LLM keys (Zhipu GLM-4-Flash or SiliconFlow Qwen2.5-7B) gives you $0 cost AND full LLM layout tuning + dual-register comparison.<br>⚠️ Caveat: Requires pasting a free/custom API key once; lightweight free models are slightly less nuanced than flagship models on complex prose:",
       btn_show: "Show",
       btn_hide: "Hide",
       btn_test: "Test",
@@ -107,8 +110,11 @@
       tog_widget_desc: "常驻屏幕顶端，点击切换模式，支持鼠标按住拖拽至屏幕任意位置。",
       preview_title: "实时预览",
       preview_hint: "示例：「这个功能明天能上线吗？」",
-      ai_tuner_title: "一句话定制版式",
-      ai_tuner_desc: "输入你的日常用途（支持任意自然语言描述）或直接点选下方预设：",
+      free_engine_card_notice:
+        "⚠️ <strong>当前引擎为「公共网页基础翻译（传统机翻）」</strong>：传统机器翻译非大模型，仅能固定输出 <strong>1 行基础译文</strong>（下方仅「原文行」开关生效）。若需使用「一句话定制版式」、口语/书面双语气对照及重点词汇提取，请在「引擎」页切换为 <strong>1. 复用本地 Pi 模型</strong> 或 <strong>3. 独立大模型 API</strong>。",
+      ai_tuner_title: "一句话定制版式（仅大模型引擎生效）",
+      ai_tuner_desc:
+        "作用：动态改写大模型的系统提示词（System Prompt），把默认卡片改成你需要的专属行项与文风（例如改为「跨境客服礼貌回复 + 催单」、「推特短句」或「极简一行译文」）：",
       ai_tuner_placeholder: "例如：只要一行极简译文，不显示原文和词汇...",
       ai_tuner_btn: "应用",
       wish_1: "单行极简（纯打字）",
@@ -128,17 +134,17 @@
       adv_slots_summary: "高级行项配置",
       btn_add_row: "+ 新增行",
       btn_reset_rows: "重置默认",
-      engine_choose_title: "翻译驱动引擎 (支持 3 种透明配置方案)",
-      engine_choose_desc: "根据你的使用习惯选择翻译来源：",
-      emode_pi_title: "1. 复用本地 Pi Agent 模型 (推荐 · 零额外配置)",
+      engine_choose_title: "翻译驱动引擎（含各方案优缺点对比）",
+      engine_choose_desc: "请根据你对翻译准确度、版式定制与 Token 成本的偏好选择：",
+      emode_pi_title: "1. 复用本地 Pi Agent 模型（免配 Key · 共享 Pi 额度）",
       emode_pi_desc:
-        "自动复用 ~/.pi/agent/models.json 中配置的模型通道，无需重复填 Key，完整支持双语气对比与重点词汇。",
-      emode_free_title: "2. 公共网页基础翻译 (免注册 / 免 API 密钥)",
+        "✔ <strong>优势</strong>：自动复用 <code>~/.pi/agent/models.json</code> 模型通道，免填 Key，完整支持「一句话定制版式」、口语/书面双语气对照与词汇提取，准确度最高。<br>⚠️ <strong>缺点/注意</strong>：<strong>直接消耗你 Pi 配置的模型额度</strong>。若你的 Pi 绑定的是昂贵的旗舰付费模型（如 Claude Opus/Sonnet），日常高频打字会产生额外的 Token 账单消耗。",
+      emode_free_title: "2. 公共网页基础翻译（Google / MyMemory · 免 Key 传统机翻）",
       emode_free_desc:
-        "调用公共网页基础翻译接口（Google 翻译与 MyMemory），免注册免 Key，直接输出标准译文。",
-      emode_custom_title: "3. 自定义大模型 API 密钥 (智谱 / 硅基 / Groq / OpenAI 等)",
+        "✔ <strong>优势</strong>：免注册免 Key，完全不消耗任何大模型 Token。<br>⚠️ <strong>缺点/注意</strong>：属于<strong>传统机器直译（非大模型），准确度与地道感一般，长句容易生硬直译</strong>；且<strong>无法使用「一句话定制版式」、无双语气对照、无词汇提取</strong>（每次仅固定输出 1 行基础译文）。",
+      emode_custom_title: "3. 独立大模型 API 密钥（推荐配免费层 · 与 Pi 额度隔离）",
       emode_custom_desc:
-        "支持任意兼容 OpenAI 标准格式的模型接口，填入对应 API Key 即可享受完整双语气对照能力：",
+        "✔ <strong>优势</strong>：<strong>与你的 Pi 主力编程额度彻底隔离，互不抢占</strong>。填入智谱 <code>GLM-4-Flash</code> 或硅基流动 <code>Qwen2.5-7B</code> 的官方免费 API Key，即可在 <strong>0 成本</strong> 下完整享受「一句话定制版式」与双语气伴学。<br>⚠️ <strong>缺点/注意</strong>：首次需去对应平台复制粘贴一次 API Key；免费层小模型在极长复杂句上的文采略逊于顶级旗舰大模型：",
       btn_show: "显示",
       btn_hide: "隐藏",
       btn_test: "测试",
@@ -930,6 +936,20 @@
       `;
     }
 
+    // If activeEngineMode is "free" (non-LLM web translation), honestly preview the 1-line standard machine translation!
+    if (activeEngineMode === "free") {
+      html += `
+        <div class="preview-row">
+          <span class="preview-tree">└</span>
+          <span class="preview-tag">[1] Translation</span>
+          <span class="preview-text">${escapeHtml(sample.trans1)}</span>
+          <span class="preview-meta">${escapeHtml(t("meta_key").replace("{n}", "1"))}</span>
+        </div>
+      `;
+      liveHudPreview.innerHTML = html;
+      return;
+    }
+
     let transIdx = 0;
     branchSlots.forEach((slot, i) => {
       const isLast = i === branchSlots.length - 1;
@@ -1271,12 +1291,36 @@
 
   function setEngineModeUI(mode) {
     activeEngineMode = mode || "pi";
+    const isFreeWeb = activeEngineMode === "free";
+
     engineModeCards.forEach((card) => {
       card.classList.toggle("active", card.dataset.emode === activeEngineMode);
     });
     if (cloudConfigBox) {
       cloudConfigBox.style.display = activeEngineMode === "custom" ? "flex" : "none";
     }
+
+    // Sync Cards tab availability: Free Web Translate is non-LLM and only supports 1 line + optional Source row
+    const freeNotice = document.getElementById("free-engine-card-notice");
+    const aiTunerCard = document.getElementById("ai-tuner-card-box");
+    if (freeNotice) {
+      freeNotice.classList.toggle("hidden", !isFreeWeb);
+    }
+    if (aiTunerCard) {
+      aiTunerCard.style.opacity = isFreeWeb ? "0.45" : "1";
+      aiTunerCard.style.pointerEvents = isFreeWeb ? "none" : "auto";
+    }
+    [toggleDualStyle, toggleShowMeaning, toggleShowVocab].forEach((chk) => {
+      if (chk) {
+        chk.disabled = isFreeWeb;
+        const labelParent = chk.closest(".toggle-item");
+        if (labelParent) {
+          labelParent.style.opacity = isFreeWeb ? "0.45" : "1";
+        }
+      }
+    });
+
+    renderLiveHudPreview();
   }
 
   engineModeCards.forEach((card) => {

@@ -151,6 +151,13 @@
 
       <!-- ==================== TAB 2: CARDS ==================== -->
       <section id="tab-cards" class="tab-pane">
+        <!-- Notice when Free Web Translate (non-LLM) is active -->
+        <div id="free-engine-card-notice" class="notice-banner hidden" style="border-color: #d97706; background: #fffbeb; color: #92400e;">
+          <span data-i18n="free_engine_card_notice">
+            ⚠️ <strong>当前引擎为「公共网页基础翻译（传统机翻）」</strong>：传统机器翻译非大模型，仅能固定输出 <strong>1 行基础译文</strong>（下方仅「原文行」开关生效）。若需使用「一句话定制版式」、口语/书面双语气对照及重点词汇提取，请在「引擎」页切换为 <strong>1. 复用本地 Pi 模型</strong> 或 <strong>3. 自定义大模型 API</strong>。
+          </span>
+        </div>
+
         <!-- 1. Live Preview -->
         <div class="preview-stage">
           <div class="preview-stage-header">
@@ -161,7 +168,7 @@
         </div>
 
         <!-- 2. Conversational Intent Tuner -->
-        <div class="card ai-tuner-card">
+        <div class="card ai-tuner-card" id="ai-tuner-card-box">
           <div class="card-header">
             <h2 class="card-title" data-i18n="ai_tuner_title">Natural Language Layout Tuner</h2>
             <p class="card-desc" data-i18n="ai_tuner_desc">Type any custom instruction or click a preset below to reconfigure the card:</p>
