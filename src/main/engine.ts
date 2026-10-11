@@ -41,10 +41,17 @@ export async function fetchZeroKeyTranslation(
       if (!res.ok) throw new Error("MyMemory HTTP error");
       const data = (await res.json()) as any;
       const out = data?.responseData?.translatedText;
-      if (typeof out === "string" && out.trim() && out.trim() !== trimmed) {
+      if (
+        (data?.responseStatus === 200 || data?.responseStatus === undefined) &&
+        typeof out === "string" &&
+        out.trim() &&
+        out.trim() !== trimmed &&
+        !/MYMEMORY WARNING|YOU USED ALL AVAILABLE|INVALID LANGUAGE/i.test(out) &&
+        !/^\s*<(!DOCTYPE|html|head|body)/i.test(out)
+      ) {
         return out.trim();
       }
-      throw new Error("Empty MyMemory result");
+      throw new Error("Empty or quota-exceeded MyMemory result");
     } finally {
       clearTimeout(timer);
     }
@@ -186,8 +193,12 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
 
       const data = (await res.json()) as any;
       const content = data?.choices?.[0]?.message?.content;
+      if (typeof content !== "string" || !content.trim() || /^\s*<(!DOCTYPE|html)/i.test(content)) {
+        requestFailed = true;
+        return null;
+      }
       logger.info("engine:http", `Model completion successful: [${model}] in ${elapsed}ms`);
-      return typeof content === "string" ? content : null;
+      return content;
     } catch (err: any) {
       requestFailed = true;
       if (err.name === "AbortError") {

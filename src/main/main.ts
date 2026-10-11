@@ -61,9 +61,28 @@ function notifyCapsuleModeChanged(mode: CompanionMode = currentMode): void {
   }
 }
 
+function clampCapsuleToScreen(x: number, y: number): { x: number; y: number } {
+  try {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      const primary = screen.getPrimaryDisplay().workArea;
+      return {
+        x: Math.round(primary.x + (primary.width - CAPSULE_WIDTH) / 2),
+        y: Math.round(primary.y + 10),
+      };
+    }
+    const { workArea } = screen.getDisplayNearestPoint({ x: Math.round(x), y: Math.round(y) });
+    return {
+      x: Math.max(workArea.x, Math.min(Math.round(x), workArea.x + workArea.width - CAPSULE_WIDTH)),
+      y: Math.max(workArea.y, Math.min(Math.round(y), workArea.y + workArea.height - CAPSULE_HEIGHT)),
+    };
+  } catch {
+    return { x: 500, y: 10 };
+  }
+}
+
 function getInitialCapsulePos(config: LingualDesktopConfig): { x: number; y: number } {
   if (config.capsulePos && typeof config.capsulePos.x === "number" && typeof config.capsulePos.y === "number") {
-    return { x: Math.round(config.capsulePos.x), y: Math.round(config.capsulePos.y) };
+    return clampCapsuleToScreen(config.capsulePos.x, config.capsulePos.y);
   }
   try {
     const primary = screen.getPrimaryDisplay();
@@ -309,6 +328,8 @@ function cycleCompanionMode(): void {
   console.log(`[lingual-desktop] Mode cycled to: ${currentMode}`);
 }
 
+let passiveSubmitSeq = 0;
+
 /**
  * 100% Passive Submit Handler (Zero Key Occupation, 0.00ms Enter Latency)
  * Triggered passively by uia_helper.exe watch when the user types in an input box and presses Enter.
@@ -337,7 +358,8 @@ async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
     return;
   }
 
-  logger.info("passive-watcher", `Detected submit (${text.length} chars, mode=${currentMode}): "${text.slice(0, 40).replace(/\n/g, " ")}"`);
+  const mySeq = ++passiveSubmitSeq;
+  logger.info("passive-watcher", `Detected submit #${mySeq} (${text.length} chars, mode=${currentMode}): "${text.slice(0, 40).replace(/\n/g, " ")}"`);
 
   const effectiveConfig = { ...config, sourceLang: effectiveSourceLang };
   const configuredSlots =
@@ -361,11 +383,13 @@ async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
 
   try {
     const res = await executeTranslation(text, effectiveConfig, undefined, configuredSlots);
+    if (mySeq !== passiveSubmitSeq) return; // Discard out-of-order stale turn
     currentTranslationResponse = res;
 
     if (res.isOfflineOrFailed) {
       if (hudWindow && !hudWindow.isDestroyed() && hudWindow.isVisible()) {
         hudWindow.webContents.send("lingual:data", {
+          isOffline: true,
           sourceText: text,
           sourceLang: effectiveConfig.sourceLang,
           targetLang: effectiveConfig.targetLang,

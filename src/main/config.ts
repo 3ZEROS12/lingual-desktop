@@ -108,7 +108,8 @@ export function loadDesktopConfig(): LingualDesktopConfig {
   const primaryPath = getConfigPath();
   if (fs.existsSync(primaryPath)) {
     try {
-      desktopRaw = JSON.parse(fs.readFileSync(primaryPath, "utf8"));
+      const parsed = JSON.parse(fs.readFileSync(primaryPath, "utf8"));
+      desktopRaw = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
     } catch {
       desktopRaw = {};
     }
@@ -119,7 +120,10 @@ export function loadDesktopConfig(): LingualDesktopConfig {
   if (!isTestEnvironment() && fs.existsSync(sharedPath)) {
     try {
       const parsed = JSON.parse(fs.readFileSync(sharedPath, "utf8"));
-      sharedRaw = parsed["pi-lingual"] || parsed;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        const inner = parsed["pi-lingual"] || parsed;
+        sharedRaw = inner && typeof inner === "object" && !Array.isArray(inner) ? inner : {};
+      }
     } catch {
       sharedRaw = {};
     }
@@ -128,11 +132,15 @@ export function loadDesktopConfig(): LingualDesktopConfig {
   const piDiscovered = !isTestEnvironment() ? discoverPiModelConfig() : null;
 
   // Desktop config is primary; shared config is fallback for initial bootstrap
-  const effectiveUiLang = desktopRaw.uiLang || DEFAULT_DESKTOP_CONFIG.uiLang;
+  const effectiveUiLang = typeof desktopRaw.uiLang === "string" && desktopRaw.uiLang ? desktopRaw.uiLang : DEFAULT_DESKTOP_CONFIG.uiLang;
   const effectiveSourceLang =
-    desktopRaw.sourceLang || sharedRaw.sourceLang || DEFAULT_DESKTOP_CONFIG.sourceLang;
+    (typeof desktopRaw.sourceLang === "string" && desktopRaw.sourceLang) ||
+    (typeof sharedRaw.sourceLang === "string" && sharedRaw.sourceLang) ||
+    DEFAULT_DESKTOP_CONFIG.sourceLang;
   const effectiveTargetLang =
-    desktopRaw.targetLang || sharedRaw.targetLang || DEFAULT_DESKTOP_CONFIG.targetLang;
+    (typeof desktopRaw.targetLang === "string" && desktopRaw.targetLang) ||
+    (typeof sharedRaw.targetLang === "string" && sharedRaw.targetLang) ||
+    DEFAULT_DESKTOP_CONFIG.targetLang;
   const effectiveMode =
     (desktopRaw.mode as CompanionMode) ||
     (sharedRaw.mode as CompanionMode) ||
@@ -142,14 +150,19 @@ export function loadDesktopConfig(): LingualDesktopConfig {
     (sharedRaw.slotPreset as SlotPreset) ||
     DEFAULT_DESKTOP_CONFIG.slotPreset;
 
-  const effectiveSlots =
-    Array.isArray(desktopRaw.slots) && desktopRaw.slots.length > 0
-      ? desktopRaw.slots
-      : Array.isArray(sharedRaw.slots) && sharedRaw.slots.length > 0
-      ? sharedRaw.slots
-      : getDefaultSlots("en");
+  const isValidSlotArray = (arr: unknown): arr is SlotConfig[] =>
+    Array.isArray(arr) &&
+    arr.length > 0 &&
+    arr.every((s) => s && typeof s === "object" && typeof (s as any).role === "string" && typeof (s as any).id === "string") &&
+    arr.some((s) => (s as any).enabled !== false && (s as any).role !== "source");
 
-  const rawSubmitKey = desktopRaw.hotkeySubmit || DEFAULT_DESKTOP_CONFIG.hotkeySubmit;
+  const effectiveSlots = isValidSlotArray(desktopRaw.slots)
+    ? desktopRaw.slots
+    : isValidSlotArray(sharedRaw.slots)
+    ? sharedRaw.slots
+    : getDefaultSlots("en");
+
+  const rawSubmitKey = typeof desktopRaw.hotkeySubmit === "string" ? desktopRaw.hotkeySubmit : DEFAULT_DESKTOP_CONFIG.hotkeySubmit;
   const safeHotkeySubmit =
     rawSubmitKey.toLowerCase() === "ctrl+enter" ? "Enter" : rawSubmitKey;
 
@@ -158,7 +171,7 @@ export function loadDesktopConfig(): LingualDesktopConfig {
     (piDiscovered ? "pi" : "free");
 
   const customEndpoint =
-    desktopRaw.endpoint && !desktopRaw.endpoint.includes("11434") && !desktopRaw.endpoint.includes("127.0.0.1:0")
+    typeof desktopRaw.endpoint === "string" && desktopRaw.endpoint && !desktopRaw.endpoint.includes("11434") && !desktopRaw.endpoint.includes("127.0.0.1:0")
       ? desktopRaw.endpoint
       : "";
   const customApiKey =

@@ -638,6 +638,15 @@
     return dict[key] || UI_I18N.en[key] || key;
   }
 
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function applyInterfaceLanguage(langCode) {
     activeUiLang = UI_I18N[langCode] ? langCode : "en";
     const dict = UI_I18N[activeUiLang] || UI_I18N.en;
@@ -914,9 +923,9 @@
     if (sourceSlot) {
       html += `
         <div class="preview-row">
-          <span class="preview-tag source">[${sourceSlot.label || "Source"}]</span>
-          <span class="preview-text">${sample.source}</span>
-          <span class="preview-meta">${t("meta_orig")}</span>
+          <span class="preview-tag source">[${escapeHtml(sourceSlot.label || "Source")}]</span>
+          <span class="preview-text">${escapeHtml(sample.source)}</span>
+          <span class="preview-meta">${escapeHtml(t("meta_orig"))}</span>
         </div>
       `;
     }
@@ -930,9 +939,9 @@
         html += `
           <div class="preview-row">
             <span class="preview-tree">${treeChar}</span>
-            <span class="preview-tag vocab">[${slot.label || "Vocab"}]</span>
-            <span class="preview-text">${sample.vocab}</span>
-            <span class="preview-meta">${t("meta_vocab")}</span>
+            <span class="preview-tag vocab">[${escapeHtml(slot.label || "Vocab")}]</span>
+            <span class="preview-text">${escapeHtml(sample.vocab)}</span>
+            <span class="preview-meta">${escapeHtml(t("meta_vocab"))}</span>
           </div>
         `;
       } else {
@@ -944,10 +953,10 @@
         html += `
           <div class="preview-row">
             <span class="preview-tree">${treeChar}</span>
-            <span class="preview-tag">[${transIdx}] ${slot.label || "Translation"}</span>
-            <span class="preview-text">${mainText}</span>
-            ${showMeaning ? `<span class="preview-nuance">(${meaningText})</span>` : ""}
-            <span class="preview-meta">${t("meta_key").replace("{n}", String(transIdx))}</span>
+            <span class="preview-tag">[${transIdx}] ${escapeHtml(slot.label || "Translation")}</span>
+            <span class="preview-text">${escapeHtml(mainText)}</span>
+            ${showMeaning ? `<span class="preview-nuance">(${escapeHtml(meaningText)})</span>` : ""}
+            <span class="preview-meta">${escapeHtml(t("meta_key").replace("{n}", String(transIdx)))}</span>
           </div>
         `;
       }
@@ -1126,7 +1135,7 @@
         <div class="slot-row-top">
           <span class="slot-idx">#${idx + 1}</span>
           <input type="checkbox" class="slot-checkbox" ${slot.enabled !== false ? "checked" : ""} />
-          <input type="text" class="input-text slot-label-input" value="${slot.label || ""}" placeholder="Label" />
+          <input type="text" class="input-text slot-label-input" value="${escapeHtml(slot.label || "")}" placeholder="Label" />
           <select class="slot-role-select">
             <option value="translation" ${slot.role === "translation" || slot.role === "custom" ? "selected" : ""}>Translation</option>
             <option value="vocab" ${slot.role === "vocab" ? "selected" : ""}>Vocab</option>
@@ -1141,7 +1150,7 @@
           <button type="button" class="btn-icon-subtle btn-del-slot" title="Remove row">✕</button>
         </div>
         ${!isSource ? `
-          <input type="text" class="input-text slot-inst-input" value="${slot.instruction || ""}" placeholder="Prompt instruction..." />
+          <input type="text" class="input-text slot-inst-input" value="${escapeHtml(slot.instruction || "")}" placeholder="Prompt instruction..." />
         ` : ""}
       `;
 

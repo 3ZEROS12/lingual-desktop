@@ -34,6 +34,15 @@
   let secondsLeft = 6;
   let isHoverPaused = false;
 
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function startAutoDismissCountdown(initialSec = 6) {
     secondsLeft = initialSec;
     isHoverPaused = false;
@@ -138,8 +147,8 @@
         sourceRow.className = "branch-row branch-source";
         sourceRow.innerHTML = `
           <span class="tree-bullet">·</span>
-          <span class="tag tag-source">[${sourceSlot.label || "Source"}]</span>
-          <span class="branch-text">${sourceSlot.content}</span>
+          <span class="tag tag-source">[${escapeHtml(sourceSlot.label || "Source")}]</span>
+          <span class="branch-text">${escapeHtml(sourceSlot.content)}</span>
         `;
         cardContent.appendChild(sourceRow);
       }
@@ -170,10 +179,10 @@
           row.innerHTML = `
             <div class="key-badge">${num}</div>
             <span class="tree-glyph">${glyph}</span>
-            <span class="tag">[${slot.label || "Translation"}]</span>
+            <span class="tag">[${escapeHtml(slot.label || "Translation")}]</span>
             <div class="text-group">
-              <div class="branch-text main-text">${slot.content}</div>
-              ${slot.meaning ? `<div class="sub-nuance">(${slot.meaning})</div>` : ""}
+              <div class="branch-text main-text">${escapeHtml(slot.content)}</div>
+              ${slot.meaning ? `<div class="sub-nuance">(${escapeHtml(slot.meaning)})</div>` : ""}
             </div>
           `;
 
@@ -185,8 +194,8 @@
           row.classList.add("branch-vocab");
           row.innerHTML = `
             <span class="tree-glyph indent-glyph">${glyph}</span>
-            <span class="tag tag-vocab">[${slot.label || "Vocab"}]</span>
-            <div class="branch-text vocab-stream">${slot.content}</div>
+            <span class="tag tag-vocab">[${escapeHtml(slot.label || "Vocab")}]</span>
+            <div class="branch-text vocab-stream">${escapeHtml(slot.content)}</div>
           `;
         }
         cardContent.appendChild(row);
