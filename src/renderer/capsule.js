@@ -12,11 +12,22 @@
   let dragStartX = 0;
   let dragStartY = 0;
   let hasMoved = false;
+  let currentTargetLang = "EN";
 
-  function updateDisplay(mode) {
+  function updateDisplay(data) {
+    let mode = "english";
+    if (typeof data === "string") {
+      mode = data;
+    } else if (data && typeof data === "object") {
+      mode = data.mode || "english";
+      if (data.targetLang) {
+        currentTargetLang = String(data.targetLang).toUpperCase();
+      }
+    }
+
     document.body.classList.remove("mode-original", "mode-off", "mode-english");
     if (mode === "english") {
-      if (label) label.textContent = "EN";
+      if (label) label.textContent = currentTargetLang || "EN";
       document.body.classList.add("mode-english");
     } else if (mode === "original") {
       if (label) label.textContent = "LEARN";

@@ -75,6 +75,11 @@
     spotlightBox.classList.add("hidden");
     cardContent.classList.remove("hidden");
 
+    const hudPairText = document.getElementById("hud-pair-text");
+    if (hudPairText && (payload.sourceLang || payload.targetLang)) {
+      hudPairText.textContent = `[${payload.sourceLang || "zh"} ⇄ ${payload.targetLang || "en"}]`;
+    }
+
     if (payload.loading) {
       loadingState.classList.remove("hidden");
       cardContent.classList.add("hidden");

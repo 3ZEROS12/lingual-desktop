@@ -50,6 +50,16 @@ const HUD_HEIGHT = 280;
 
 let currentCapsulePos = { x: 0, y: 0 };
 
+function notifyCapsuleModeChanged(mode: CompanionMode = currentMode): void {
+  if (capsuleWindow && !capsuleWindow.isDestroyed()) {
+    const config = loadDesktopConfig();
+    capsuleWindow.webContents.send("lingual:mode-changed", {
+      mode,
+      targetLang: config.targetLang || "en",
+    });
+  }
+}
+
 function getInitialCapsulePos(config: LingualDesktopConfig): { x: number; y: number } {
   if (config.capsulePos && typeof config.capsulePos.x === "number" && typeof config.capsulePos.y === "number") {
     return { x: Math.round(config.capsulePos.x), y: Math.round(config.capsulePos.y) };
@@ -108,7 +118,7 @@ function createCapsuleWindow(): BrowserWindow {
   win.once("ready-to-show", () => {
     if (config.showCapsule !== false) {
       win.showInactive();
-      win.webContents.send("lingual:mode-changed", currentMode);
+      notifyCapsuleModeChanged(currentMode);
     }
   });
 
@@ -283,9 +293,7 @@ function cycleCompanionMode(): void {
   saveDesktopConfig({ mode: currentMode });
   registerShortcuts(loadDesktopConfig());
 
-  if (capsuleWindow && !capsuleWindow.isDestroyed()) {
-    capsuleWindow.webContents.send("lingual:mode-changed", currentMode);
-  }
+  notifyCapsuleModeChanged(currentMode);
   updateTrayMenu();
   if (tray) {
     const title =
@@ -343,6 +351,8 @@ async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
     hudWindow.webContents.send("lingual:data", {
       loading: true,
       sourceText: text,
+      sourceLang: effectiveConfig.sourceLang,
+      targetLang: effectiveConfig.targetLang,
       autoSent: true,
       modeLabel: currentMode === "original" ? "Learn" : "Translating",
     });
@@ -356,6 +366,8 @@ async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
       if (hudWindow && !hudWindow.isDestroyed() && hudWindow.isVisible()) {
         hudWindow.webContents.send("lingual:data", {
           sourceText: text,
+          sourceLang: effectiveConfig.sourceLang,
+          targetLang: effectiveConfig.targetLang,
           spoken: text,
           written: text,
           autoSent: false,
@@ -376,6 +388,8 @@ async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
       hudWindow.webContents.send("lingual:data", {
         ...res,
         sourceText: text,
+        sourceLang: effectiveConfig.sourceLang,
+        targetLang: effectiveConfig.targetLang,
         autoSent: true,
         modeLabel: currentMode === "original" ? "Learn" : "Translated",
         slots: res.slots,
@@ -481,9 +495,7 @@ function updateTrayMenu(): void {
         currentMode = "english";
         saveDesktopConfig({ mode: "english" });
         registerShortcuts(loadDesktopConfig());
-        if (capsuleWindow && !capsuleWindow.isDestroyed()) {
-          capsuleWindow.webContents.send("lingual:mode-changed", "english");
-        }
+        notifyCapsuleModeChanged("english");
         updateTrayMenu();
       },
     },
@@ -495,9 +507,7 @@ function updateTrayMenu(): void {
         currentMode = "original";
         saveDesktopConfig({ mode: "original" });
         registerShortcuts(loadDesktopConfig());
-        if (capsuleWindow && !capsuleWindow.isDestroyed()) {
-          capsuleWindow.webContents.send("lingual:mode-changed", "original");
-        }
+        notifyCapsuleModeChanged("original");
         updateTrayMenu();
       },
     },
@@ -509,9 +519,7 @@ function updateTrayMenu(): void {
         currentMode = "off";
         saveDesktopConfig({ mode: "off" });
         registerShortcuts(loadDesktopConfig());
-        if (capsuleWindow && !capsuleWindow.isDestroyed()) {
-          capsuleWindow.webContents.send("lingual:mode-changed", "off");
-        }
+        notifyCapsuleModeChanged("off");
         updateTrayMenu();
       },
     },
@@ -623,7 +631,7 @@ function setupIpc(): void {
     registerShortcuts(updated);
     updateTrayMenu();
     if (capsuleWindow && !capsuleWindow.isDestroyed()) {
-      capsuleWindow.webContents.send("lingual:mode-changed", currentMode);
+      notifyCapsuleModeChanged(currentMode);
       if (updated.showCapsule === false) {
         capsuleWindow.hide();
       } else {
