@@ -118,6 +118,11 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
   let requestFailed = false;
 
   const completer = async (prompt: string, systemPrompt: string, signal?: AbortSignal): Promise<string | null> => {
+    if (config.engineProvider === "free") {
+      requestFailed = true;
+      return null;
+    }
+
     let endpoint = (config.endpoint || "").trim();
     let apiKey = (config.apiKey || "").trim();
     let model = (config.model || "").trim();
@@ -244,14 +249,25 @@ export async function executeTranslation(
     logger.warn("engine:translate", `LLM completion did not produce translation. Initiating Zero-Key web fallback...`);
     const fallbackText = await fetchZeroKeyTranslation(text, config.sourceLang, config.targetLang);
     if (fallbackText) {
-      const dynamicSlots = effectiveSlots
-        ? effectiveSlots.map((s) => ({
-            id: s.id,
-            label: s.label,
-            role: s.role,
-            content: s.role === "source" ? text : fallbackText,
-          }))
-        : undefined;
+      const slotList = Array.isArray(effectiveSlots) ? effectiveSlots : undefined;
+      const hasSource = !slotList || slotList.some((s) => s.role === "source" && s.enabled !== false);
+      const sourceLabel = slotList?.find((s) => s.role === "source")?.label || "Source";
+
+      const dynamicSlots: Array<{ id: string; label: string; role: "source" | "translation" | "vocab" | "custom"; content: string }> = [];
+      if (hasSource) {
+        dynamicSlots.push({
+          id: "source",
+          label: sourceLabel,
+          role: "source",
+          content: text,
+        });
+      }
+      dynamicSlots.push({
+        id: "spoken",
+        label: "Translation",
+        role: "translation",
+        content: fallbackText,
+      });
 
       logger.info("engine:translate", `Zero-Key web fallback successfully saved turn without user friction.`);
       return {

@@ -117,18 +117,25 @@ class Program {
                 if (!vp.Current.IsReadOnly) {
                     return vp.Current.Value ?? "";
                 }
+                return null;
             }
             var ctrlType = el.Current.ControlType;
-            bool isEditableType = (
+            bool isEditControl = (
                 ctrlType == ControlType.Edit ||
-                ctrlType == ControlType.Document ||
                 ctrlType == ControlType.ComboBox
             );
-            if (el.TryGetCurrentPattern(TextPattern.Pattern, out patternObj)) {
-                if (isEditableType || el.Current.IsKeyboardFocusable) {
-                    var tp = (TextPattern)patternObj;
-                    return tp.DocumentRange.GetText(2000) ?? "";
-                }
+            bool isCompactDocumentInput = false;
+            if (ctrlType == ControlType.Document) {
+                try {
+                    var r = el.Current.BoundingRectangle;
+                    if (!r.IsEmpty && r.Height > 0 && r.Height < 320) {
+                        isCompactDocumentInput = true;
+                    }
+                } catch {}
+            }
+            if ((isEditControl || isCompactDocumentInput) && el.TryGetCurrentPattern(TextPattern.Pattern, out patternObj)) {
+                var tp = (TextPattern)patternObj;
+                return tp.DocumentRange.GetText(1500) ?? "";
             }
         } catch {}
         return null;
@@ -211,7 +218,7 @@ class Program {
                     } catch {}
 
                     long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    if (string.IsNullOrWhiteSpace(finalDraft) && cachedHwnd == fgHwnd && (nowMs - cachedTimestamp) < 20000) {
+                    if (string.IsNullOrWhiteSpace(finalDraft) && cachedHwnd == fgHwnd && (nowMs - cachedTimestamp) < 4000) {
                         finalDraft = cachedText;
                     }
 

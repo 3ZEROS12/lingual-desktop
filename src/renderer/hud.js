@@ -31,23 +31,41 @@
 
   let currentData = null;
   let countdownTimer = null;
+  let secondsLeft = 6;
+  let isHoverPaused = false;
 
-  function startAutoDismissCountdown() {
-    let secondsLeft = 3;
-    countdownNum.textContent = String(secondsLeft);
+  function startAutoDismissCountdown(initialSec = 6) {
+    secondsLeft = initialSec;
+    isHoverPaused = false;
+    if (countdownNum) countdownNum.textContent = String(secondsLeft);
     if (countdownTimer) clearInterval(countdownTimer);
 
     countdownTimer = setInterval(() => {
+      if (isHoverPaused) return;
       secondsLeft--;
       if (secondsLeft <= 0) {
         clearInterval(countdownTimer);
         countdownTimer = null;
         window.lingualAPI?.dismiss();
       } else {
-        countdownNum.textContent = String(secondsLeft);
+        if (countdownNum) countdownNum.textContent = String(secondsLeft);
       }
     }, 1000);
   }
+
+  // Hover-to-Pause: keep HUD open as long as user's mouse is hovering over the card
+  hudContainer?.addEventListener("mouseenter", () => {
+    isHoverPaused = true;
+    if (countdownNum) countdownNum.textContent = "Paused";
+  });
+
+  hudContainer?.addEventListener("mouseleave", () => {
+    if (isHoverPaused) {
+      isHoverPaused = false;
+      if (secondsLeft < 2) secondsLeft = 3;
+      if (countdownNum) countdownNum.textContent = String(secondsLeft);
+    }
+  });
 
   // Listen for view state changes
   window.lingualAPI?.onViewState((state) => {
@@ -96,7 +114,9 @@
       if (payload.autoSent) {
         footerAutoHint.classList.remove("hidden");
         footerConfirmHint.classList.add("hidden");
-        startAutoDismissCountdown();
+        const totalChars = (payload.spoken || "").length + (payload.written || "").length + (payload.vocab || "").length;
+        const dynamicSeconds = Math.max(6, Math.min(12, Math.ceil(totalChars / 22)));
+        startAutoDismissCountdown(dynamicSeconds);
       } else {
         footerAutoHint.classList.add("hidden");
         footerConfirmHint.classList.remove("hidden");

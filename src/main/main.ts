@@ -9,6 +9,7 @@ import {
   getFocusedElementRect,
   getFocusedElementRectAsync,
   getCaretPositionAsync,
+  getFocusedElementText,
   captureActiveInputText,
   injectTextToTarget,
   setFocusedElementText,
@@ -139,7 +140,7 @@ function createHudWindow(): BrowserWindow {
     skipTaskbar: true,
     show: false,
     resizable: false,
-    focusable: false,
+    focusable: true,
     hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -242,12 +243,7 @@ let lastPassiveRect: { x: number; y: number; width: number; height: number } | n
 function switchToHudView(autoSent = true, overrideRect?: { x: number; y: number; width: number; height: number } | null): void {
   if (!hudWindow) return;
   viewState = "hud";
-
-  if (autoSent) {
-    hudWindow.setFocusable(false);
-  } else {
-    hudWindow.setFocusable(true);
-  }
+  hudWindow.setFocusable(true);
 
   const initialHeight = 180;
   hudWindow.setSize(HUD_WIDTH, initialHeight);
@@ -328,11 +324,16 @@ async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
   activeTargetHwnd = evt.hwnd || getActiveWindowHwnd();
   activeBackupText = text;
 
-  const hasChinese = /[\u4e00-\u9fff]/.test(text);
+  const hasJapaneseKana = /[\u3040-\u30ff]/.test(text);
+  const hasCjk = /[\u4e00-\u9fff]/.test(text);
   const effectiveSourceLang =
-    hasChinese && config.targetLang !== "zh" ? "zh" : config.sourceLang || "zh";
+    hasJapaneseKana && config.targetLang !== "ja"
+      ? "ja"
+      : hasCjk && config.sourceLang !== "ja" && config.targetLang !== "zh"
+      ? "zh"
+      : config.sourceLang || "zh";
 
-  if (!hasChinese && !shouldTriggerTranslation(text, effectiveSourceLang)) {
+  if (!hasCjk && !hasJapaneseKana && !shouldTriggerTranslation(text, effectiveSourceLang)) {
     return;
   }
 
@@ -380,8 +381,13 @@ async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
 
     const replacement = res.written || res.spoken;
     if (currentMode === "english" && replacement) {
-      // Zero-clipboard UIA direct replacement if input control is still focused
-      setFocusedElementText(replacement);
+      // Automatically copy primary translation to clipboard so user can immediately Ctrl+V anywhere
+      clipboard.writeText(replacement);
+      // Only replace in-place via UIA if the focused input box still holds text (was not cleared by Enter)
+      const currentFocusedText = getFocusedElementText();
+      if (currentFocusedText && currentFocusedText.trim().length > 0) {
+        setFocusedElementText(replacement);
+      }
     }
 
     if (hudWindow && !hudWindow.isDestroyed() && hudWindow.isVisible()) {
@@ -391,7 +397,7 @@ async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
         sourceLang: effectiveConfig.sourceLang,
         targetLang: effectiveConfig.targetLang,
         autoSent: true,
-        modeLabel: currentMode === "original" ? "Learn" : "Translated",
+        modeLabel: currentMode === "original" ? "Learn" : "Copied ✓",
         slots: res.slots,
       });
     }
@@ -479,7 +485,7 @@ function updateTrayMenu(): void {
       enabled: false,
     },
     {
-      label: "Cycle Mode (Alt+Q)",
+      label: "Cycle Mode",
       click: () => cycleCompanionMode(),
     },
     {
@@ -570,7 +576,7 @@ function setupIpc(): void {
     const clampedHeight = Math.max(140, Math.min(340, Math.ceil(measuredHeight)));
     hudWindow.setSize(HUD_WIDTH, clampedHeight);
 
-    const pos = calculateRoofDockingPosition(HUD_WIDTH, clampedHeight);
+    const pos = calculateRoofDockingPosition(HUD_WIDTH, clampedHeight, lastPassiveRect);
     hudWindow.setPosition(pos.x, pos.y);
   });
 
@@ -583,7 +589,7 @@ function setupIpc(): void {
 
   ipcMain.on("lingual:select", async (_event, slot: number) => {
     if (!currentTranslationResponse) {
-      switchToCapsuleView();
+      switchToIdleView();
       restoreFocus(activeTargetHwnd);
       return;
     }
@@ -605,13 +611,16 @@ function setupIpc(): void {
         : currentTranslationResponse.written;
     }
 
-    switchToIdleView();
-
     if (selectedText) {
-      await injectTextToTarget(selectedText, activeTargetHwnd, activeBackupText, clipboard);
-    } else {
-      restoreFocus(activeTargetHwnd);
+      clipboard.writeText(selectedText);
+      const currentFocusedText = getFocusedElementText();
+      if (currentFocusedText && currentFocusedText.trim().length > 0) {
+        setFocusedElementText(selectedText);
+      }
     }
+
+    switchToIdleView();
+    restoreFocus(activeTargetHwnd);
   });
 
   ipcMain.on("lingual:close-settings", () => {
@@ -723,7 +732,7 @@ function setupIpc(): void {
   });
 
   ipcMain.on("lingual:save-capsule-pos", () => {
-    if (currentCapsulePos.x > 0 || currentCapsulePos.y > 0) {
+    if (typeof currentCapsulePos.x === "number" && typeof currentCapsulePos.y === "number") {
       saveDesktopConfig({ capsulePos: currentCapsulePos });
     }
   });
@@ -768,7 +777,7 @@ if (!gotTheLock) {
     if (tray) {
       tray.displayBalloon({
         title: "Lingual",
-        content: "Settings window activated. Shortcuts: Alt+Q to cycle mode, Alt+E to translate.",
+        content: "Settings window activated.",
       });
     }
   });
@@ -805,7 +814,7 @@ if (!gotTheLock) {
     } else if (tray) {
       tray.displayBalloon({
         title: "Lingual Started",
-        content: `Mode: [${currentMode.toUpperCase()}]. Alt+Q to cycle mode, Alt+E to translate.`,
+        content: `Mode: [${currentMode.toUpperCase()}]. Click top floating island to switch modes.`,
       });
     }
 

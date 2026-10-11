@@ -989,22 +989,41 @@
       instruction: "Clear, polite, formal written expression.",
     };
 
+    const existingSource = currentSlots.find((s) => s.role === "source" || s.id === "source");
+    const existingVocab = currentSlots.find((s) => s.role === "vocab");
+
     const nextSlots = [];
     if (wantSource) {
-      nextSlots.push({ id: "source", label: "Source", role: "source", enabled: true });
+      nextSlots.push({
+        id: "source",
+        label: existingSource?.label || "Source",
+        role: "source",
+        enabled: true,
+      });
     }
+
+    const firstLabel =
+      firstTrans.label && firstTrans.label !== "Casual" && firstTrans.label !== "Translation"
+        ? firstTrans.label
+        : wantDual
+        ? "Casual"
+        : "Translation";
 
     nextSlots.push({
       ...firstTrans,
-      label: wantDual ? "Casual" : "Translation",
+      label: firstLabel,
       showMeaning: wantMeaning,
       enabled: true,
     });
 
     if (wantDual) {
+      const secondLabel =
+        secondTrans.label && secondTrans.label !== "Formal"
+          ? secondTrans.label
+          : "Formal";
       nextSlots.push({
         ...secondTrans,
-        label: "Formal",
+        label: secondLabel,
         showMeaning: wantMeaning,
         enabled: true,
       });
@@ -1013,9 +1032,9 @@
     if (wantVocab) {
       nextSlots.push({
         id: "vocab",
-        label: "Vocab",
+        label: existingVocab?.label || "Vocab",
         role: "vocab",
-        instruction: "Extract 2-3 key idiomatic phrases or collocations.",
+        instruction: existingVocab?.instruction || "Extract 2-3 key idiomatic phrases or collocations.",
         enabled: true,
       });
     }
