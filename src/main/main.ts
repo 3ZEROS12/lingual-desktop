@@ -263,9 +263,6 @@ function cycleCompanionMode(): void {
 
   if (capsuleWindow && !capsuleWindow.isDestroyed()) {
     capsuleWindow.webContents.send("lingual:mode-changed", currentMode);
-    if (currentMode === "off") {
-      capsuleWindow.hide();
-    }
   }
   updateTrayMenu();
   if (tray) {
@@ -697,8 +694,10 @@ function setupIpc(): void {
     updateTrayMenu();
     if (capsuleWindow && !capsuleWindow.isDestroyed()) {
       capsuleWindow.webContents.send("lingual:mode-changed", currentMode);
-      if (updated.showCapsule === false || currentMode === "off") {
+      if (updated.showCapsule === false) {
         capsuleWindow.hide();
+      } else {
+        capsuleWindow.showInactive();
       }
     }
     console.log("[lingual-desktop] Config updated and hot-reloaded:", patch);
