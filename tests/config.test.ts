@@ -94,3 +94,34 @@ test("logger: writes structured runtime logs and reads recent lines in isolated 
   assert.ok(recent.includes("Verification warning #2"));
   assert.ok(recent.includes("Simulated diagnostic error"));
 });
+
+test("qa: zero banned buzzwords and complete 10-language matrix in settings UI", () => {
+  const settingsJs = fs.readFileSync("src/renderer/settings.js", "utf8");
+  const settingsHtml = fs.readFileSync("src/renderer/settings.html", "utf8");
+
+  for (const banned of ["豆包", "白嫖", "完了"]) {
+    assert.ok(!settingsJs.includes(banned), `Found banned term '${banned}' in settings.js`);
+    assert.ok(!settingsHtml.includes(banned), `Found banned term '${banned}' in settings.html`);
+  }
+
+  for (const lang of ["zh:", "en:", "ja:", "ko:", "es:", "fr:", "de:", "ru:"]) {
+    assert.ok(settingsJs.includes(lang), `Missing UI_I18N dictionary for ${lang}`);
+  }
+
+  for (const code of ["zh", "en", "ja", "ko", "es", "fr", "de", "ru", "pt", "it"]) {
+    assert.ok(settingsHtml.includes(`data-slang="${code}"`), `Missing source chip for ${code}`);
+    assert.ok(settingsHtml.includes(`data-tlang="${code}"`), `Missing target chip for ${code}`);
+  }
+});
+
+test("qa: zero globalShortcut Enter hijacking and dynamic language pebble/HUD wiring", () => {
+  const mainTs = fs.readFileSync("src/main/main.ts", "utf8");
+  assert.ok(!mainTs.includes('globalShortcut.register("Enter"'), "Enter key must not be hijacked via globalShortcut");
+
+  const capsuleJs = fs.readFileSync("src/renderer/capsule.js", "utf8");
+  assert.ok(capsuleJs.includes("currentTargetLang"), "Top floating island must dynamically reflect targetLang");
+
+  const hudHtml = fs.readFileSync("src/renderer/index.html", "utf8");
+  assert.ok(hudHtml.includes('id="hud-pair-text"'), "HUD HTML must expose #hud-pair-text");
+});
+
