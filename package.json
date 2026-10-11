@@ -1,6 +1,6 @@
 {
   "name": "lingual-desktop",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Universal Windows dual-register writing companion & in-situ language bridge",
   "main": "dist/main/main.js",
   "type": "module",

@@ -44,9 +44,6 @@ const HUD_WIDTH = 540;
 const HUD_HEIGHT = 280;
 
 let currentCapsulePos = { x: 0, y: 0 };
-let inputTrackerInterval: NodeJS.Timeout | null = null;
-let lastPebblePos = { x: 0, y: 0 };
-let isProbingFocus = false;
 
 function getInitialCapsulePos(config: LingualDesktopConfig): { x: number; y: number } {
   if (config.capsulePos && typeof config.capsulePos.x === "number" && typeof config.capsulePos.y === "number") {
@@ -54,21 +51,23 @@ function getInitialCapsulePos(config: LingualDesktopConfig): { x: number; y: num
   }
   try {
     const primary = screen.getPrimaryDisplay();
+    // 默认居中常驻在屏幕最顶部（灵动岛极简胶囊，稳固不跳动，可随意拖拽）
     return {
-      x: Math.round(primary.workArea.x + primary.workArea.width - CAPSULE_WIDTH - 20),
-      y: Math.round(primary.workArea.y + primary.workArea.height - CAPSULE_HEIGHT - 60),
+      x: Math.round(primary.workArea.x + (primary.workArea.width - CAPSULE_WIDTH) / 2),
+      y: Math.round(primary.workArea.y + 10),
     };
   } catch {
-    return { x: 100, y: 100 };
+    return { x: 500, y: 10 };
   }
 }
 
 /**
- * In-Situ Roof-Docked Floating Pebble (聚焦输入框时浮现在光标/输入框正上方)
- * 平时不打字时静默隐藏；聚焦到任意输入框时，在输入框正上方轻巧浮现 (⇄ EN | ⚙)；
- * 左键点击切换模式，右键或齿轮点击打开设置。
- * focusable: true 确保 Chromium DOM 能 100% 捕获点击、悬浮和右键事件；
- * 配合 showInactive() 保证绝不争夺当前输入框打字焦点！
+ * 屏幕最顶部常驻极简悬浮小岛 (Resident Top Floating Island)
+ * - 常驻在屏幕最上方，100% 稳固，绝不忽上忽下，绝不意外消失；
+ * - 随时左键点击 [⇄ EN] 快速轮转模式 (EN / LEARN / OFF)；
+ * - 随时点击 [⚙] 或右键呼出设置控制中心；
+ * - 鼠标按住胶囊可自由平滑拖拽至屏幕任意边缘，松手即自动记忆位置；
+ * - 打字敲回车时，就地在输入框正上方展开 3 秒双语对照卡片。
  */
 function createCapsuleWindow(): BrowserWindow {
   const config = loadDesktopConfig();
@@ -83,9 +82,9 @@ function createCapsuleWindow(): BrowserWindow {
     transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
-    show: false, // 平时不打字时静默，由 inputTracker 在检测到输入框时浮现
+    show: false,
     resizable: false,
-    focusable: true, // 核心修复：必须为 true，Chromium 才会分发 click 和 contextmenu 事件！
+    focusable: true,
     hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -97,141 +96,14 @@ function createCapsuleWindow(): BrowserWindow {
   const capsuleHtml = path.join(__dirname, "../../src/renderer/capsule.html");
   win.loadFile(capsuleHtml);
 
+  win.once("ready-to-show", () => {
+    if (config.showCapsule !== false) {
+      win.showInactive();
+      win.webContents.send("lingual:mode-changed", currentMode);
+    }
+  });
+
   return win;
-}
-
-function isForegroundLingualWindow(): boolean {
-  const fgHwnd = getActiveWindowHwnd();
-  if (!fgHwnd || fgHwnd === "0") return false;
-
-  for (const win of [capsuleWindow, hudWindow, settingsWindow]) {
-    if (win && !win.isDestroyed()) {
-      try {
-        const handleBuf = win.getNativeWindowHandle();
-        const winHwnd = String(handleBuf.readUInt32LE(0));
-        if (winHwnd === fgHwnd) return true;
-      } catch {}
-    }
-  }
-  return false;
-}
-
-/**
- * 测算微圆标在当前输入框/光标正上方的停靠坐标 (Roof-Docked Pebble Position)
- * 100% 异步非阻塞探针，零阻塞 Node.js 事件循环！
- */
-async function calculatePebblePositionAsync(pebbleW = CAPSULE_WIDTH, pebbleH = CAPSULE_HEIGHT): Promise<{ x: number; y: number } | null> {
-  // Never track Lingual's own windows (eliminates jitter and self-tracking loop)
-  if (isForegroundLingualWindow()) {
-    return null;
-  }
-
-  const focusedRect = await getFocusedElementRectAsync();
-  const caret = !focusedRect ? await getCaretPositionAsync() : null;
-
-  let targetX = 0;
-  let targetY = 0;
-  let targetH = 24;
-
-  // Filter out giant full-window rectangles (height > 160 means full window/canvas, not an input box)
-  if (focusedRect && focusedRect.width > 0 && focusedRect.height > 0 && focusedRect.height < 160) {
-    targetX = focusedRect.x;
-    targetY = focusedRect.y;
-    targetH = focusedRect.height;
-  } else if (caret) {
-    targetX = caret.x;
-    targetY = caret.y;
-    targetH = 20;
-  } else {
-    return null;
-  }
-
-  const display = screen.getDisplayNearestPoint({ x: targetX, y: targetY });
-  const scale = display.scaleFactor || 1.0;
-  const dipX = targetX / scale;
-  const dipY = targetY / scale;
-  const dipH = targetH / scale;
-  const { workArea } = display;
-
-  // 水平靠齐输入框左上边缘
-  let x = dipX;
-  if (x + pebbleW > workArea.x + workArea.width - 8) {
-    x = workArea.x + workArea.width - pebbleW - 8;
-  }
-  if (x < workArea.x + 8) {
-    x = workArea.x + 8;
-  }
-
-  // 垂直顶在输入框正上方 6px (若贴顶则翻转到正下方)
-  let y = dipY - pebbleH - 6;
-  if (y < workArea.y + 8) {
-    y = dipY + dipH + 6;
-  }
-
-  return { x: Math.round(x), y: Math.round(y) };
-}
-
-/**
- * 实时聚焦探测器：检测用户是否处于可编辑输入框中
- * - 处于输入框打字：在正上方轻巧浮现小圆标；
- * - 离开输入框/点击桌面：自动淡出隐去，保持桌面 100% 干净；
- * - 伴学关闭(OFF)或配置关闭(showCapsule=false)：100% 隐藏，绝不残留；
- * - 聚焦在 Lingual 自己的窗口时：绝不自追踪，杜绝上下抖动！
- * - 100% 非阻塞异步探针，零阻塞 Node.js 主事件循环，彻底消除卡顿！
- */
-function startInputTracker(): void {
-  if (inputTrackerInterval) clearInterval(inputTrackerInterval);
-
-  inputTrackerInterval = setInterval(async () => {
-    if (!capsuleWindow || capsuleWindow.isDestroyed()) return;
-
-    // 1. 如果处于 HUD 翻译卡片展开状态、或者伴学已关闭(OFF)
-    if (viewState !== "idle" || currentMode === "off") {
-      if (capsuleWindow.isVisible()) {
-        capsuleWindow.hide();
-      }
-      return;
-    }
-
-    const config = loadDesktopConfig();
-    if (config.showCapsule === false) {
-      if (capsuleWindow.isVisible()) {
-        capsuleWindow.hide();
-      }
-      return;
-    }
-
-    // 2. 如果当前聚焦的是本软件自己的任意窗口（设置中心、微圆标自身、HUD），不自追踪
-    if (isForegroundLingualWindow()) {
-      return;
-    }
-
-    // 3. 并发锁，防止异步探针堆积排队
-    if (isProbingFocus) return;
-    isProbingFocus = true;
-
-    try {
-      const pos = await calculatePebblePositionAsync(CAPSULE_WIDTH, CAPSULE_HEIGHT);
-      if (pos) {
-        if (Math.abs(pos.x - lastPebblePos.x) > 6 || Math.abs(pos.y - lastPebblePos.y) > 6) {
-          capsuleWindow.setPosition(pos.x, pos.y);
-          lastPebblePos = pos;
-        }
-        if (!capsuleWindow.isVisible()) {
-          capsuleWindow.showInactive();
-          capsuleWindow.webContents.send("lingual:mode-changed", currentMode);
-        }
-      } else {
-        if (capsuleWindow.isVisible()) {
-          capsuleWindow.hide();
-        }
-      }
-    } catch {
-      // 容错防崩
-    } finally {
-      isProbingFocus = false;
-    }
-  }, 400);
 }
 
 /**
@@ -969,7 +841,6 @@ if (!gotTheLock) {
     registerShortcuts(config);
     setupTray();
     setupIpc();
-    startInputTracker();
 
     // Enable Windows autostart on boot (silent mode)
     try {
