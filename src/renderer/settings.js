@@ -18,7 +18,7 @@
       nav_engine: "Engine",
       sec_mode_title: "Operating Mode",
       sec_mode_desc:
-        "Just press Enter in any input box. Lingual automatically detects natural language and dispatches to the active engine (commands, code, terminals, and Ctrl+Enter / Shift+Enter newlines pass through untouched). Cycle anytime with Alt + Q:",
+        "Type normally and press Enter in any input box. Lingual passively observes natural language without occupying or blocking any keyboard keys:",
       mode_en_title: "Translate",
       mode_en_sub: "Press Enter ➔ Translates, replaces & submits + shows card",
       mode_orig_title: "Learn",
@@ -73,6 +73,7 @@
       adv_endpoint_summary: "Endpoint URL & Model ID",
       footer_hint: "Changes save automatically",
       footer_saved: "Saved · Active immediately",
+      btn_logs: "View Logs",
       btn_close: "Close",
       btn_done: "Done",
       meta_orig: "Original input",
@@ -83,9 +84,9 @@
       nav_general: "常规",
       nav_cards: "卡片",
       nav_engine: "引擎",
-      sec_mode_title: "运行模式（与 pi-lingual 完全一致）",
+      sec_mode_title: "运行模式（零键位占用 · 被动无感检测）",
       sec_mode_desc:
-        "在任何输入框打完字直接按回车 (Enter)，自动判断是否需要翻译并交给所选引擎（代码、命令、终端窗口及 Ctrl+Enter / Shift+Enter 换行自动原样放行）。随时可按 Alt + Q 切换模式：",
+        "不占用、不拦截任何系统快捷键。日常打字按回车 (Enter) 100% 原生零延迟直通，后台被动检测自然语言并展开对照卡片：",
       mode_en_title: "译文 (Translate)",
       mode_en_sub: "按回车 ➔ 自动翻译替换并发出 + 展开对照卡片",
       mode_orig_title: "伴学 (Learn)",
@@ -140,6 +141,7 @@
       adv_endpoint_summary: "Endpoint URL & Model ID",
       footer_hint: "所有改动自动保存并即时生效",
       footer_saved: "已保存 · 即时生效",
+      btn_logs: "查看日志",
       btn_close: "关闭",
       btn_done: "完成",
       meta_orig: "输入原文",
@@ -150,9 +152,9 @@
       nav_general: "常規",
       nav_cards: "卡片",
       nav_engine: "引擎",
-      sec_mode_title: "運行模式（與 pi-lingual 完全一致）",
+      sec_mode_title: "運行模式（零鍵位佔用 · 被動無感檢測）",
       sec_mode_desc:
-        "在任何輸入框打完字直接按 Enter，自動判斷是否需要翻譯並交給所選引擎（代碼、命令、終端窗口及 Ctrl+Enter / Shift+Enter 換行自動原樣放行）。隨時可按 Alt + Q 切換模式：",
+        "不佔用、不攔截任何系統快捷鍵。日常打字按 Enter 100% 原生零延遲直通，後台被動檢測自然語言並展開對照卡片：",
       mode_en_title: "譯文 (Translate)",
       mode_en_sub: "按 Enter ➔ 自動翻譯替換並發出 + 展開對照卡片",
       mode_orig_title: "伴學 (Learn)",
@@ -207,6 +209,7 @@
       adv_endpoint_summary: "Endpoint URL & Model ID",
       footer_hint: "所有改動自動保存並即時生效",
       footer_saved: "已保存 · 即時生效",
+      btn_logs: "查看日誌",
       btn_close: "關閉",
       btn_done: "完成",
       meta_orig: "輸入原文",
@@ -217,9 +220,9 @@
       nav_general: "一般",
       nav_cards: "カード",
       nav_engine: "エンジン",
-      sec_mode_title: "動作モード（pi-lingual と完全共通）",
+      sec_mode_title: "動作モード（キー占有ゼロ · パッシブ検知）",
       sec_mode_desc:
-        "入力欄で Enter を押すだけで、自然言語かどうかを自動判定して処理します（コード、コマンド、ターミナル、Ctrl+Enter / Shift+Enter の改行はそのまま通過）。Alt + Q でモード切替：",
+        "ショートカットキーを一切占有せず、Enter も遅延ゼロでそのまま通過します。バックグラウンドで自然言語を検知してカードを表示：",
       mode_en_title: "翻訳 (Translate)",
       mode_en_sub: "Enter ➔ 翻訳して置換・送信＋カード表示",
       mode_orig_title: "学習 (Learn)",
@@ -274,6 +277,7 @@
       adv_endpoint_summary: "Endpoint URL & Model ID",
       footer_hint: "変更は自動的に保存・反映されます",
       footer_saved: "保存済み · 即時反映",
+      btn_logs: "ログを表示",
       btn_close: "閉じる",
       btn_done: "完了",
       meta_orig: "入力原文",
@@ -965,7 +969,12 @@
   const btnClose = document.getElementById("btn-window-close");
   const btnCancel = document.getElementById("btn-cancel");
   const btnSave = document.getElementById("btn-save");
+  const btnOpenLogs = document.getElementById("btn-open-logs");
   const saveStatus = document.getElementById("save-status");
+
+  btnOpenLogs?.addEventListener("click", () => {
+    window.lingualSettingsAPI?.openLogFile?.();
+  });
 
   async function autoSaveNow() {
     if (isInitialLoading) return;

@@ -6,7 +6,8 @@ import {
   type SlotConfig,
 } from "pi-lingual/core";
 import { shouldTriggerTranslation } from "pi-lingual";
-import { loadDesktopConfig, type LingualDesktopConfig } from "./config.js";
+import { loadDesktopConfig, discoverPiModelConfig, type LingualDesktopConfig } from "./config.js";
+import { logger } from "./logger.js";
 
 export { shouldTriggerTranslation };
 
@@ -71,8 +72,11 @@ export async function fetchZeroKeyTranslation(
   };
 
   try {
-    return await Promise.any([tryMyMemory(), tryGoogleGtx()]);
-  } catch {
+    const winner = await Promise.any([tryMyMemory(), tryGoogleGtx()]);
+    logger.info("engine:zerokey", `Zero-key web fallback resolved: "${trimmed.slice(0, 30)}..." ➔ "${winner.slice(0, 30)}..."`);
+    return winner;
+  } catch (err: any) {
+    logger.warn("engine:zerokey", `Zero-key translation failed across both channels: ${err?.message || "All promises rejected"}`);
     return null;
   }
 }
@@ -114,13 +118,28 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
   let requestFailed = false;
 
   const completer = async (prompt: string, systemPrompt: string, signal?: AbortSignal): Promise<string | null> => {
-    const endpoint = (config.endpoint || "").trim();
-    if (!endpoint || endpoint.includes("127.0.0.1:0") || endpoint.includes("11434")) {
+    let endpoint = (config.endpoint || "").trim();
+    let apiKey = (config.apiKey || "").trim();
+    let model = (config.model || "").trim();
+
+    // 自动接入 Pi Agent 本地模型通道（零配置复用 ~/.pi/agent/models.json）
+    if (config.engineProvider === "pi" || !endpoint) {
+      const piCfg = config.piModelInfo || discoverPiModelConfig();
+      if (piCfg && piCfg.endpoint) {
+        endpoint = piCfg.endpoint;
+        apiKey = piCfg.apiKey || apiKey;
+        model = piCfg.model || model || "gemini-3.8-flash";
+        logger.info("engine:pi", `Resolved local Pi model: [${model}] @ ${endpoint}`);
+      }
+    }
+
+    if (!endpoint || endpoint.includes("127.0.0.1:0")) {
       requestFailed = true;
+      logger.warn("engine", `No valid HTTP endpoint configured (provider: ${config.engineProvider || "custom"})`);
       return null;
     }
-    const apiKey = (config.apiKey || "").trim();
-    const model = (config.model || "deepseek-chat").trim();
+
+    if (!model) model = "deepseek-chat";
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
@@ -131,6 +150,7 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
     }
 
     try {
+      const startTime = Date.now();
       const res = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -150,21 +170,25 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
         signal: controller.signal,
       });
 
+      const elapsed = Date.now() - startTime;
+
       if (!res.ok) {
-        console.error(`[engine] Completion request failed: ${res.status} ${res.statusText}`);
+        const errorText = await res.text().catch(() => "");
+        logger.error("engine:http", `API request failed: ${res.status} ${res.statusText} (${elapsed}ms) - ${errorText.slice(0, 200)}`);
         requestFailed = true;
         return null;
       }
 
       const data = (await res.json()) as any;
       const content = data?.choices?.[0]?.message?.content;
+      logger.info("engine:http", `Model completion successful: [${model}] in ${elapsed}ms`);
       return typeof content === "string" ? content : null;
     } catch (err: any) {
       requestFailed = true;
       if (err.name === "AbortError") {
-        console.warn("[engine] Completion request timed out or was aborted");
+        logger.warn("engine:http", "Completion request timed out (12s limit) or was aborted");
       } else {
-        console.error("[engine] Completion network error:", err.message);
+        logger.error("engine:http", "Completion network error:", err.message);
       }
       return null;
     } finally {
@@ -205,11 +229,19 @@ export async function executeTranslation(
     slots: effectiveSlots,
   };
 
+  logger.info("engine:translate", `Translating text (${text.length} chars): "${text.slice(0, 40).replace(/\n/g, " ")}..." [${config.sourceLang} ➔ ${config.targetLang}] provider=${config.engineProvider || "pi"}`);
   const res = await translateCore(req, { completer });
   const isLlmFailed = didFail() || (!res.shieldBypassed && !res.cached && res.spoken === text && res.written === text);
 
+  if (res.shieldBypassed) {
+    logger.info("engine:translate", `Shield bypassed (code/command detected, 0ms, 0 tokens)`);
+  } else if (res.cached) {
+    logger.info("engine:translate", `Translation cache hit!`);
+  }
+
   // 若 LLM 调用失败（或用户初次使用未配置任何模型端点），平滑降级至 Layer 0 免 Key 极速保底引擎
   if (isLlmFailed && !res.shieldBypassed) {
+    logger.warn("engine:translate", `LLM completion did not produce translation. Initiating Zero-Key web fallback...`);
     const fallbackText = await fetchZeroKeyTranslation(text, config.sourceLang, config.targetLang);
     if (fallbackText) {
       const dynamicSlots = effectiveSlots
@@ -221,6 +253,7 @@ export async function executeTranslation(
           }))
         : undefined;
 
+      logger.info("engine:translate", `Zero-Key web fallback successfully saved turn without user friction.`);
       return {
         spoken: fallbackText,
         written: fallbackText,
@@ -230,6 +263,8 @@ export async function executeTranslation(
         isZeroKeyFallback: true,
         slots: dynamicSlots,
       };
+    } else {
+      logger.error("engine:translate", `Both LLM and Zero-Key fallback failed. Setting isOfflineOrFailed=true.`);
     }
   }
 

@@ -11,6 +11,10 @@ import {
   getCaretPositionAsync,
   captureActiveInputText,
   injectTextToTarget,
+  setFocusedElementText,
+  startPassiveInputWatcher,
+  stopPassiveInputWatcher,
+  type PassiveSubmitEvent,
   triggerPaste,
   triggerEnter,
   isImeComposing,
@@ -23,6 +27,7 @@ import {
 } from "./engine.js";
 import { SLOT_PRESETS, getDefaultSlots } from "pi-lingual/core";
 import { resolveLabelsForLang } from "pi-lingual";
+import { initLogger, logger, openLogFile, readRecentLogs } from "./logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -96,6 +101,10 @@ function createCapsuleWindow(): BrowserWindow {
   const capsuleHtml = path.join(__dirname, "../../src/renderer/capsule.html");
   win.loadFile(capsuleHtml);
 
+  win.webContents.on("console-message", (_event, level, message) => {
+    logger.info("renderer:capsule", message);
+  });
+
   win.once("ready-to-show", () => {
     if (config.showCapsule !== false) {
       win.showInactive();
@@ -132,6 +141,10 @@ function createHudWindow(): BrowserWindow {
   const hudHtml = path.join(__dirname, "../../src/renderer/index.html");
   win.loadFile(hudHtml);
 
+  win.webContents.on("console-message", (_event, level, message) => {
+    logger.info("renderer:hud", message);
+  });
+
   win.on("blur", () => {
     if (viewState === "hud" || viewState === "spotlight") {
       switchToIdleView();
@@ -157,16 +170,20 @@ function switchToIdleView(): void {
  * 3. Docks directly above the input box (roof-docking, 8px gap). If too close to screen top, flips below.
  * 4. Fallback chain: caret position -> cursor position -> primary display center.
  */
-function calculateRoofDockingPosition(winWidth: number, winHeight: number): { x: number; y: number } {
-  const focusedRect = getFocusedElementRect();
-  const caret = getCaretPosition();
+function calculateRoofDockingPosition(
+  winWidth: number,
+  winHeight: number,
+  overrideRect?: { x: number; y: number; width: number; height: number } | null
+): { x: number; y: number } {
+  const focusedRect = overrideRect && overrideRect.width > 0 && overrideRect.height > 0 ? overrideRect : getFocusedElementRect();
+  const caret = !focusedRect ? getCaretPosition() : null;
   const cursor = screen.getCursorScreenPoint();
 
   let targetX = 0;
   let targetY = 0;
   let targetH = 24;
 
-  if (focusedRect && focusedRect.width > 0 && focusedRect.height > 0 && focusedRect.height < 160) {
+  if (focusedRect && focusedRect.width > 0 && focusedRect.height > 0 && focusedRect.height < 260) {
     targetX = focusedRect.x;
     targetY = focusedRect.y;
     targetH = focusedRect.height;
@@ -210,8 +227,9 @@ function calculateRoofDockingPosition(winWidth: number, winHeight: number): { x:
 }
 
 let lastAnchorPos = { x: 0, y: 0 };
+let lastPassiveRect: { x: number; y: number; width: number; height: number } | null = null;
 
-function switchToHudView(autoSent = true): void {
+function switchToHudView(autoSent = true, overrideRect?: { x: number; y: number; width: number; height: number } | null): void {
   if (!hudWindow) return;
   viewState = "hud";
 
@@ -224,7 +242,11 @@ function switchToHudView(autoSent = true): void {
   const initialHeight = 180;
   hudWindow.setSize(HUD_WIDTH, initialHeight);
 
-  const pos = calculateRoofDockingPosition(HUD_WIDTH, initialHeight);
+  if (overrideRect && overrideRect.width > 0 && overrideRect.height > 0) {
+    lastPassiveRect = overrideRect;
+  }
+
+  const pos = calculateRoofDockingPosition(HUD_WIDTH, initialHeight, lastPassiveRect);
   lastAnchorPos = pos;
   hudWindow.setPosition(pos.x, pos.y);
 
@@ -283,133 +305,59 @@ function cycleCompanionMode(): void {
   console.log(`[lingual-desktop] Mode cycled to: ${currentMode}`);
 }
 
-let isSubmittingSyntheticEnter = false;
+/**
+ * 100% Passive Submit Handler (Zero Key Occupation, 0.00ms Enter Latency)
+ * Triggered passively by uia_helper.exe watch when the user types in an input box and presses Enter.
+ * NEVER blocks or delays the physical Enter key!
+ */
+async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
+  if (currentMode === "off") return;
 
-function sendNativeEnterSafe(): void {
-  isSubmittingSyntheticEnter = true;
-  try {
-    globalShortcut.unregister("Enter");
-  } catch {}
-  triggerEnter();
-  setTimeout(() => {
-    isSubmittingSyntheticEnter = false;
-    registerShortcuts(loadDesktopConfig());
-  }, 80);
-}
-
-async function handleSubmitInterception(allowSelectAll = true, fromEnterKey = false): Promise<void> {
-  if (isSubmittingSyntheticEnter) return;
+  const text = (evt.text || "").trim();
+  if (!text) return;
 
   const config = loadDesktopConfig();
+  activeTargetHwnd = evt.hwnd || getActiveWindowHwnd();
+  activeBackupText = text;
 
-  // Do not hijack Enter inside our own Settings window
-  if (settingsWindow && !settingsWindow.isDestroyed() && settingsWindow.isFocused()) {
-    if (fromEnterKey) sendNativeEnterSafe();
-    return;
-  }
-
-  const targetHwnd = getActiveWindowHwnd();
-  activeTargetHwnd = targetHwnd;
-
-  if (currentMode === "off") {
-    if (fromEnterKey) sendNativeEnterSafe();
-    return;
-  }
-
-  // 触发翻译时，先隐去光标微圆标，避免与 3 秒大卡片重叠
-  if (capsuleWindow && !capsuleWindow.isDestroyed() && capsuleWindow.isVisible()) {
-    capsuleWindow.hide();
-  }
-
-  // IME Composition Guard:
-  // If input method is currently composing text (e.g. typing pinyin or candidate list open),
-  // 0ms pass-through immediately, NEVER intercept or interfere!
-  if (isImeComposing()) {
-    if (fromEnterKey) sendNativeEnterSafe();
-    return;
-  }
-
-  const captured = await captureActiveInputText(clipboard, allowSelectAll);
-  if (!captured || !captured.text.trim()) {
-    if (fromEnterKey) sendNativeEnterSafe();
-    return;
-  }
-
-  activeBackupText = captured.backup;
-
-  // Smart Chinese / Native Language Detection:
-  const hasChinese = /[\u4e00-\u9fff]/.test(captured.text);
+  const hasChinese = /[\u4e00-\u9fff]/.test(text);
   const effectiveSourceLang =
     hasChinese && config.targetLang !== "zh" ? "zh" : config.sourceLang || "zh";
 
-  if (!hasChinese && !shouldTriggerTranslation(captured.text, effectiveSourceLang)) {
-    if (fromEnterKey) sendNativeEnterSafe();
+  if (!hasChinese && !shouldTriggerTranslation(text, effectiveSourceLang)) {
     return;
   }
 
+  logger.info("passive-watcher", `Detected submit (${text.length} chars, mode=${currentMode}): "${text.slice(0, 40).replace(/\n/g, " ")}"`);
+
   const effectiveConfig = { ...config, sourceLang: effectiveSourceLang };
-
-  const caret = getCaretPosition();
-  const cursor = screen.getCursorScreenPoint();
-  const pos = caret || cursor;
-
-  // Determine active dynamic multi-slot configuration
   const configuredSlots =
     effectiveConfig.slots && Array.isArray(effectiveConfig.slots)
       ? effectiveConfig.slots
       : getDefaultSlots(effectiveSourceLang);
 
-  // Mode A: Learn / Original Mode (0ms pass-through Enter, HUD explains in background)
-  if (currentMode === "original") {
-    if (fromEnterKey) sendNativeEnterSafe();
-    switchToHudView(true);
-    if (hudWindow && !hudWindow.isDestroyed()) {
-      hudWindow.webContents.send("lingual:data", {
-        loading: true,
-        sourceText: captured.text,
-        autoSent: true,
-        modeLabel: "Learn",
-      });
-    }
+  const rect = evt.w > 0 && evt.h > 0 ? { x: evt.x, y: evt.y, width: evt.w, height: evt.h } : null;
 
-    executeTranslation(captured.text, effectiveConfig, undefined, configuredSlots)
-      .then((res) => {
-        currentTranslationResponse = res;
-        if (hudWindow && !hudWindow.isDestroyed() && hudWindow.isVisible()) {
-          hudWindow.webContents.send("lingual:data", {
-            ...res,
-            sourceText: captured.text,
-            autoSent: true,
-            modeLabel: "Learn",
-            slots: res.slots,
-          });
-        }
-      })
-      .catch((err) => console.error("[main] Translation error:", err));
-    return;
-  }
-
-  // Mode B: Translate Mode (Intercept Enter -> Translate -> Replace & Submit Enter + HUD)
-  switchToHudView(true);
+  switchToHudView(true, rect);
   if (hudWindow && !hudWindow.isDestroyed()) {
     hudWindow.webContents.send("lingual:data", {
       loading: true,
-      sourceText: captured.text,
+      sourceText: text,
       autoSent: true,
-      modeLabel: "Translating",
+      modeLabel: currentMode === "original" ? "Learn" : "Translating",
     });
   }
 
   try {
-    const res = await executeTranslation(captured.text, effectiveConfig, undefined, configuredSlots);
+    const res = await executeTranslation(text, effectiveConfig, undefined, configuredSlots);
     currentTranslationResponse = res;
 
     if (res.isOfflineOrFailed) {
       if (hudWindow && !hudWindow.isDestroyed() && hudWindow.isVisible()) {
         hudWindow.webContents.send("lingual:data", {
-          sourceText: captured.text,
-          spoken: captured.text,
-          written: captured.text,
+          sourceText: text,
+          spoken: text,
+          written: text,
           autoSent: false,
           modeLabel: "Offline",
           slots: res.slots,
@@ -419,63 +367,35 @@ async function handleSubmitInterception(allowSelectAll = true, fromEnterKey = fa
     }
 
     const replacement = res.written || res.spoken;
-
-    if (replacement) {
-      isSubmittingSyntheticEnter = true;
-      try {
-        globalShortcut.unregister("Enter");
-      } catch {}
-      await injectTextToTarget(replacement, targetHwnd, activeBackupText, clipboard, fromEnterKey);
-      setTimeout(() => {
-        isSubmittingSyntheticEnter = false;
-        registerShortcuts(loadDesktopConfig());
-      }, 80);
+    if (currentMode === "english" && replacement) {
+      // Zero-clipboard UIA direct replacement if input control is still focused
+      setFocusedElementText(replacement);
     }
 
     if (hudWindow && !hudWindow.isDestroyed() && hudWindow.isVisible()) {
       hudWindow.webContents.send("lingual:data", {
         ...res,
-        sourceText: captured.text,
+        sourceText: text,
         autoSent: true,
-        modeLabel: "Submitted",
+        modeLabel: currentMode === "original" ? "Learn" : "Translated",
         slots: res.slots,
       });
     }
   } catch (err: any) {
-    console.error("[main] Translation interception error:", err);
+    logger.error("passive-watcher", "Passive translation error:", err);
     switchToIdleView();
-    restoreFocus(targetHwnd);
   }
 }
 
-function registerShortcuts(config: LingualDesktopConfig): void {
-  globalShortcut.unregisterAll();
-
-  // 1. Mode cycle shortcut (Alt+Q)
-  const toggleKey = config.hotkeyToggleMode || "Alt+Q";
-  globalShortcut.register(toggleKey, () => {
-    cycleCompanionMode();
-  });
-
-  // 2. Just like pi-lingual: When in Translate or Learn mode, pressing Enter inspects and dispatches!
-  //    (Ctrl+Enter and Shift+Enter are never registered, so newlines remain 100% native.)
-  if (currentMode !== "off") {
-    globalShortcut.register("Enter", () => {
-      handleSubmitInterception(true, true);
-    });
-  }
-
-  // 3. Optional selection rewrite shortcut (Alt+E)
-  const rewriteKey = config.hotkeyRewrite || "Alt+E";
-  globalShortcut.register(rewriteKey, () => {
-    handleSubmitInterception(false, false);
-  });
-
-  // 4. Spotlight capsule shortcut (Alt+Space)
-  const spotlightKey = config.hotkeySpotlight || "Alt+Space";
-  globalShortcut.register(spotlightKey, () => {
-    switchToSpotlightView();
-  });
+/**
+ * Zero Global Shortcut Occupation Policy:
+ * Lingual NEVER calls globalShortcut.register() to hijack Enter, Alt+Q, Alt+E, or Alt+Space.
+ * Every key on the user's keyboard passes through 100% natively with 0.00ms latency!
+ */
+function registerShortcuts(_config: LingualDesktopConfig): void {
+  try {
+    globalShortcut.unregisterAll();
+  } catch {}
 }
 
 function openSettingsWindow(): void {
@@ -506,6 +426,10 @@ function openSettingsWindow(): void {
 
   const settingsHtml = path.join(__dirname, "../../src/renderer/settings.html");
   settingsWindow.loadFile(settingsHtml);
+
+  settingsWindow.webContents.on("console-message", (_event, level, message) => {
+    logger.info("renderer:settings", message);
+  });
 
   settingsWindow.once("ready-to-show", () => {
     settingsWindow?.show();
@@ -606,6 +530,11 @@ function updateTrayMenu(): void {
       click: (item) => {
         saveDesktopConfig({ showCapsule: item.checked });
       },
+    },
+    { type: "separator" },
+    {
+      label: "View Runtime Logs (runtime.log)",
+      click: () => openLogFile(),
     },
     { type: "separator" },
     {
@@ -794,6 +723,14 @@ function setupIpc(): void {
     openSettingsWindow();
   });
 
+  ipcMain.on("lingual:open-log-file", () => {
+    openLogFile();
+  });
+
+  ipcMain.handle("lingual:get-recent-logs", async () => {
+    return readRecentLogs(100);
+  });
+
   ipcMain.on("lingual:submit-spotlight", async (_event, input: string) => {
     try {
       const res = await executeTranslation(input);
@@ -832,6 +769,8 @@ if (!gotTheLock) {
       app.setAppUserModelId("dev.lingual.desktop");
     } catch {}
 
+    initLogger();
+
     const config = loadDesktopConfig();
     currentMode = config.mode || "english";
 
@@ -840,6 +779,7 @@ if (!gotTheLock) {
     registerShortcuts(config);
     setupTray();
     setupIpc();
+    startPassiveInputWatcher(handlePassiveSubmit);
 
     // Enable Windows autostart on boot (silent mode)
     try {
@@ -864,7 +804,7 @@ if (!gotTheLock) {
   });
 
   app.on("will-quit", () => {
-    if (inputTrackerInterval) clearInterval(inputTrackerInterval);
+    stopPassiveInputWatcher();
     globalShortcut.unregisterAll();
   });
 

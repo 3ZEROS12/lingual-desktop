@@ -48,4 +48,6 @@ contextBridge.exposeInMainWorld("lingualSettingsAPI", {
   aiTuneSlots: (promptText: string) => ipcRenderer.invoke("lingual:ai-tune-slots", promptText),
   detectLocalAI: () => ipcRenderer.invoke("lingual:detect-local-ai"),
   closeWindow: () => ipcRenderer.send("lingual:close-settings"),
+  openLogFile: () => ipcRenderer.send("lingual:open-log-file"),
+  getRecentLogs: () => ipcRenderer.invoke("lingual:get-recent-logs"),
 });

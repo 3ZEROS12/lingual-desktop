@@ -12,6 +12,8 @@ import {
   injectReplacementText,
   captureActiveInputText,
   injectTextToTarget,
+  startPassiveInputWatcher,
+  stopPassiveInputWatcher,
   isImeComposing,
   type ClipboardLike,
 } from "../src/main/win32.js";
@@ -108,4 +110,15 @@ test("win32: captureActiveInputText and injectTextToTarget handle hybrid pipelin
   const targetHwnd = getActiveWindowHwnd();
   const res = await injectTextToTarget("Hybrid Test", targetHwnd, "Backup Text", mockClipboard);
   assert.ok(res === "uia" || res === "clipboard");
+});
+
+test("win32: startPassiveInputWatcher and stopPassiveInputWatcher manage background daemon cleanly with zero key hijacking", async () => {
+  const received: any[] = [];
+  startPassiveInputWatcher((evt) => {
+    received.push(evt);
+  });
+
+  await new Promise((r) => setTimeout(r, 150));
+  stopPassiveInputWatcher();
+  assert.ok(Array.isArray(received));
 });

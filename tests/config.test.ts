@@ -7,6 +7,11 @@ import {
   getConfigPath,
   DEFAULT_DESKTOP_CONFIG,
 } from "../src/main/config.js";
+import {
+  getLogFilePath,
+  logger,
+  readRecentLogs,
+} from "../src/main/logger.js";
 
 test("config: loadDesktopConfig returns valid configuration object with companion defaults", () => {
   const cfg = loadDesktopConfig();
@@ -73,4 +78,19 @@ test("config: persists uiLang, engineProvider, and capsulePos cleanly across ses
       fs.unlinkSync(configPath);
     }
   }
+});
+
+test("logger: writes structured runtime logs and reads recent lines in isolated test sandbox", () => {
+  const logPath = getLogFilePath();
+  assert.ok(logPath.endsWith("runtime.log"));
+
+  logger.info("test-suite", "Verification log entry #1");
+  logger.warn("test-suite", "Verification warning #2");
+  logger.error("test-suite", new Error("Simulated diagnostic error"));
+
+  assert.ok(fs.existsSync(logPath), "Expected runtime.log file to be created");
+  const recent = readRecentLogs(20);
+  assert.ok(recent.includes("Verification log entry #1"));
+  assert.ok(recent.includes("Verification warning #2"));
+  assert.ok(recent.includes("Simulated diagnostic error"));
 });
