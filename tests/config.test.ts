@@ -47,3 +47,30 @@ test("config: saveDesktopConfig writes mode and autoSend to user config and relo
     }
   }
 });
+
+test("config: persists uiLang, engineProvider, and capsulePos cleanly across sessions", () => {
+  const configPath = getConfigPath();
+  const originalExists = fs.existsSync(configPath);
+  const originalRaw = originalExists ? fs.readFileSync(configPath, "utf8") : null;
+
+  try {
+    saveDesktopConfig({
+      uiLang: "ja",
+      engineProvider: "free",
+      capsulePos: { x: 500, y: 300 },
+    });
+
+    const updated = loadDesktopConfig();
+    assert.equal(updated.uiLang, "ja");
+    assert.equal(updated.engineProvider, "free");
+    assert.deepEqual(updated.capsulePos, { x: 500, y: 300 });
+    // In free engine mode, endpoint points to zero-key fallback
+    assert.ok(updated.endpoint.includes("127.0.0.1:0/free"));
+  } finally {
+    if (originalExists && originalRaw !== null) {
+      fs.writeFileSync(configPath, originalRaw, "utf8");
+    } else if (fs.existsSync(configPath)) {
+      fs.unlinkSync(configPath);
+    }
+  }
+});

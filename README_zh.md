@@ -1,9 +1,9 @@
 # lingual-desktop · 全平台通用随身外挂语言伴侣
 
-> **不替代你的输入法 · 随身光标微胶囊 · 发送拦截与双模分流 · 剪贴板历史零污染**  
-> 你完全照旧使用最顺手的**微软拼音、微信输入法、搜狗或 Rime**，在任何软件（X/推特、Slack、Discord、VS Code、Notion、微信、邮件）中打字。打完敲发送，`lingual-desktop` 自动按模式拦截与分流，直接发出地道英文或原文，并就地展开双轨伴学视窗。
+> **不替代你的输入法 · 回车即发即翻 · 常驻可自由拖拽微胶囊 · 剪贴板历史零污染**  
+> 你完全照旧使用最顺手的**微软拼音、微信输入法、搜狗或 Rime**，在任何软件（X/推特、Slack、Discord、必应/谷歌搜索、Notion、微信、邮件）中打字。打完敲回车（Enter），`lingual-desktop` 自动判断自然语言并按模式分流，直接发出地道外语或原文，并就地展开双轨伴学视窗。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 18/18 Pass](https://img.shields.io/badge/Tests-18%2F18%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 19/19 Pass](https://img.shields.io/badge/Tests-19%2F19%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
 
 [English](README.md) | **简体中文**
 
@@ -11,75 +11,67 @@
 
 ## 什么是 lingual-desktop？
 
-`lingual-desktop` **绝不是一个输入法软件，也绝不替代你的现有输入法**。你不需要换掉用了多年的微软拼音，也不需要适应任何新的打字习惯。
+`lingual-desktop` **绝不是一个输入法软件，也绝不替代你的现有输入法**。你不需要换掉用了多年的输入法，也不需要改变任何打字习惯。
 
-它是一个**常驻在 Windows 系统托盘的随身外挂语言伴侣**。当你打字时，它只在光标右上方静默跟随一个半透明的微胶囊（`⇄ [EN]`）。当你打完一句话敲下发送（`Ctrl+Enter` 或配置好的发送键）时：
-* **英文模式 (`[EN]`)**：自动截获你的中文草稿，通过 `@lingual/core` 极速转换为地道硅谷口语或规范技术英文，通过 Windows 原生 UIA 管道写回输入框并真正发出，同时胶囊就地平滑展开为 Left-Rail 树形 HUD，展示发出的内容与重点短语释义（3 秒后自动隐去）；
-* **原文模式 (`[ZH]`)**：0ms 彻底非阻塞放行，你的中文原文秒级发出去，HUD 卡片在后台异步展开供你对照双轨英文与词汇微学习；
-* **关闭模式 (`[OFF]`)**：微胶囊隐藏，完全透明静默。
+它是常驻在 Windows 桌面端的随身伴侣层，逻辑与 `pi-lingual` 完全一致：
+* **译文模式 (`[EN]`)**：在任何输入框打完字直接按 **`Enter`**。自动识别中文，通过所选模型转换并直接替换输入框发出，同时在屏幕展开伴学卡片供你核对（3 秒后自动隐去；3 秒内按 Esc 可瞬间撤回恢复原中文草稿）；
+* **伴学模式 (`[LEARN]`)**：按 **`Enter`** 0ms 彻底非阻塞放行，你的中文原文秒级发出去，卡片在后台异步展开供你学习地道英文与词汇搭配；
+* **关闭模式 (`[OFF]`)**：完全静默，不拦截任何回车；
+* **换行零冲突**：仅监听单 Enter，**`Ctrl+Enter` 与 `Shift+Enter` 换行键 100% 原生保留**，绝不影响普通换行。
 
 ---
 
 ## 交互心流 (Interaction Model)
 
 ```
-[场景 1：日常正常敲字]
-你在 X/推特、Slack 或微信里用微软拼音正常打字：
+[场景 1：日常正常打字]
+你在 X/推特、Slack、微信或搜索框里打中文：
                       
-   光标 ➔ 这个方案有点过度设计了，不如用标准库|  ⇄ [EN]  <-- 随身微胶囊 (不抢输入焦点)
+   光标 ➔ 这个方案有点过度设计了，不如用标准库|        [⇄ EN]  <-- 稳定常驻且可自由拖拽的胶囊
 
 ────────────────────────────────────────────────────────────────────────────────────────────
-[场景 2：按下发送键 (Ctrl+Enter 或 发送)]
+[场景 2：按下回车 (Enter)]
 
-  【英文模式】：
-  1. 通过 Windows UI Automation 截获当前输入文本 (0ms，零剪贴板污染)；
-  2. @lingual/core 极速生成 (直连 Groq / Gemini / 本地 Ollama)；
-  3. 英文自动填入目标文本框并触发真正发送；
-  4. 微胶囊平滑展开为经典的左轨树伴学 HUD：
-     · [Original] 这个方案有点过度设计了，不如用标准库
-     ┌ [Spoken]   This feels a bit over-engineered; we'd be much better off sticking with the standard library.
-     │            (感觉过度设计了，用标准库划算得多)
-     ├ [Written]  The proposed approach introduces unnecessary complexity. Standard library is preferred.
-     │            (该方案引入了不必要的复杂度，建议优先采用原生实现)
-     └ [Vocab]    over-engineered · be better off · stick with
-     (显示 3 秒后或按下新按键时自动收起)
+  【译文模式】：
+  1. 自动判断输入内容（代码、终端命令、纯英文自动 0ms 放行）；
+  2. 调用翻译引擎（本机 Pi 模型 / 免费网页翻译 / 云端大模型）；
+  3. 原地替换输入框文本并真正发出；
+  4. 伴学卡片就地展开：
+     · [Source]  这个方案有点过度设计了，不如用标准库
+     ┌ [Casual]  This feels a bit over-engineered; we'd be much better off with the standard library.
+     │           (自然地道的美式口语，适合 Slack 沟通与日常站会)
+     ├ [Formal]  The proposed approach introduces unnecessary complexity. Standard library is preferred.
+     │           (严谨现代的技术书面语，适合 PR 审查、RFC 与文档)
+     └ [Vocab]   over-engineered · be better off with · stick with
+     (显示 3 秒后自动隐去；3 秒内按 Esc 可一键撤回恢复原草稿)
 ```
 
 ---
 
-## 五大核心工程支柱
+## 核心工程支柱
 
-### 1. 零输入法替代成本 (与任意现有输入法和谐共生)
-无需学习新输入法，无需折腾复杂的 TSF 驱动配置。`lingual-desktop` 运行在纯用户态，通过 Windows UI Automation 监听输入控件边界，完全不碰你的拼音选词管线。
+### 1. 稳定常驻 + 鼠标自由拖拽与位置记忆
+* **告别乱闪乱跳**：不再依赖脆弱的 Windows 光标坐标轮询。胶囊稳定常驻在屏幕边缘，绝不在屏幕正中随机闪现。
+* **任意位置拖拽**：按住鼠标左键即可将胶囊或 HUD 卡片拖到屏幕任意角落，松手自动持久化记忆坐标（`capsulePos: { x, y }`）。
+* **极简交互手势**：左键单击胶囊切换模式（`EN` ⇄ `LEARN` ⇄ `OFF`）；右键单击呼出设置控制中心。
 
-### 2. 无焦点幽灵微胶囊 (`WS_EX_NOACTIVATE`)
-跟随光标浮动的微胶囊具备 Windows 原生 `WS_EX_NOACTIVATE` 特性，绝对不会抢走正在打字的焦点，打字心流零打断。
-* 敲击 **`Alt+Q`** 或鼠标点击胶囊，即可在 **`[EN]`** ⇄ **`[ZH]`** ⇄ **`[OFF]`** 三模之间快速轮转。
+### 2. 回车自动驱动 + 终端进程绝对隔离
+* 与 `pi-lingual` 一样直观：不用记复杂的快捷键组合，选好模式打完字直接敲 **`Enter`**。
+* **终端免打扰**：底层自动识别终端进程（`WindowsTerminal`、`PowerShell`、`cmd`、`WezTerm`、`Mintty`）。在终端打字 100% 原样放行，绝不向终端误发全选复制，完全不干扰命令行开发。
 
-### 3. 可选的确认流 (自动瞬发 vs 预览确认)
-* **默认自动发送 (`autoSend: true`)**：敲发送键后，自动换为英文发出，弹窗展示 3 秒供认知吸收，省心极速。
-* **确认模式 (`autoSend: false`)**：敲发送键后暂停发出，弹窗展开 `[1] 口语` 与 `[2] 书面`，按 1 或 2 确认后再真正发出，彻底消除词义偏差顾虑。
+### 3. 三大清晰驱动引擎（包含零成本方案）
+* **方案 1：直接复用本机 Pi 模型（推荐 · 零额外花费）**：自动读取 `~/.pi/agent/models.json`（如 `gemini-3.8-flash`），无需重复填 Key，直接享受完整的大模型多语气对比与词汇生成。
+* **方案 2：免注册基础网页翻译（Google / MyMemory · 无需任何 Key）**：直接调用免注册的公共网页翻译接口（适合全新电脑临时应急，每次输出 1 行标准译文）。
+* **方案 3：永久免费大模型 API 或自定义密钥**：支持填入自己的 Key，并预设了 **智谱 GLM-4-Flash（官方永久免费 ¥0）**、**硅基流动 Qwen2.5-7B（官方永久免费 ¥0）**、**Groq（免费额度）**、DeepSeek 与 OpenAI。
 
-### 4. 混合零污染注入 (UIA 优先 + 原子剪贴板兜底)
-* **首选**：直接通过 Windows UIA `ValuePattern::SetValue` 改写目标文本框（0 剪贴板读写，速度极快）。
-* **兜底**：遇到极少数不支持 UIA 的自绘编辑器时，自动走**原子剪贴板事务**（发送完成后 160ms 自动还原用户原本的剪贴板历史，Windows 11 的 `Win+V` 剪贴板完全不被污染）。
+### 4. Paper & Stone 极简编辑部设计风格
+* 采用白画布/暖纸底色（`#fbfaf8`）、纯白卡片（`#ffffff`）与炭石黑字（`#1c1917`）。
+* **零表情包**：彻底剥除花哨的表情符号与廉价赛博黑底色，回归专业冷峻的高信息密度排版。
+* **四语种即时切换**：右上角提供极简双字母切换器（`EN` / `ZH` / `TW` / `JA`），点击即时全界面切换并自动落盘。
 
-### 5. 0ms 代码与终端命令护盾 (Shield)
-继承自 `@lingual/core`，40+ 常见命令行前缀（`git`, `npm`, `cargo`, `docker`, `curl` 等）和常见编程语言代码语句在 0.1ms 内自动直通，绝不浪费 1 个 Token。
-
-### 6. 所见即所得大白话设置中心 & 内置「一句话让 AI 帮我配好」 (`⚙️ 设置`)
-右键系统托盘图标即可打开零门槛设置面板，专为“只想专心打字”的用户设计：
-* **🌱 免 Key 开箱即用保底**：安装后无需填写任何 API Key、无需安装 Ollama，第一秒打字即可使用内置免费极速翻译；
-* **👀 实时弹窗效果预览 (WYSIWYG)**：界面上方直接展示真实的深色小卡片预览。勾选“保留中文原话 / 给 2 种语气对比 / 附中文语气解释 / 顺便挑 2 个单词”，上方预览卡片当场实时变化，每个选项管哪一行一目了然；
-* **🤖 内置「一句话让 AI 帮我配好」**：把在终端里跟智能体说话的体验直接搬进桌面端！你只需输入一句大白话（如：*“我只是为了打字，只要一行简单翻译，不要原话和单词”* 或 *“我是做外贸客服的，想要客气礼貌回复和简短催单”*），AI 当场自动帮你配好卡片结构；
-* **🔍 本地 AI 一键自动检测与云端极简接入**：点一下按钮自动扫描连接电脑上的 Ollama / LM Studio，或直接粘贴 DeepSeek / 硅基流动 / OpenAI 密钥（网址与模型名全部自动隐藏配好）。
-
-### 7. 动态双槽位架构与领域定制 (Dual-Slot Architecture)
-`[口语]` 与 `[书面]` 仅是 **Slot 1** 与 **Slot 2** 的出厂默认值。在设置面板中可自由切换预设语域以适配你的真实业务场景：
-* **💻 开发者协同 (默认)**：`[Spoken]` 硅谷站会交流 / Slack 日常 vs `[Written]` RFC 提案 / PR 审查技术规范
-* **🐦 出海推特运营 (针对X推广)**：`[Hook]` 爆款社交推文 / 互动俚语 vs `[Deep]` 深度技术洞察 / 长推干货
-* **🌸 日语双轨伴学 (针对日语)**：`[口語]` 朋友日常タメ口 / Huddle 对话 vs `[敬語]` 商务严谨敬语 / 官方邮件
-* **🎓 学术科研论文 (针对论文)**：`[Discussion]` 组会研讨口语 / 答辩提问 vs `[Paper]` IEEE/ACM 顶级期刊正文规范
+### 5. 一句话版式定制 + 所见即所得实时预览
+* 输入任意大白话需求（如*“只要一行极简译文，不要原文和词汇”* 或 *“商务客服：客气回复加简短催单”*），引擎动态解析生成专属槽位结构。
+* 勾选任意行项，上方预览卡片当场同步更新。
 
 ---
 
@@ -88,70 +80,46 @@
 ```
 ┌────────────────────────────────────────────────────────┐
 │                   任意 Windows 应用程序                 │
-│         (X / 网页浏览器、Slack、Discord、VS Code、微信) │
+│         (X / 浏览器、Slack、Discord、Notion、微信)      │
 └──────────────────────────┬─────────────────────────────┘
-                           │ 1. 敲击与光标位置感知
+                           │ 1. 敲击与回车自动分流
                            ▼
 ┌────────────────────────────────────────────────────────┐
 │              lingual-desktop 原生宿主层                 │
 │     (Electron + MinGW GCC 原生 C & C# UIA 桥接器)      │
-│  - GetGUIThreadInfo:   实时捕获光标屏幕绝对坐标        │
-│  - UIA ValuePattern:   零剪贴板直接读写活跃文本框      │
-│  - WS_EX_NOACTIVATE:   随身微胶囊 (绝对不抢焦点)       │
-│  - 发送拦截网关:       English 模式 / Original 模式分流 │
+│  - UIA ValuePattern UTF-8 直接读取 (< 2ms)             │
+│  - 终端环境进程识别 (WindowsTerminal 隔离保护)         │
+│  - 常驻悬浮胶囊自由拖拽与坐标记忆                      │
+│  - 模式状态机与 Enter 自动派发分流网关                 │
 └──────────────────────────┬─────────────────────────────┘
-                           │ 2. 文本载荷
+                           │ 2. 双语境推理驱动
                            ▼
 ┌────────────────────────────────────────────────────────┐
-│           @lingual/core 核心双语域引擎                 │
-│  - shield.ts:   0ms 识别代码/CLI 命令直接放行          │
-│  - cache.ts:    50-entry LRU 缓存秒级命中              │
-│  - prompts.ts:  硅谷口语/推特 Hook ⇄ RFC 技术书面对冲  │
-└──────────────────────────┬─────────────────────────────┘
-                           │ 3. 结构化结果
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│            平滑展开的 Left-Rail 树形伴学视窗           │
-│  自动发送态: ✓ 已自动发出 (3秒后自动淡出)              │
-│  预览确认态: [1] 选口语  │  [2] 选书面  │  [Esc] 取消   │
+│           翻译推理引擎与容错降级流水线                 │
+│  - Tier 1: 本机 Pi 模型自动发现与共享 ($0 成本)        │
+│  - Tier 2: 免 Key 公共网页翻译接口 (Google / MyMemory) │
+│  - Tier 3: 官方永久免费大模型 API (GLM-4-Flash ¥0 等)  │
+│  - 原子剪贴板事务哨兵恢复机制 (< 160ms)                │
 └────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 快速上手与验证
+## 物理构建与测试
 
 ```bash
-cd D:/Workspace/projects/lingual-desktop
-npm install
-npm run build   # 编译原生 C/UIA 助手与主进程
-npm test        # 12/12 物理测试全绿通过
-npm start       # 启动系统托盘后台伴侣进程
+# 编译 MinGW C 与 C# UIA 原生二进制辅助器
+npm run build:native
+
+# 编译 Electron 主进程与 Preload 脚本
+npm run build:main
+
+# 运行全量单元测试套件 (19/19 Pass)
+npm test
 ```
 
 ---
 
-## 配置文件 (`~/.lingual/config.json`)
+## 授权许可
 
-```json
-{
-  "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
-  "apiKey": "ollama",
-  "model": "qwen2.5:3b",
-  "sourceLang": "zh",
-  "targetLang": "en",
-  "mode": "english",
-  "autoSend": true,
-  "showCapsule": true,
-  "hotkeyToggleMode": "Alt+Q",
-  "hotkeySubmit": "Ctrl+Enter",
-  "hotkeyRewrite": "Alt+E",
-  "hotkeySpotlight": "Alt+Space"
-}
-```
-
----
-
-## 开源协议
-
-MIT © [Jason Song](https://github.com/3ZEROS12)
+MIT © Jason & Lingual Contributors

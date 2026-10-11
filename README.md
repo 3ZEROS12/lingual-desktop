@@ -1,9 +1,9 @@
 # lingual-desktop · Universal Ambient Language Companion Layer
 
 > **The zero-friction desktop writing companion that lives alongside your existing IME.**  
-> Type naturally with your preferred input method (Microsoft Pinyin, WeChat IME, Sogou, Rime) in any Windows app (X/Twitter, Slack, Discord, VS Code, Notion, WeChat, Email). Upon hitting submit, `lingual-desktop` intercepts, translates, and delivers authentic Silicon Valley spoken flow or technical RFC precision—while keeping you in complete flow state.
+> Type naturally with your preferred input method (Microsoft Pinyin, WeChat IME, Sogou, Rime) in any Windows app (X/Twitter, Slack, Discord, Chrome, Notion, WeChat, Email). Upon pressing Enter, `lingual-desktop` automatically detects natural language, translates via your chosen engine, and delivers authentic spoken flow or technical precision—while keeping you in complete flow state.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 18/18 Pass](https://img.shields.io/badge/Tests-18%2F18%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 19/19 Pass](https://img.shields.io/badge/Tests-19%2F19%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
 
 **English** | [简体中文](README_zh.md)
 
@@ -11,12 +11,13 @@
 
 ## What is lingual-desktop?
 
-`lingual-desktop` is **NOT a replacement for your input method**. You continue using your favorite Chinese IME without changing a single typing habit.
+`lingual-desktop` is **NOT a replacement for your input method**. You continue using your favorite input method without changing a single typing habit.
 
-It is an **ambient, system-wide companion layer** that runs unobtrusively in your Windows system tray. It floats a gentle, non-activating micro-capsule (`⇄ [EN]`) near your typing caret. When you finish your thought and send:
-* **English Mode (`[EN]`)**: Intercepts your native input, translates it into natural Silicon Valley tech prose via `@lingual/core`, injects the English directly into the host application, and submits—all while smoothly expanding a Left-Rail HUD for 3 seconds so you can verify what was sent and absorb idiomatic vocabulary.
-* **Original Mode (`[ZH]`)**: 0ms non-blocking pass-through. Your original text sends instantly, while the Left-Rail HUD expands in the background to provide a dual-register comparison for micro-learning.
-* **Off Mode (`[OFF]`)**: Fully transparent.
+It is an **ambient, system-wide companion layer** running as a lightweight Windows utility:
+* **Translate Mode (`[EN]`)**: Simply press `Enter` in any text box. `lingual-desktop` automatically inspects your text—if it's natural language, it translates it via your active engine, replaces your input box draft, and submits, while expanding the dual-register card for 3 seconds.
+* **Learn Mode (`[LEARN]`)**: Simply press `Enter`. 0ms non-blocking pass-through. Your original text sends instantly, while the dual-register card pops up in the background for micro-learning.
+* **Off Mode (`[OFF]`)**: Fully transparent. Zero hooks active.
+* **Zero Newline Conflict**: `Ctrl+Enter` and `Shift+Enter` are **never intercepted**, preserving normal chat multiline and search newlines across all applications.
 
 ---
 
@@ -24,62 +25,53 @@ It is an **ambient, system-wide companion layer** that runs unobtrusively in you
 
 ```
 [Normal Typing State]
-You type Chinese as usual in X, Slack, Discord, or VS Code using Microsoft Pinyin:
+You type Chinese as usual in X/Twitter, Slack, Discord, or Bing search:
                       
-   Caret ➔ 这个方案有点过度设计了，不如用标准库|  ⇄ [EN]  <-- Ambient Ghost Capsule (Non-activating)
+   Caret ➔ 这个方案有点过度设计了，不如用标准库|        [⇄ EN]  <-- Steady Draggable Capsule
 
 ────────────────────────────────────────────────────────────────────────────────────────────
-[Submit State: Ctrl+Enter or Send]
+[Submit State: Press Enter]
 
-  In English Mode:
-  1. Intercepts submission via Windows UI Automation (zero clipboard pollution);
-  2. Runs @lingual/core fast inference (Groq / Gemini / local Ollama);
-  3. Auto-injects English into target control & triggers submit;
-  4. Ambient capsule smoothly expands into Left-Rail HUD:
-     · [Original] 这个方案有点过度设计了，不如用标准库
-     ┌ [Spoken]   This feels a bit over-engineered; we'd be better off sticking with the standard library.
-     │            (感觉过度设计了，用标准库划算得多)
-     ├ [Written]  The proposed approach introduces unnecessary complexity. Standard library is preferred.
-     │            (该方案引入了不必要的复杂度，建议优先采用原生实现)
-     └ [Vocab]    over-engineered · be better off · stick with
-     (Auto-closes in 3 seconds or on next keystroke)
+  In Translate Mode:
+  1. Inspects input text (0ms bypass for pure code, CLI commands, and English);
+  2. Runs translation inference (Local Pi Model / Free Web Translate / Cloud LLM);
+  3. Replaces input box text in-place and submits;
+  4. HUD card smoothly expands:
+     · [Source]  这个方案有点过度设计了，不如用标准库
+     ┌ [Casual]  This feels a bit over-engineered; we'd be much better off with the standard library.
+     │           (Natural conversational flow for Slack and daily standups)
+     ├ [Formal]  The proposed approach introduces unnecessary complexity. Standard library is preferred.
+     │           (High-precision technical prose for RFCs, PR reviews, and documentation)
+     └ [Vocab]   over-engineered · be better off with · stick with
+     (Auto-closes in 3 seconds; press Esc within 3s to undo and restore original draft)
 ```
 
 ---
 
 ## Key Engineering Pillars
 
-### 1. Zero IME Replacement (Coexists with Any Input Method)
-You do not need to learn a new keyboard layout or switch away from Microsoft Pinyin or Sogou. `lingual-desktop` hooks into text controls via **Windows UI Automation (UIA)** and caret telemetry, operating strictly at the submit/dispatch barrier.
+### 1. Steady Resident & Freely Draggable Floating Capsule
+* **No Jumpy Vanishing**: Instead of flickering based on erratic Win32 caret telemetry, the capsule stays steadily docked at your preferred screen location.
+* **Full Mouse Dragging & Position Memory**: Click and drag the capsule or HUD header anywhere on screen. It remembers your exact `(x, y)` coordinates across reboots.
+* **Intuitive Gestures**: Left-click the capsule to cycle modes (`EN` ⇄ `LEARN` ⇄ `OFF`); right-click to open Settings.
 
-### 2. Ambient Ghost Capsule (`WS_EX_NOACTIVATE`)
-The micro-capsule stays docked beside your active caret without stealing typing focus.
-* Click the capsule or press **`Alt+Q`** to toggle between **`[EN]`**, **`[ZH]`**, and **`[OFF]`**.
+### 2. Enter-Driven Workflow with Native Terminal Isolation
+* Works exactly like `pi-lingual`: no complex shortcut gymnastics to memorize. Select your mode, type, and press **`Enter`**.
+* **Terminal Process Guard**: Automatically recognizes terminal emulators (`WindowsTerminal`, `PowerShell`, `cmd`, `WezTerm`, `Mintty`). Terminals are 100% passed through with zero interception, preventing any interference with your CLI agent.
 
-### 3. Configurable Dispatch (Auto-Send vs. Confirm-First)
-* **Auto-Send (`autoSend: true`, Default)**: Submits the translated English immediately and shows the HUD for quick cognitive absorption.
-* **Confirm Mode (`autoSend: false`)**: Pauses before sending, presenting `[1] Spoken` and `[2] Written` options. Press `1` or `2` to commit and submit.
+### 3. Three Transparent Engine Tiers (Including $0 Zero-Cost Options)
+* **Tier 1: Reuse Local Pi Model ($0 Extra, Recommended)**: Automatically discovers and shares the model already configured in `~/.pi/agent/models.json` (e.g. `gemini-3.8-flash`). Zero extra cost, full dual-register capability.
+* **Tier 2: Free Web Translate (Google / MyMemory, No Key Needed)**: Uses public web translation APIs with zero registration, zero accounts, and zero keys. Outputs 1 direct translation line.
+* **Tier 3: Free-Tier or Custom LLM API Key**: Connect your own key, including permanently free LLM endpoints such as **Zhipu GLM-4-Flash (Free ¥0)**, **SiliconFlow Qwen2.5-7B (Free ¥0)**, **Groq Llama-3.3 (Free Tier)**, DeepSeek, or OpenAI.
 
-### 4. Hybrid Zero-Pollution Injection (UIA + Atomic Clipboard Guard)
-* **Primary**: Injects text directly into host controls via UIA `ValuePattern::SetValue` (0ms, zero clipboard interaction).
-* **Fallback**: For custom canvas editors, utilizes an **Atomic Clipboard Transaction** that automatically rolls back your previous clipboard content after 160ms, keeping your Windows 11 `Win+V` history completely clean.
+### 4. Paper & Stone Minimalist Editorial Design System
+* Styled with a warm paper canvas (`#fbfaf8`), clean white cards (`#ffffff`), and charcoal stone typography (`#1c1917`).
+* **Zero Cheesy Emojis**: Clean monospace tags and crisp typography.
+* **4-Language Switcher**: Switch the interface anytime between `EN`, `ZH`, `TW`, and `JA` with instant auto-save.
 
-### 5. 0ms Code & CLI Shield
-Inherited from `@lingual/core`, 40+ terminal command prefixes (`git`, `npm`, `cargo`, `docker`, `curl`, etc.) and multi-language code snippets pass through in 0ms without burning tokens.
-
-### 6. Human-First WYSIWYG Settings & Built-in Conversational AI Tuner (`⚙️ Settings`)
-Right-click the system tray icon to open the human-first GUI settings center:
-* **Zero-Key Out-of-the-Box Fallback**: Works immediately upon installation without requiring any API key or local Ollama setup.
-* **👀 Real-Time WYSIWYG HUD Preview**: Every toggle (show/hide source text, 1-line vs 2-style comparison, Chinese nuance explanations, vocabulary notes) updates a live dark HUD preview card in real time.
-* **🤖 Built-in Conversational AI Tuner ("一句话让 AI 帮我配好")**: Just like chatting with an AI agent in Pi, type a plain-language sentence describing what you use typing for (e.g., *"I just want 1 simple translation line for chatting, no source text or vocab"* or *"Customer support: polite reply + brief follow-up"*), and the built-in intent engine configures your card layout automatically.
-* **1-Click Local AI Sniffer & Cloud Presets**: Auto-detects local Ollama/LM Studio with a single click, or connects to DeepSeek, SiliconFlow, Groq, and OpenAI by pasting just an API key.
-
-### 7. Dynamic Dual-Slot Architecture (Domain-Specific Customization)
-`[Spoken]` and `[Written]` are simply the defaults for **Slot 1** and **Slot 2**. Switch presets in the settings window to match your exact scenario:
-* **💻 Developer Collaboration (Default)**: `[Spoken]` Silicon Valley Standup / Slack vs. `[Written]` RFC / PR Review Plain English
-* **🐦 Twitter/X Social Growth (Targeted at Overseas Promotion)**: `[Hook]` Viral Social Hook vs. `[Deep]` Structured Technical Insight
-* **🌸 Japanese Immersion**: `[口語]` Casual Tameguchi vs. `[敬語]` Business Polite Keigo
-* **🎓 Academic Publishing**: `[Discussion]` Seminar / Lab Colloquy vs. `[Paper]` Peer-Reviewed Journal Prose
+### 5. Natural Language Layout Tuner with Live WYSIWYG Preview
+* Describe how you want your card formatted in natural language (e.g. *"Single line only for fast chat, no source row or vocab"* or *"Polite customer support reply and concise follow-up"*).
+* The engine dynamically compiles custom `SlotConfig[]` arrays with instant visual feedback on the live card preview.
 
 ---
 
@@ -88,70 +80,46 @@ Right-click the system tray icon to open the human-first GUI settings center:
 ```
 ┌────────────────────────────────────────────────────────┐
 │                   Active Windows App                   │
-│         (X / Browser, Slack, Discord, VS Code, Word)   │
+│         (X / Browser, Slack, Discord, Notion, Word)    │
 └──────────────────────────┬─────────────────────────────┘
-                           │ 1. Typing & Caret telemetry
+                           │ 1. Text input & Enter submission
                            ▼
 ┌────────────────────────────────────────────────────────┐
 │              lingual-desktop Host Layer                │
 │    (Electron + Native MinGW C & C# UIA Bridge)         │
-│  - GetGUIThreadInfo caret tracking (< 2ms)             │
-│  - UIA ValuePattern zero-clipboard text reading/set    │
-│  - Ambient ghost capsule (WS_EX_NOACTIVATE)            │
-│  - Submit interception gateway & Mode FSM              │
+│  - UIA ValuePattern UTF-8 direct reading (< 2ms)       │
+│  - Terminal process isolation (WindowsTerminal guard)  │
+│  - Steady resident draggable capsule & position store  │
+│  - Mode FSM & Enter dispatch router                    │
 └──────────────────────────┬─────────────────────────────┘
-                           │ 2. Text payload
+                           │ 2. Dual-register translation
                            ▼
 ┌────────────────────────────────────────────────────────┐
-│           @lingual/core Language Engine                │
-│  - shield.ts:   0ms code/CLI pass-through              │
-│  - cache.ts:    50-entry LRU cache                     │
-│  - prompts.ts:  Dual-register generation & vocab       │
-└──────────────────────────┬─────────────────────────────┘
-                           │ 3. Streamed result
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│             Smoothly Expanding Left-Rail HUD           │
-│  Auto-Send: ✓ Submitted (3s auto-close)                │
-│  Confirm:   [1] Spoken  │  [2] Written  │  [Esc]       │
+│           Translation Engine & Resilience Matrix       │
+│  - Tier 1: Local Pi Model auto-discovery ($0 extra)    │
+│  - Tier 2: Free Web Translate (Google / MyMemory GTX)  │
+│  - Tier 3: Free-Tier LLMs (GLM-4-Flash ¥0 / Qwen ¥0)   │
+│  - Atomic Clipboard Transaction Sentinel (< 160ms)     │
 └────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Quickstart & Verification
+## Build & Physical Verification
 
 ```bash
-cd D:/Workspace/projects/lingual-desktop
-npm install
-npm run build   # Compiles native C/UIA helpers & main process
-npm test        # 12/12 physical tests pass
-npm start       # Launches the ambient companion background daemon
-```
+# Compile native MinGW C and C# UIA helpers
+npm run build:native
 
----
+# Compile Electron main process and preload bundle
+npm run build:main
 
-## Configuration (`~/.lingual/config.json`)
-
-```json
-{
-  "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
-  "apiKey": "ollama",
-  "model": "qwen2.5:3b",
-  "sourceLang": "zh",
-  "targetLang": "en",
-  "mode": "english",
-  "autoSend": true,
-  "showCapsule": true,
-  "hotkeyToggleMode": "Alt+Q",
-  "hotkeySubmit": "Ctrl+Enter",
-  "hotkeyRewrite": "Alt+E",
-  "hotkeySpotlight": "Alt+Space"
-}
+# Run full physical unit test suite (19/19 Pass)
+npm test
 ```
 
 ---
 
 ## License
 
-MIT © [Jason Song](https://github.com/3ZEROS12)
+MIT © Jason & Lingual Contributors
