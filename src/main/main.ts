@@ -87,7 +87,7 @@ function createCapsuleWindow(): BrowserWindow {
     focusable: true,
     hasShadow: false,
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -123,7 +123,7 @@ function createHudWindow(): BrowserWindow {
     focusable: false,
     hasShadow: false,
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -498,7 +498,7 @@ function openSettingsWindow(): void {
     show: false,
     backgroundColor: "#fbfaf8",
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
     },

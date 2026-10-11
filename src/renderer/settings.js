@@ -29,10 +29,10 @@
       sec_slang_desc: "The primary language you type in:",
       sec_tlang_title: "Target Language",
       sec_tlang_desc: "The target language to translate into:",
-      sec_widget_title: "Floating Desktop Widget",
-      sec_widget_desc: "A compact draggable pebble at the screen corner showing active mode at a glance:",
-      tog_widget_title: "Show Corner Floating Pebble (⇄ EN)",
-      tog_widget_desc: "Always shows whether Lingual is running. Click to cycle mode; drag to move anywhere.",
+      sec_widget_title: "Top Floating Island",
+      sec_widget_desc: "A minimal status island anchored at the top edge of your screen:",
+      tog_widget_title: "Show Top Floating Island (⇄ EN)",
+      tog_widget_desc: "Anchored at screen top edge. Click to cycle mode; drag to move anywhere.",
       preview_title: "Live Preview",
       preview_hint: 'Sample: "Can we release this feature tomorrow?"',
       ai_tuner_title: "Natural Language Layout Tuner",
@@ -56,17 +56,17 @@
       adv_slots_summary: "Advanced slot configuration",
       btn_add_row: "+ Add Row",
       btn_reset_rows: "Reset Default",
-      engine_choose_title: "Translation Engine (3 Ways to Run — Including $0 Options)",
+      engine_choose_title: "Translation Engine Options",
       engine_choose_desc: "Select how translations are powered:",
-      emode_pi_title: "1. Reuse Local Pi Model (Recommended · $0 Extra)",
+      emode_pi_title: "1. Reuse Local Pi Model (Recommended · $0 Setup)",
       emode_pi_desc:
         "Automatically shares the model configured in ~/.pi/agent/models.json. Supports full dual-register comparison, vocabulary notes, and AI layout tuning with zero extra setup.",
-      emode_free_title: "2. Free Web Translate (Google / MyMemory · No Key Required)",
+      emode_free_title: "2. Free Web Translate (Google / MyMemory · No Key)",
       emode_free_desc:
         "Uses public web translation APIs (Google Translate + MyMemory) with zero registration or API keys. Note: As standard machine translation (non-LLM), it provides 1 direct translation line without dual-tone comparison.",
-      emode_custom_title: "3. Free-Tier LLM or Custom API Key",
+      emode_custom_title: "3. Custom LLM API Key (GLM-4 / SiliconFlow / Groq / OpenAI)",
       emode_custom_desc:
-        "Don't want to pay for tokens? Zhipu (GLM-4-Flash), SiliconFlow (Qwen2.5-7B), and Groq offer permanently free API tiers ($0 / 1M tokens) with full dual-register LLM capabilities:",
+        "Connect to high-tier reasoning or lightweight models via standard OpenAI-compatible endpoints:",
       btn_show: "Show",
       btn_hide: "Hide",
       btn_test: "Test",
@@ -96,10 +96,10 @@
       sec_slang_desc: "你日常打字输入的母语：",
       sec_tlang_title: "目标语言 (Target)",
       sec_tlang_desc: "希望转换成的目标外语：",
-      sec_widget_title: "桌面常驻悬浮挂件",
-      sec_widget_desc: "像豆包一样在屏幕边缘常驻一个小巧微挂件，一眼看清当前运行状态：",
-      tog_widget_title: "显示右下角微悬浮挂件 (⇄ EN)",
-      tog_widget_desc: "随时确认软件是否运行。点击切换模式，按住可随意拖拽到屏幕任意角落。",
+      sec_widget_title: "屏幕顶端悬浮岛",
+      sec_widget_desc: "常驻屏幕最顶部中央的极简状态胶囊，实时显示模式状态并支持拖拽位置：",
+      tog_widget_title: "显示屏幕顶端悬浮岛 (⇄ EN)",
+      tog_widget_desc: "常驻屏幕顶端，点击切换模式，支持鼠标按住拖拽至屏幕任意位置。",
       preview_title: "实时预览",
       preview_hint: "示例：「这个功能明天能上线吗？」",
       ai_tuner_title: "一句话定制版式",
@@ -123,17 +123,17 @@
       adv_slots_summary: "高级行项配置",
       btn_add_row: "+ 新增行",
       btn_reset_rows: "重置默认",
-      engine_choose_title: "翻译驱动方式（含 3 种完全零成本白嫖方案）",
-      engine_choose_desc: "即使不想花一分钱买 API，也有以下三种方案可直接使用：",
-      emode_pi_title: "1. 直接复用本机 Pi 模型（推荐 · 零额外成本）",
+      engine_choose_title: "翻译驱动引擎 (支持 3 种透明配置方案)",
+      engine_choose_desc: "根据你的使用习惯选择翻译来源：",
+      emode_pi_title: "1. 复用本地 Pi Agent 模型 (推荐 · 零额外配置)",
       emode_pi_desc:
-        "自动读取复用你电脑上 ~/.pi/agent/models.json 已配好的模型通道，无需重复填 Key，完整支持双语气对比、重点词汇与 AI 版式定制。",
-      emode_free_title: "2. 免注册基础网页翻译 (Google / MyMemory · 无需任何 Key)",
+        "自动复用 ~/.pi/agent/models.json 中配置的模型通道，无需重复填 Key，完整支持双语气对比与重点词汇。",
+      emode_free_title: "2. 公共网页基础翻译 (免注册 / 免 API 密钥)",
       emode_free_desc:
-        "直接调用公共网页翻译接口（Google 翻译 + MyMemory 免费接口），无需注册账号或填 Key。注：属于传统机器翻译（非大模型），每次仅输出 1 行标准译文。",
-      emode_custom_title: "3. 永久免费大模型 API 或自定义密钥",
+        "调用公共网页基础翻译接口（Google 翻译与 MyMemory），免注册免 Key，直接输出标准译文。",
+      emode_custom_title: "3. 自定义大模型 API 密钥 (智谱 / 硅基 / Groq / OpenAI 等)",
       emode_custom_desc:
-        "不想付费买 Token？智谱 (GLM-4-Flash)、硅基流动 (Qwen2.5-7B) 与 Groq 均提供官方永久免费 API 额度（0 元 / 百万 Token），只需填免费 Key 即可享受完整大模型双轨能力：",
+        "支持任意兼容 OpenAI 标准格式的模型接口，填入对应 API Key 即可享受完整双语气对照能力：",
       btn_show: "显示",
       btn_hide: "隐藏",
       btn_test: "测试",
@@ -163,10 +163,10 @@
       sec_slang_desc: "你日常打字輸入的母語：",
       sec_tlang_title: "目標語言 (Target)",
       sec_tlang_desc: "希望轉換成的目標外語：",
-      sec_widget_title: "桌面常駐懸浮掛件",
-      sec_widget_desc: "在螢幕邊緣常駐一個小巧微掛件，一眼看清當前運行狀態：",
-      tog_widget_title: "顯示右下角微懸浮掛件 (⇄ EN)",
-      tog_widget_desc: "隨時確認軟體是否運行。點擊切換模式，按住可隨意拖拽到螢幕任意角落。",
+      sec_widget_title: "螢幕頂端懸浮島",
+      sec_widget_desc: "常駐螢幕頂部的極簡狀態膠囊，即時顯示模式狀態並支援拖拽位置：",
+      tog_widget_title: "顯示螢幕頂端懸浮島 (⇄ EN)",
+      tog_widget_desc: "常駐螢幕頂端，點擊切換模式，支援滑鼠按住拖拽至螢幕任意位置。",
       preview_title: "即時預覽",
       preview_hint: "示例：「這個功能明天能上線嗎？」",
       ai_tuner_title: "一句話定制版式",
@@ -190,17 +190,17 @@
       adv_slots_summary: "高級行項配置",
       btn_add_row: "+ 新增行",
       btn_reset_rows: "重置默認",
-      engine_choose_title: "翻譯驅動方式（含 3 種零成本方案）",
-      engine_choose_desc: "選擇你的翻譯驅動方式：",
-      emode_pi_title: "1. 直接複用本機 Pi 模型（推薦 · 零額外成本）",
+      engine_choose_title: "翻譯驅動引擎 (支援 3 種透明配置方案)",
+      engine_choose_desc: "根據你的使用習慣選擇翻譯來源：",
+      emode_pi_title: "1. 複用本地 Pi Agent 模型 (推薦 · 零額外配置)",
       emode_pi_desc:
         "自動讀取複用你電腦上 ~/.pi/agent/models.json 已配好的模型通道，無需重複填 Key。",
-      emode_free_title: "2. 免註冊基礎網頁翻譯 (Google / MyMemory · 無需任何 Key)",
+      emode_free_title: "2. 公共網頁基礎翻譯 (免註冊 / 免 API 密鑰)",
       emode_free_desc:
         "直接調用公共網頁翻譯接口（Google + MyMemory），無需註冊帳號。注：屬於傳統機器翻譯，每次僅輸出 1 行標準譯文。",
-      emode_custom_title: "3. 永久免費大模型 API 或自定義密鑰",
+      emode_custom_title: "3. 自定義大模型 API 密鑰 (智譜 / 矽基 / Groq / OpenAI 等)",
       emode_custom_desc:
-        "智譜 (GLM-4-Flash)、硅基流動 (Qwen2.5-7B) 與 Groq 均提供官方免費 API 額度（0 元 / 百萬 Token）：",
+        "支援任意相容 OpenAI 格式的模型接口，填入對應 API Key 即可享受完整雙語氣能力：",
       btn_show: "顯示",
       btn_hide: "隱藏",
       btn_test: "測試",
@@ -230,10 +230,10 @@
       sec_slang_desc: "普段入力する言語：",
       sec_tlang_title: "ターゲット言語 (Target)",
       sec_tlang_desc: "翻訳先の言語：",
-      sec_widget_title: "デスクトップ常駐ウィジェット",
-      sec_widget_desc: "画面端にコンパクトな小石型ウィジェットを常駐させ、動作状態を一目で確認：",
-      tog_widget_title: "画面端のフローティングウィジェットを表示 (⇄ EN)",
-      tog_widget_desc: "起動中かどうかが一目で分かります。クリックでモード切替、ドラッグで自由移動。",
+      sec_widget_title: "画面上部フローティングアイランド",
+      sec_widget_desc: "画面上部に常駐するミニマルなカプセルで、動作状態を一目で確認：",
+      tog_widget_title: "画面上部フローティングアイランドを表示 (⇄ EN)",
+      tog_widget_desc: "画面最上部に常駐。クリックでモード切替、ドラッグで自由移動。",
       preview_title: "プレビュー",
       preview_hint: "例：「この機能、明日リリースできる？」",
       ai_tuner_title: "自然言語プリセット",
@@ -257,7 +257,7 @@
       adv_slots_summary: "詳細スロット設定",
       btn_add_row: "+ 行を追加",
       btn_reset_rows: "リセット",
-      engine_choose_title: "翻訳エンジン（無料オプションを含む3つの方式）",
+      engine_choose_title: "翻訳エンジン（3つの方式から選択）",
       engine_choose_desc: "翻訳エンジンの駆動方式を選択：",
       emode_pi_title: "1. ローカル Pi モデルを共有（推奨 · 追加費用 $0）",
       emode_pi_desc:
@@ -265,9 +265,9 @@
       emode_free_title: "2. 無料 Web 翻訳 (Google / MyMemory · キー不要)",
       emode_free_desc:
         "登録やAPIキー不要の公開Web翻訳API（Google + MyMemory）を使用します（標準翻訳1行のみ出力）。",
-      emode_custom_title: "3. 無料枠 LLM またはカスタム API Key",
+      emode_custom_title: "3. カスタム LLM API Key (OpenAI / Groq 等)",
       emode_custom_desc:
-        "GLM-4-Flash、SiliconFlow (Qwen2.5-7B)、Groq などの無料API枠、または独自キーを設定：",
+        "標準的な OpenAI 互換エンドポイントをサポート。API Key を入力して利用：",
       btn_show: "表示",
       btn_hide: "隠す",
       btn_test: "テスト",
@@ -992,17 +992,33 @@
       await window.lingualSettingsAPI?.saveConfig(patch);
       if (saveStatus) {
         saveStatus.textContent = t("footer_saved");
+        saveStatus.style.color = "#16a34a";
+        setTimeout(() => {
+          if (saveStatus) {
+            saveStatus.textContent = t("footer_hint");
+            saveStatus.style.color = "";
+          }
+        }, 2200);
       }
     } catch (err) {
       console.error("Auto-save failed:", err);
     }
   }
 
-  btnClose?.addEventListener("click", () => window.lingualSettingsAPI?.closeWindow());
-  btnCancel?.addEventListener("click", () => window.lingualSettingsAPI?.closeWindow());
+  function handleCloseWindow() {
+    try {
+      window.lingualSettingsAPI?.closeWindow();
+    } catch {}
+    try {
+      window.close();
+    } catch {}
+  }
+
+  btnClose?.addEventListener("click", handleCloseWindow);
+  btnCancel?.addEventListener("click", handleCloseWindow);
   btnSave?.addEventListener("click", async () => {
     await autoSaveNow();
-    window.lingualSettingsAPI?.closeWindow();
+    handleCloseWindow();
   });
 
   async function loadConfig() {
