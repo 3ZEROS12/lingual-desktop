@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout
@@ -29,12 +29,7 @@ jobs:
 
       - name: Install dependencies
         shell: bash
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          elif node -e "const p=require('./package.json'); process.exit(p.dependencies || p.devDependencies ? 0 : 1)"; then
-            npm install
-          fi
+        run: npm install
 
       - name: Polymorphic validation
         shell: bash

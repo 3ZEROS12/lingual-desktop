@@ -59,7 +59,7 @@
     }
   },
   "dependencies": {
-    "pi-lingual": "file:../pi-lingual"
+    "pi-lingual": "^0.3.15"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
