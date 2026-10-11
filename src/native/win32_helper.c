@@ -142,6 +142,45 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    if (strcmp(cmd, "focused-rect") == 0) {
+        HWND hwnd = GetForegroundWindow();
+        if (hwnd) {
+            DWORD thread_id = GetWindowThreadProcessId(hwnd, NULL);
+            GUITHREADINFO gti;
+            ZeroMemory(&gti, sizeof(gti));
+            gti.cbSize = sizeof(GUITHREADINFO);
+
+            if (GetGUIThreadInfo(thread_id, &gti)) {
+                if (gti.hwndCaret && (gti.rcCaret.right > gti.rcCaret.left || gti.rcCaret.bottom > gti.rcCaret.top)) {
+                    RECT rc = gti.rcCaret;
+                    POINT ptTopLeft = { rc.left, rc.top };
+                    POINT ptBottomRight = { rc.right, rc.bottom };
+                    ClientToScreen(gti.hwndCaret, &ptTopLeft);
+                    ClientToScreen(gti.hwndCaret, &ptBottomRight);
+                    int w = ptBottomRight.x - ptTopLeft.x;
+                    int h = ptBottomRight.y - ptTopLeft.y;
+                    if (w <= 0) w = 4;
+                    if (h <= 0) h = 20;
+                    printf("%ld %ld %d %d\n", ptTopLeft.x, ptTopLeft.y, w, h);
+                    return 0;
+                }
+                if (gti.hwndFocus) {
+                    RECT rc;
+                    if (GetWindowRect(gti.hwndFocus, &rc)) {
+                        int w = rc.right - rc.left;
+                        int h = rc.bottom - rc.top;
+                        if (w > 0 && h > 0) {
+                            printf("%ld %ld %d %d\n", rc.left, rc.top, w, h);
+                            return 0;
+                        }
+                    }
+                }
+            }
+        }
+        printf("none\n");
+        return 0;
+    }
+
     if (strcmp(cmd, "ime-composing") == 0) {
         HWND hwnd = GetForegroundWindow();
         if (hwnd) {

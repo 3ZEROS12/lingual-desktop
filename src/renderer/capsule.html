@@ -6,10 +6,19 @@
   <link rel="stylesheet" href="capsule.css">
 </head>
 <body>
-  <div id="capsule-container" class="capsule-container" title="Click: Toggle Mode | Right-click: Settings">
+  <div id="capsule-container" class="capsule-container">
     <div id="capsule-pill" class="capsule-pill">
-      <span class="capsule-symbol">⇄</span>
-      <span id="capsule-label" class="capsule-label">EN</span>
+      <button id="btn-mode" class="pill-btn mode-btn" type="button" title="Click to cycle mode (EN / LEARN / OFF)">
+        <span class="capsule-symbol">⇄</span>
+        <span id="capsule-label" class="capsule-label">EN</span>
+      </button>
+      <div class="pill-divider"></div>
+      <button id="btn-settings" class="pill-btn settings-btn" type="button" title="Open Settings (Right-click anywhere also opens Settings)">
+        <svg class="gear-icon" viewBox="0 0 16 16" width="11" height="11" fill="currentColor">
+          <path d="M8 4.75a3.25 3.25 0 1 0 0 6.5 3.25 3.25 0 0 0 0-6.5zM6 8a2 2 0 1 1 4 0 2 2 0 0 1-4 0z"/>
+          <path d="M9.7 1.2a1 1 0 0 0-1.4 0l-.5.5a1 1 0 0 1-1.4 0l-.5-.5a1 1 0 0 0-1.4 0l-.8.8a1 1 0 0 0 0 1.4l.5.5a1 1 0 0 1 0 1.4l-.5.5a1 1 0 0 0 0 1.4l.8.8a1 1 0 0 0 1.4 0l.5-.5a1 1 0 0 1 1.4 0l.5.5a1 1 0 0 0 1.4 0l.8-.8a1 1 0 0 0 0-1.4l-.5-.5a1 1 0 0 1 0-1.4l.5-.5a1 1 0 0 0 0-1.4l-.8-.8z"/>
+        </svg>
+      </button>
     </div>
   </div>
   <script src="capsule.js"></script>

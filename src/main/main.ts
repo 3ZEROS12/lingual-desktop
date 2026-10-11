@@ -7,6 +7,8 @@ import {
   restoreFocus,
   getCaretPosition,
   getFocusedElementRect,
+  getFocusedElementRectAsync,
+  getCaretPositionAsync,
   captureActiveInputText,
   injectTextToTarget,
   triggerPaste,
@@ -36,14 +38,15 @@ let activeBackupText = "";
 let currentTranslationResponse: any = null;
 let viewState: "idle" | "hud" | "spotlight" = "idle";
 
-const CAPSULE_WIDTH = 76;
-const CAPSULE_HEIGHT = 26;
+const CAPSULE_WIDTH = 96;
+const CAPSULE_HEIGHT = 30;
 const HUD_WIDTH = 540;
 const HUD_HEIGHT = 280;
 
 let currentCapsulePos = { x: 0, y: 0 };
 let inputTrackerInterval: NodeJS.Timeout | null = null;
 let lastPebblePos = { x: 0, y: 0 };
+let isProbingFocus = false;
 
 function getInitialCapsulePos(config: LingualDesktopConfig): { x: number; y: number } {
   if (config.capsulePos && typeof config.capsulePos.x === "number" && typeof config.capsulePos.y === "number") {
@@ -62,8 +65,10 @@ function getInitialCapsulePos(config: LingualDesktopConfig): { x: number; y: num
 
 /**
  * In-Situ Roof-Docked Floating Pebble (聚焦输入框时浮现在光标/输入框正上方)
- * 平时不打字时静默隐藏；聚焦到任意输入框时，在输入框正上方轻巧浮现 (⇄ EN)；
- * 左键点击切换模式，右键点击打开设置。
+ * 平时不打字时静默隐藏；聚焦到任意输入框时，在输入框正上方轻巧浮现 (⇄ EN | ⚙)；
+ * 左键点击切换模式，右键或齿轮点击打开设置。
+ * focusable: true 确保 Chromium DOM 能 100% 捕获点击、悬浮和右键事件；
+ * 配合 showInactive() 保证绝不争夺当前输入框打字焦点！
  */
 function createCapsuleWindow(): BrowserWindow {
   const config = loadDesktopConfig();
@@ -80,7 +85,7 @@ function createCapsuleWindow(): BrowserWindow {
     skipTaskbar: true,
     show: false, // 平时不打字时静默，由 inputTracker 在检测到输入框时浮现
     resizable: false,
-    focusable: false,
+    focusable: true, // 核心修复：必须为 true，Chromium 才会分发 click 和 contextmenu 事件！
     hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -97,10 +102,11 @@ function createCapsuleWindow(): BrowserWindow {
 
 /**
  * 测算微圆标在当前输入框/光标正上方的停靠坐标 (Roof-Docked Pebble Position)
+ * 100% 异步非阻塞探针，零阻塞 Node.js 事件循环！
  */
-function calculatePebblePosition(pebbleW = 76, pebbleH = 26): { x: number; y: number } | null {
-  const focusedRect = getFocusedElementRect();
-  const caret = getCaretPosition();
+async function calculatePebblePositionAsync(pebbleW = CAPSULE_WIDTH, pebbleH = CAPSULE_HEIGHT): Promise<{ x: number; y: number } | null> {
+  const focusedRect = await getFocusedElementRectAsync();
+  const caret = !focusedRect ? await getCaretPositionAsync() : null;
 
   let targetX = 0;
   let targetY = 0;
@@ -146,38 +152,66 @@ function calculatePebblePosition(pebbleW = 76, pebbleH = 26): { x: number; y: nu
 /**
  * 实时聚焦探测器：检测用户是否处于可编辑输入框中
  * - 处于输入框打字：在正上方轻巧浮现小圆标；
- * - 离开输入框/点击桌面：自动淡出隐去，保持桌面 100% 干净。
+ * - 离开输入框/点击桌面：自动淡出隐去，保持桌面 100% 干净；
+ * - 伴学关闭(OFF)或配置关闭(showCapsule=false)：100% 隐藏，绝不残留；
+ * - 100% 非阻塞异步探针，零阻塞 Node.js 主事件循环，彻底消除卡顿！
  */
 function startInputTracker(): void {
   if (inputTrackerInterval) clearInterval(inputTrackerInterval);
 
-  inputTrackerInterval = setInterval(() => {
-    if (viewState !== "idle" || currentMode === "off" || !capsuleWindow || capsuleWindow.isDestroyed()) {
+  inputTrackerInterval = setInterval(async () => {
+    if (!capsuleWindow || capsuleWindow.isDestroyed()) return;
+
+    // 1. 如果处于 HUD 翻译卡片展开状态、或者伴学已关闭(OFF)
+    if (viewState !== "idle" || currentMode === "off") {
+      if (capsuleWindow.isVisible()) {
+        capsuleWindow.hide();
+      }
       return;
     }
 
     const config = loadDesktopConfig();
     if (config.showCapsule === false) {
-      if (capsuleWindow.isVisible()) capsuleWindow.hide();
-      return;
-    }
-
-    const pos = calculatePebblePosition(76, 26);
-    if (pos) {
-      if (Math.abs(pos.x - lastPebblePos.x) > 3 || Math.abs(pos.y - lastPebblePos.y) > 3) {
-        capsuleWindow.setPosition(pos.x, pos.y);
-        lastPebblePos = pos;
-      }
-      if (!capsuleWindow.isVisible()) {
-        capsuleWindow.showInactive();
-        capsuleWindow.webContents.send("lingual:mode-changed", currentMode);
-      }
-    } else {
       if (capsuleWindow.isVisible()) {
         capsuleWindow.hide();
       }
+      return;
     }
-  }, 250);
+
+    // 2. 如果当前聚焦的是本软件自己的设置窗口，不显示小标
+    if (settingsWindow && !settingsWindow.isDestroyed() && settingsWindow.isFocused()) {
+      if (capsuleWindow.isVisible()) {
+        capsuleWindow.hide();
+      }
+      return;
+    }
+
+    // 3. 并发锁，防止异步探针堆积排队
+    if (isProbingFocus) return;
+    isProbingFocus = true;
+
+    try {
+      const pos = await calculatePebblePositionAsync(CAPSULE_WIDTH, CAPSULE_HEIGHT);
+      if (pos) {
+        if (Math.abs(pos.x - lastPebblePos.x) > 3 || Math.abs(pos.y - lastPebblePos.y) > 3) {
+          capsuleWindow.setPosition(pos.x, pos.y);
+          lastPebblePos = pos;
+        }
+        if (!capsuleWindow.isVisible()) {
+          capsuleWindow.showInactive();
+          capsuleWindow.webContents.send("lingual:mode-changed", currentMode);
+        }
+      } else {
+        if (capsuleWindow.isVisible()) {
+          capsuleWindow.hide();
+        }
+      }
+    } catch {
+      // 容错防崩
+    } finally {
+      isProbingFocus = false;
+    }
+  }, 400);
 }
 
 /**
@@ -337,6 +371,9 @@ function cycleCompanionMode(): void {
 
   if (capsuleWindow && !capsuleWindow.isDestroyed()) {
     capsuleWindow.webContents.send("lingual:mode-changed", currentMode);
+    if (currentMode === "off") {
+      capsuleWindow.hide();
+    }
   }
   updateTrayMenu();
   if (tray) {
@@ -712,6 +749,9 @@ function setupIpc(): void {
 
   ipcMain.on("lingual:toggle-mode", () => {
     cycleCompanionMode();
+    if (activeTargetHwnd && activeTargetHwnd !== "0") {
+      restoreFocus(activeTargetHwnd);
+    }
   });
 
   ipcMain.on("lingual:select", async (_event, slot: number) => {
@@ -765,9 +805,7 @@ function setupIpc(): void {
     updateTrayMenu();
     if (capsuleWindow && !capsuleWindow.isDestroyed()) {
       capsuleWindow.webContents.send("lingual:mode-changed", currentMode);
-      if (updated.showCapsule !== false) {
-        capsuleWindow.showInactive();
-      } else {
+      if (updated.showCapsule === false || currentMode === "off") {
         capsuleWindow.hide();
       }
     }

@@ -1,7 +1,7 @@
 /* ==========================================================================
-   Lingual In-Situ Floating Pebble — Paper & Stone Theme
+   Lingual In-Situ Caret Pebble — Paper & Stone Theme
    Appears directly above the active text input box while typing.
-   Left-click: Toggle mode | Right-click: Settings
+   Left button: Cycle mode | Right button: Settings
    ========================================================================== */
 
 * {
@@ -9,6 +9,7 @@
   margin: 0;
   padding: 0;
   user-select: none;
+  -webkit-user-select: none;
 }
 
 body {
@@ -34,24 +35,42 @@ body {
 .capsule-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
   background: #fbfaf8;
   border: 1px solid #d3cfc9;
   border-radius: 999px;
-  padding: 3px 8px;
-  cursor: pointer;
+  padding: 2px;
   box-shadow: 0 2px 8px rgba(28, 25, 23, 0.12), 0 1px 2px rgba(28, 25, 23, 0.06);
-  transition: transform 0.1s ease, background 0.12s ease, border-color 0.12s ease;
+  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 .capsule-pill:hover {
   background: #ffffff;
   border-color: #a8a29e;
-  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(28, 25, 23, 0.16);
 }
 
-.capsule-pill:active {
-  transform: scale(0.96);
+.pill-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s ease, color 0.1s ease, transform 0.08s ease;
+}
+
+.pill-btn:active {
+  transform: scale(0.94);
+}
+
+.mode-btn {
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px 0 0 999px;
+}
+
+.mode-btn:hover {
   background: #f5f4ef;
 }
 
@@ -59,6 +78,7 @@ body {
   color: #57534e;
   font-weight: 600;
   font-size: 11px;
+  line-height: 1;
 }
 
 .capsule-label {
@@ -67,6 +87,29 @@ body {
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.pill-divider {
+  width: 1px;
+  height: 12px;
+  background: #e7e5e1;
+  margin: 0 1px;
+}
+
+.settings-btn {
+  padding: 3px 6px;
+  border-radius: 0 999px 999px 0;
+  color: #78716c;
+}
+
+.settings-btn:hover {
+  background: #f5f4ef;
+  color: #1c1917;
+}
+
+.gear-icon {
+  display: block;
 }
 
 /* Learn mode */
@@ -80,7 +123,7 @@ body {
 
 /* Off mode */
 .mode-off .capsule-pill {
-  opacity: 0.6;
+  opacity: 0.75;
   border-color: #e7e5e1;
 }
 .mode-off .capsule-label {

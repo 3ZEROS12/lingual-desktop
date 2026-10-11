@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import {
   getActiveWindowHwnd,
   getCaretPosition,
+  getCaretPositionAsync,
   getFocusedElementRect,
+  getFocusedElementRectAsync,
   getFocusedElementText,
   setFocusedElementText,
   captureSelectedText,
@@ -35,8 +37,18 @@ test("win32: getCaretPosition returns coordinate object or null gracefully", () 
   }
 });
 
-test("win32: getFocusedElementRect returns valid bounding rectangle or null gracefully", () => {
-  const rect = getFocusedElementRect();
+test("win32: getCaretPositionAsync returns coordinate object or null asynchronously without blocking", async () => {
+  const pos = await getCaretPositionAsync();
+  if (pos !== null) {
+    assert.equal(typeof pos.x, "number");
+    assert.equal(typeof pos.y, "number");
+  } else {
+    assert.equal(pos, null);
+  }
+});
+
+test("win32: getFocusedElementRectAsync returns bounding rectangle or null asynchronously without blocking", async () => {
+  const rect = await getFocusedElementRectAsync();
   if (rect !== null) {
     assert.equal(typeof rect.x, "number");
     assert.equal(typeof rect.y, "number");

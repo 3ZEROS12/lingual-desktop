@@ -1,7 +1,10 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, execFile } from "node:child_process";
+import { promisify } from "node:util";
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
+
+const execFileAsync = promisify(execFile);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -167,6 +170,25 @@ export function setFocusedElementText(text: string): boolean {
  */
 export function getFocusedElementRect(): { x: number; y: number; width: number; height: number } | null {
   try {
+    // 1. Try blazing fast 1ms native C Win32 helper first
+    try {
+      const win32Helper = getHelperPath("win32_helper.exe");
+      const outC = execFileSync(win32Helper, ["focused-rect"], { encoding: "utf8", timeout: 800 }).trim();
+      if (outC && outC !== "none") {
+        const parts = outC.split(/\s+/);
+        if (parts.length >= 4) {
+          const x = parseInt(parts[0], 10);
+          const y = parseInt(parts[1], 10);
+          const width = parseInt(parts[2], 10);
+          const height = parseInt(parts[3], 10);
+          if (!isNaN(x) && !isNaN(y) && !isNaN(width) && !isNaN(height)) {
+            return { x, y, width, height };
+          }
+        }
+      }
+    } catch {}
+
+    // 2. Fall back to UI Automation helper for Chromium/WPF apps
     const helper = getHelperPath("uia_helper.exe");
     const out = execFileSync(helper, ["focused-rect"], { encoding: "utf8", timeout: 2000 }).trim();
     if (!out || out === "NONE") return null;
@@ -178,6 +200,75 @@ export function getFocusedElementRect(): { x: number; y: number; width: number; 
       const height = parseInt(parts[3], 10);
       if (!isNaN(x) && !isNaN(y) && !isNaN(width) && !isNaN(height)) {
         return { x, y, width, height };
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Asynchronous, 100% non-blocking focused rect probe.
+ * NEVER blocks Node.js event loop or freezes Electron UI!
+ */
+export async function getFocusedElementRectAsync(): Promise<{ x: number; y: number; width: number; height: number } | null> {
+  try {
+    // 1. Blazing fast 1ms native C Win32 helper first
+    try {
+      const win32Helper = getHelperPath("win32_helper.exe");
+      const { stdout: outC } = await execFileAsync(win32Helper, ["focused-rect"], { encoding: "utf8", timeout: 1000 });
+      const trimmedC = outC ? outC.trim() : "";
+      if (trimmedC && trimmedC !== "none") {
+        const parts = trimmedC.split(/\s+/);
+        if (parts.length >= 4) {
+          const x = parseInt(parts[0], 10);
+          const y = parseInt(parts[1], 10);
+          const width = parseInt(parts[2], 10);
+          const height = parseInt(parts[3], 10);
+          if (!isNaN(x) && !isNaN(y) && !isNaN(width) && !isNaN(height)) {
+            return { x, y, width, height };
+          }
+        }
+      }
+    } catch {}
+
+    // 2. Non-blocking asynchronous UI Automation probe
+    const helper = getHelperPath("uia_helper.exe");
+    const { stdout } = await execFileAsync(helper, ["focused-rect"], { encoding: "utf8", timeout: 2500 });
+    const trimmed = stdout ? stdout.trim() : "";
+    if (!trimmed || trimmed === "NONE") return null;
+    const parts = trimmed.split(/\s+/);
+    if (parts.length >= 4) {
+      const x = parseInt(parts[0], 10);
+      const y = parseInt(parts[1], 10);
+      const width = parseInt(parts[2], 10);
+      const height = parseInt(parts[3], 10);
+      if (!isNaN(x) && !isNaN(y) && !isNaN(width) && !isNaN(height)) {
+        return { x, y, width, height };
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Asynchronous, 100% non-blocking caret position probe.
+ */
+export async function getCaretPositionAsync(): Promise<{ x: number; y: number } | null> {
+  try {
+    const helper = getHelperPath("win32_helper.exe");
+    const { stdout } = await execFileAsync(helper, ["caret"], { encoding: "utf8", timeout: 1000 });
+    const trimmed = stdout ? stdout.trim() : "";
+    if (!trimmed || trimmed === "none") return null;
+    const parts = trimmed.split(/\s+/);
+    if (parts.length >= 2) {
+      const x = parseInt(parts[0], 10);
+      const y = parseInt(parts[1], 10);
+      if (!isNaN(x) && !isNaN(y)) {
+        return { x, y };
       }
     }
     return null;
