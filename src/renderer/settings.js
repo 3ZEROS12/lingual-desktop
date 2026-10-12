@@ -19,12 +19,14 @@
       sec_mode_title: "Operating Mode",
       sec_mode_desc:
         "Type normally and press Enter in any input box. Lingual passively observes natural language without occupying or blocking any keyboard keys:",
-      mode_en_title: "Translate",
-      mode_en_sub: "Press Enter ➔ Translates, replaces & submits + shows card",
-      mode_orig_title: "Learn",
-      mode_orig_sub: "Press Enter ➔ Submits original immediately + shows card",
-      mode_off_title: "Off",
-      mode_off_sub: "Inactive; no translation or popup",
+      mode_en_title: "2 · Direct",
+      mode_en_sub: "Fast 1-line translate & copy/replace",
+      mode_orig_title: "1 · Learn",
+      mode_orig_sub: "0ms raw send + full companion card",
+      mode_sel_title: "3 · Candidates",
+      mode_sel_sub: "Pick 1-3: Casual / Polite / Concise",
+      mode_off_title: "0 · Off",
+      mode_off_sub: "0 CPU hooks · Paused",
       sec_slang_title: "Source:",
       sec_slang_desc: "The primary language you type in:",
       sec_tlang_title: "Target:",
@@ -92,12 +94,14 @@
       sec_mode_title: "运行模式（零键位占用 · 被动无感检测）",
       sec_mode_desc:
         "不占用、不拦截任何系统快捷键。日常打字按回车 (Enter) 100% 原生零延迟直通，后台被动检测自然语言并展开对照卡片：",
-      mode_en_title: "译文 (Translate)",
-      mode_en_sub: "按回车 ➔ 自动翻译替换并发出 + 展开对照卡片",
-      mode_orig_title: "伴学 (Learn)",
-      mode_orig_sub: "按回车 ➔ 原文直接发出 + 后台展开对照卡片",
-      mode_off_title: "关闭 (Off)",
-      mode_off_sub: "静默待机，不触发任何翻译或弹窗",
+      mode_en_title: "2 · 直出 (Direct)",
+      mode_en_sub: "专属极速 1 行直译复制/原地替换",
+      mode_orig_title: "1 · 伴学 (Learn)",
+      mode_orig_sub: "0ms 原话直发 + 全营养双语词卡",
+      mode_sel_title: "3 · 候选 (Pick 3)",
+      mode_sel_sub: "按 1-3 秒选：随和 / 礼貌 / 精炼",
+      mode_off_title: "0 · 关闭 (Off)",
+      mode_off_sub: "进程级停监听 · 0 CPU 零负担",
       sec_slang_title: "源语言:",
       sec_slang_desc: "你日常打字输入的母语：",
       sec_tlang_title: "目标语言:",
@@ -165,12 +169,14 @@
       sec_mode_title: "運行模式（零鍵位佔用 · 被動無感檢測）",
       sec_mode_desc:
         "不佔用、不攔截任何系統快捷鍵。日常打字按 Enter 100% 原生零延遲直通，後台被動檢測自然語言並展開對照卡片：",
-      mode_en_title: "譯文 (Translate)",
-      mode_en_sub: "按 Enter ➔ 自動翻譯替換並發出 + 展開對照卡片",
-      mode_orig_title: "伴學 (Learn)",
-      mode_orig_sub: "按 Enter ➔ 原文直接發出 + 後台展開對照卡片",
-      mode_off_title: "關閉 (Off)",
-      mode_off_sub: "靜默待機，不觸發任何翻譯或彈窗",
+      mode_en_title: "2 · 直出 (Direct)",
+      mode_en_sub: "專屬極速 1 行直譯複製/原地替換",
+      mode_orig_title: "1 · 伴學 (Learn)",
+      mode_orig_sub: "0ms 原話直發 + 全營養雙語詞卡",
+      mode_sel_title: "3 · 候選 (Pick 3)",
+      mode_sel_sub: "按 1-3 秒選：隨和 / 禮貌 / 精煉",
+      mode_off_title: "0 · 關閉 (Off)",
+      mode_off_sub: "進程級停監聽 · 0 CPU 零負擔",
       sec_slang_title: "源語言:",
       sec_slang_desc: "你日常打字輸入的母語：",
       sec_tlang_title: "目標語言:",
@@ -235,12 +241,14 @@
       sec_mode_title: "動作モード（キー占有ゼロ · パッシブ検知）",
       sec_mode_desc:
         "ショートカットキーを一切占有せず、Enter も遅延ゼロでそのまま通過します。バックグラウンドで自然言語を検知してカードを表示：",
-      mode_en_title: "翻訳 (Translate)",
-      mode_en_sub: "Enter ➔ 翻訳して置換・送信＋カード表示",
-      mode_orig_title: "学習 (Learn)",
-      mode_orig_sub: "Enter ➔ 原文をそのまま即送信＋カード表示",
-      mode_off_title: "オフ (Off)",
-      mode_off_sub: "待機状態（翻訳・ポップアップなし）",
+      mode_en_title: "2 · 直訳 (Direct)",
+      mode_en_sub: "高速1行翻訳＆コピー/そのまま置換",
+      mode_orig_title: "1 · 学習 (Learn)",
+      mode_orig_sub: "0ms原文送信＋双方向学習カード",
+      mode_sel_title: "3 · 候補 (Pick 3)",
+      mode_sel_sub: "1-3で即選択：口語 / 丁寧 / 簡潔",
+      mode_off_title: "0 · オフ (Off)",
+      mode_off_sub: "監視プロセス停止 · 0 CPU 負荷",
       sec_slang_title: "入力言語:",
       sec_slang_desc: "普段入力する言語：",
       sec_tlang_title: "翻訳先言語:",
@@ -304,12 +312,14 @@
       nav_engine: "엔진",
       sec_mode_title: "동작 모드 (키 점유 제로 · 패시브 감지)",
       sec_mode_desc: "단축키를 전혀 가로채지 않으며 Enter 키 지연 없이 그대로 전달됩니다. 백그라운드에서 자연어를 감지하여 카드를 표시합니다.",
-      mode_en_title: "번역 (Translate)",
-      mode_en_sub: "번역 후 실시간 대체 및 카드 표시",
-      mode_orig_title: "학습 (Learn)",
-      mode_orig_sub: "원문 유지 및 어휘 카드 표시",
-      mode_off_title: "끄기 (Off)",
-      mode_off_sub: "대기 상태",
+      mode_en_title: "2 · 직출 (Direct)",
+      mode_en_sub: "초고속 1줄 번역 및 복사/즉시 대체",
+      mode_orig_title: "1 · 학습 (Learn)",
+      mode_orig_sub: "0ms 원문 전송 + 이중언어 학습 카드",
+      mode_sel_title: "3 · 후보 (Pick 3)",
+      mode_sel_sub: "1-3 즉시 선택: 친근 / 정중 / 간결",
+      mode_off_title: "0 · 끄기 (Off)",
+      mode_off_sub: "감시 프로세스 중지 · 0 CPU",
       sec_slang_title: "입력 언어:",
       sec_slang_desc: "평소 입력하는 모국어:",
       sec_tlang_title: "번역 언어:",
@@ -370,12 +380,14 @@
       nav_engine: "Motor",
       sec_mode_title: "Modo de funcionamiento",
       sec_mode_desc: "Observa pasivamente tus entradas sin ocupar ni bloquear teclas. Latencia de Enter a 0 ms.",
-      mode_en_title: "Traducir",
-      mode_en_sub: "Traduce y muestra tarjeta comparativa",
-      mode_orig_title: "Aprender",
-      mode_orig_sub: "Mantiene original y muestra tarjeta",
-      mode_off_title: "Desactivado",
-      mode_off_sub: "Compañero pausado",
+      mode_en_title: "2 · Directo",
+      mode_en_sub: "Traducción rápida de 1 línea y reemplazo",
+      mode_orig_title: "1 · Aprender",
+      mode_orig_sub: "Envío 0ms + tarjeta bilingüe",
+      mode_sel_title: "3 · Opciones",
+      mode_sel_sub: "Elige 1-3: Coloquial / Cortés / Conciso",
+      mode_off_title: "0 · Apagado",
+      mode_off_sub: "0 hooks de CPU · En pausa",
       sec_slang_title: "Idioma origen:",
       sec_slang_desc: "El idioma en el que escribes:",
       sec_tlang_title: "Idioma destino:",
@@ -436,12 +448,14 @@
       nav_engine: "Moteur",
       sec_mode_title: "Mode de fonctionnement",
       sec_mode_desc: "Observe passivement les saisies sans bloquer de raccourcis clavier. Latence de la touche Entrée à 0 ms.",
-      mode_en_title: "Traduire",
-      mode_en_sub: "Traduit et affiche la carte comparative",
-      mode_orig_title: "Apprendre",
-      mode_orig_sub: "Conserve l'original et affiche la carte",
-      mode_off_title: "Désactivé",
-      mode_off_sub: "Compagnon en veille",
+      mode_en_title: "2 · Direct",
+      mode_en_sub: "Traduction rapide 1 ligne et remplacement",
+      mode_orig_title: "1 · Apprendre",
+      mode_orig_sub: "Envoi 0ms + carte bilingue",
+      mode_sel_title: "3 · Options",
+      mode_sel_sub: "Touches 1-3 : Familier / Poli / Concis",
+      mode_off_title: "0 · Désactivé",
+      mode_off_sub: "0 hook CPU · En veille",
       sec_slang_title: "Langue source :",
       sec_slang_desc: "La langue dans laquelle vous écrivez :",
       sec_tlang_title: "Langue cible :",
@@ -502,12 +516,14 @@
       nav_engine: "Engine",
       sec_mode_title: "Betriebsmodus",
       sec_mode_desc: "Erfasst Eingaben passiv ohne Tastaturbeschränkung. Eingabetaste hat 0 ms Latenz.",
-      mode_en_title: "Übersetzen",
-      mode_en_sub: "Übersetzt und zeigt Vergleichskarte",
-      mode_orig_title: "Lernen",
-      mode_orig_sub: "Behält Original und zeigt Karte",
-      mode_off_title: "Aus",
-      mode_off_sub: "Begleiter pausiert",
+      mode_en_title: "2 · Direkt",
+      mode_en_sub: "Schnelle 1-Zeilen-Übersetzung & Ersetzen",
+      mode_orig_title: "1 · Lernen",
+      mode_orig_sub: "0ms Senden + zweisprachige Karte",
+      mode_sel_title: "3 · Auswahl",
+      mode_sel_sub: "Tasten 1-3: Locker / Höflich / Prägnant",
+      mode_off_title: "0 · Aus",
+      mode_off_sub: "0 CPU-Hooks · Pausiert",
       sec_slang_title: "Ausgangssprache:",
       sec_slang_desc: "Die Sprache, in der Sie schreiben:",
       sec_tlang_title: "Zielsprache:",
@@ -568,12 +584,14 @@
       nav_engine: "Движок",
       sec_mode_title: "Режим работы",
       sec_mode_desc: "Пассивно отслеживает ввод текста без перехвата клавиш. Нулевая задержка Enter.",
-      mode_en_title: "Перевод",
-      mode_en_sub: "Переводит и показывает сравнительную карточку",
-      mode_orig_title: "Обучение",
-      mode_orig_sub: "Сохраняет оригинал и показывает карточку",
-      mode_off_title: "Выключено",
-      mode_off_sub: "Помощник на паузе",
+      mode_en_title: "2 · Прямой",
+      mode_en_sub: "Быстрый перевод в 1 строку и замена",
+      mode_orig_title: "1 · Обучение",
+      mode_orig_sub: "Отправка 0мс + карточка обучения",
+      mode_sel_title: "3 · Варианты",
+      mode_sel_sub: "Клавиши 1-3: Живой / Вежливый / Краткий",
+      mode_off_title: "0 · Выкл",
+      mode_off_sub: "0 хуков CPU · На паузе",
       sec_slang_title: "Исходный язык:",
       sec_slang_desc: "Язык, на котором вы печатаете:",
       sec_tlang_title: "Целевой язык:",
@@ -936,14 +954,38 @@
       `;
     }
 
-    // If activeEngineMode is "free" (non-LLM web translation), honestly preview the 1-line standard machine translation!
-    if (activeEngineMode === "free") {
+    // Mode-aware live preview:
+    // - "english" (2 · Direct): 1 fast direct translation line
+    // - "select" (3 · Candidates): 3 interpersonal tones (Casual / Polite / Concise)
+    // - "original" (1 · Learn): user's configured companion slots
+    if (activeEngineMode === "free" || activeCompanionMode === "english") {
       html += `
         <div class="preview-row">
-          <span class="preview-tree">└</span>
-          <span class="preview-tag">[1] Translation</span>
+          <span class="preview-tag">[1] Direct</span>
           <span class="preview-text">${escapeHtml(sample.trans1)}</span>
           <span class="preview-meta">${escapeHtml(t("meta_key").replace("{n}", "1"))}</span>
+        </div>
+      `;
+      liveHudPreview.innerHTML = html;
+      return;
+    }
+
+    if (activeCompanionMode === "select") {
+      html += `
+        <div class="preview-row">
+          <span class="preview-tag">[1] Casual</span>
+          <span class="preview-text">${escapeHtml(sample.trans1)}</span>
+          <span class="preview-meta">${escapeHtml(t("meta_key").replace("{n}", "1"))}</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-tag">[2] Polite</span>
+          <span class="preview-text">${escapeHtml(sample.trans2)}</span>
+          <span class="preview-meta">${escapeHtml(t("meta_key").replace("{n}", "2"))}</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-tag">[3] Concise</span>
+          <span class="preview-text">${escapeHtml(sample.trans2)}</span>
+          <span class="preview-meta">${escapeHtml(t("meta_key").replace("{n}", "3"))}</span>
         </div>
       `;
       liveHudPreview.innerHTML = html;
@@ -1515,6 +1557,14 @@
       isInitialLoading = false;
     }
   }
+
+  window.lingualSettingsAPI?.onModeChanged?.((data) => {
+    const newMode = typeof data === "string" ? data : data?.mode;
+    if (newMode && newMode !== activeCompanionMode) {
+      setCompanionModeState(newMode);
+      renderLiveHudPreview();
+    }
+  });
 
   loadConfig();
 })();

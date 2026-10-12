@@ -6,65 +6,65 @@
   <link rel="stylesheet" href="hud.css">
 </head>
 <body>
-  <!-- In-Situ Roof-Docked HUD Card (Appears directly above the active text input box) -->
   <div id="view-hud" class="view-hud">
     <div id="hud-container" class="hud-container">
-      <!-- Header bar with totem and mode info -->
+      <!-- Header bar with language pair, app-aware badge, and mode status -->
       <div class="hud-header">
-        <div class="totem"><span class="totem-icon">⇄</span> <span id="hud-pair-text">[zh ⇄ en]</span></div>
+        <div class="header-left">
+          <div class="totem">
+            <span class="totem-icon">⇄</span>
+            <span id="hud-pair-text" class="pair-pill">zh ⇄ en</span>
+          </div>
+          <span id="badge-app" class="app-pill hidden">Chat</span>
+        </div>
         <div class="header-badges">
-          <span id="badge-mode" class="badge">Translating</span>
-          <button id="btn-close" class="btn-close" title="Dismiss (Esc)">✕</button>
+          <span id="badge-mode" class="badge">Ready</span>
+          <button id="btn-close" class="btn-close" title="Dismiss (0 / Esc)">✕</button>
         </div>
       </div>
 
-      <!-- Spotlight input (visible when triggered via Alt+Space) -->
+      <!-- Spotlight input -->
       <div id="spotlight-box" class="spotlight-box hidden">
-        <input id="spotlight-input" type="text" placeholder="Type thoughts in native language and press Enter..." autocomplete="off" />
+        <input id="spotlight-input" type="text" placeholder="Type or paste text and press Enter..." autocomplete="off" />
       </div>
 
       <!-- Loading skeleton state -->
       <div id="loading-state" class="loading-state hidden">
         <div class="spinner"></div>
-        <div class="loading-text">Polishing dual registers...</div>
+        <div class="loading-text">Polishing expression...</div>
       </div>
 
-      <!-- Card layout (Trifecta Left-Rail Tree Branch) -->
+      <!-- Modern Desktop GUI Card Content (Zero Terminal ASCII Tree) -->
       <div id="card-content" class="card-content">
-        <!-- Source anchor -->
-        <div class="branch-row branch-source">
-          <span class="tree-bullet">·</span>
-          <span class="tag tag-source">[Source]</span>
-          <span id="text-source" class="branch-text"></span>
+        <div class="source-quote-bar">
+          <span class="source-pill">Source</span>
+          <span id="text-source" class="source-text"></span>
         </div>
 
-        <!-- Slot 1: Spoken / Casual -->
-        <div id="slot1-row" class="branch-row branch-slot branch-spoken interactive-slot" data-slot="1">
-          <div class="key-badge">1</div>
-          <span class="tree-glyph">┌</span>
-          <span id="tag-slot1" class="tag tag-spoken">[Casual]</span>
-          <div class="text-group">
-            <div id="text-spoken" class="branch-text main-text"></div>
+        <div id="slot1-row" class="slot-card interactive-slot" data-slot="1">
+          <div class="slot-head">
+            <span class="key-badge">1</span>
+            <span id="tag-slot1" class="slot-pill">Casual</span>
+          </div>
+          <div class="slot-body">
+            <div id="text-spoken" class="main-text"></div>
             <div id="meaning-spoken" class="sub-nuance"></div>
           </div>
         </div>
 
-        <!-- Slot 2: Written / Formal -->
-        <div id="slot2-row" class="branch-row branch-slot branch-written interactive-slot" data-slot="2">
-          <div class="key-badge">2</div>
-          <span class="tree-glyph">├</span>
-          <span id="tag-slot2" class="tag tag-written">[Formal]</span>
-          <div class="text-group">
-            <div id="text-written" class="branch-text main-text"></div>
+        <div id="slot2-row" class="slot-card interactive-slot" data-slot="2">
+          <div class="slot-head">
+            <span class="key-badge">2</span>
+            <span id="tag-slot2" class="slot-pill">Formal</span>
+          </div>
+          <div class="slot-body">
+            <div id="text-written" class="main-text"></div>
             <div id="meaning-written" class="sub-nuance"></div>
           </div>
         </div>
 
-        <!-- Vocab stream -->
-        <div id="vocab-row" class="branch-row branch-vocab">
-          <span class="tree-glyph indent-glyph">└</span>
-          <span class="tag tag-vocab">[Vocab]</span>
-          <div id="text-vocab" class="branch-text vocab-stream"></div>
+        <div id="vocab-row" class="vocab-section">
+          <div id="text-vocab" class="vocab-chips-wrap"></div>
         </div>
       </div>
 
@@ -73,15 +73,18 @@
         <div id="footer-auto-hint" class="footer-hint">
           <span class="auto-badge" id="footer-status-badge">✓ Ready</span>
           <span class="hint-sep">·</span>
-          <span class="auto-timer">Click any row to copy · Updates on next Enter · Click ✕ to close</span>
+          <span class="auto-timer" id="footer-hint-text">Click row or press 1-3 to copy · Hover to pin</span>
         </div>
         <div id="footer-confirm-hint" class="footer-hint hidden">
-          <span class="hint-item"><kbd>1</kbd> Casual</span>
+          <span class="hint-item"><kbd>1</kbd>-<kbd>3</kbd> Pick &amp; Replace</span>
           <span class="hint-sep">·</span>
-          <span class="hint-item"><kbd>2</kbd> Formal</span>
-          <span class="hint-sep">·</span>
-          <span class="hint-item"><kbd>Esc</kbd> Cancel</span>
+          <span class="hint-item"><kbd>0</kbd>/<kbd>Esc</kbd> Cancel</span>
         </div>
+      </div>
+
+      <!-- Subtle 1.5px Hover-Aware Auto-Dismiss Bar -->
+      <div class="auto-dismiss-track">
+        <div id="auto-dismiss-bar" class="auto-dismiss-bar"></div>
       </div>
     </div>
   </div>

@@ -5,20 +5,14 @@ import { loadDesktopConfig, saveDesktopConfig, type LingualDesktopConfig, type C
 import {
   getActiveWindowHwnd,
   restoreFocus,
-  getCaretPosition,
-  getFocusedElementRect,
-  getFocusedElementRectAsync,
-  getCaretPositionAsync,
   getFocusedElementText,
-  captureActiveInputText,
   injectTextToTarget,
   setFocusedElementText,
   startPassiveInputWatcher,
   stopPassiveInputWatcher,
+  getLatestPassiveDraft,
+  isDesktopNoiseInput,
   type PassiveSubmitEvent,
-  triggerPaste,
-  triggerEnter,
-  isImeComposing,
 } from "./win32.js";
 import {
   executeTranslation,
@@ -26,8 +20,7 @@ import {
   generateSlotsFromUserIntent,
   detectLocalEndpoints,
 } from "./engine.js";
-import { SLOT_PRESETS, getDefaultSlots } from "pi-lingual/core";
-import { resolveLabelsForLang } from "pi-lingual";
+import { getDefaultSlots } from "pi-lingual/core";
 import { initLogger, logger, openLogFile, readRecentLogs } from "./logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -44,7 +37,7 @@ let activeBackupText = "";
 let currentTranslationResponse: any = null;
 let viewState: "idle" | "hud" | "spotlight" = "idle";
 
-const CAPSULE_WIDTH = 96;
+const CAPSULE_WIDTH = 144;
 const CAPSULE_HEIGHT = 30;
 const HUD_WIDTH = 540;
 const HUD_HEIGHT = 280;
@@ -52,12 +45,16 @@ const HUD_HEIGHT = 280;
 let currentCapsulePos = { x: 0, y: 0 };
 
 function notifyCapsuleModeChanged(mode: CompanionMode = currentMode): void {
+  const config = loadDesktopConfig();
+  const payload = {
+    mode,
+    targetLang: config.targetLang || "en",
+  };
   if (capsuleWindow && !capsuleWindow.isDestroyed()) {
-    const config = loadDesktopConfig();
-    capsuleWindow.webContents.send("lingual:mode-changed", {
-      mode,
-      targetLang: config.targetLang || "en",
-    });
+    capsuleWindow.webContents.send("lingual:mode-changed", payload);
+  }
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.webContents.send("lingual:mode-changed", payload);
   }
 }
 
@@ -119,7 +116,7 @@ function createCapsuleWindow(): BrowserWindow {
     skipTaskbar: true,
     show: false,
     resizable: false,
-    focusable: true,
+    focusable: false,
     hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -176,7 +173,7 @@ function createHudWindow(): BrowserWindow {
   });
 
   win.on("blur", () => {
-    if (viewState === "spotlight") {
+    if (viewState === "spotlight" || (viewState === "hud" && currentMode === "select")) {
       switchToIdleView();
       restoreFocus(activeTargetHwnd);
     }
@@ -279,28 +276,51 @@ function switchToSpotlightView(): void {
   hudWindow.webContents.send("lingual:view-state", "spotlight");
 }
 
+let passiveWatcherActive = false;
+
+function syncPassiveWatcherWithMode(mode: CompanionMode = currentMode): void {
+  if (mode === "off") {
+    if (passiveWatcherActive) {
+      stopPassiveInputWatcher();
+      passiveWatcherActive = false;
+    }
+    switchToIdleView();
+  } else {
+    if (!passiveWatcherActive) {
+      startPassiveInputWatcher(handlePassiveSubmit);
+      passiveWatcherActive = true;
+    }
+  }
+}
+
 function cycleCompanionMode(): void {
-  const modes: CompanionMode[] = ["english", "original", "off"];
-  const nextIdx = (modes.indexOf(currentMode) + 1) % modes.length;
+  const modes: CompanionMode[] = ["original", "english", "select", "off"];
+  const idx = modes.indexOf(currentMode);
+  const nextIdx = (idx === -1 ? 0 : idx + 1) % modes.length;
   currentMode = modes[nextIdx];
   saveDesktopConfig({ mode: currentMode });
   registerShortcuts(loadDesktopConfig());
+  syncPassiveWatcherWithMode(currentMode);
 
   notifyCapsuleModeChanged(currentMode);
   updateTrayMenu();
   if (tray) {
     const title =
-      currentMode === "english"
-        ? "Translate Mode"
-        : currentMode === "original"
-        ? "Learn Mode"
-        : "Off";
+      currentMode === "original"
+        ? "1 · Learn Mode"
+        : currentMode === "english"
+        ? "2 · Direct Mode"
+        : currentMode === "select"
+        ? "3 · Candidates Mode"
+        : "0 · Off";
     const desc =
-      currentMode === "english"
-        ? "Press Enter to translate & replace in-place"
-        : currentMode === "original"
-        ? "Press Enter to submit original + pop up card"
-        : "Companion paused";
+      currentMode === "original"
+        ? "Press Enter -> 0ms raw send + dual-register card"
+        : currentMode === "english"
+        ? "Fast 1-line direct translation & copy/replace"
+        : currentMode === "select"
+        ? "Pick from 3 tones (1 Casual / 2 Polite / 3 Concise)"
+        : "Companion paused · 0 CPU hooks";
     tray.displayBalloon({ title, content: desc });
   }
   console.log(`[lingual-desktop] Mode cycled to: ${currentMode}`);
@@ -308,18 +328,21 @@ function cycleCompanionMode(): void {
 
 let passiveSubmitSeq = 0;
 
-/**
- * 100% Passive Submit Handler (Zero Key Occupation, 0.00ms Enter Latency)
- * Triggered passively by uia_helper.exe watch when the user types in an input box and presses Enter.
- * NEVER blocks or delays the physical Enter key!
- */
-async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
-  if (currentMode === "off") return;
+async function runDesktopTranslationFlow(
+  evt: PassiveSubmitEvent,
+  options?: { preSendReplace?: boolean }
+): Promise<void> {
+  if (currentMode === "off" && !options?.preSendReplace) return;
 
   const text = (evt.text || "").trim();
-  if (!text) return;
+  if (!text || isDesktopNoiseInput(text)) return;
 
   const config = loadDesktopConfig();
+  const effectiveMode: CompanionMode =
+    options?.preSendReplace && (currentMode === "original" || currentMode === "off")
+      ? "english"
+      : currentMode;
+
   activeTargetHwnd = evt.hwnd || getActiveWindowHwnd();
   activeBackupText = text;
 
@@ -337,31 +360,39 @@ async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
   }
 
   const mySeq = ++passiveSubmitSeq;
-  logger.info("passive-watcher", `Detected submit #${mySeq} (${text.length} chars, mode=${currentMode}): "${text.slice(0, 40).replace(/\n/g, " ")}"`);
+  logger.info(
+    "passive-watcher",
+    `Dispatch #${mySeq} (${text.length} chars, mode=${effectiveMode}, app=${evt.app || "unknown"}): "${text.slice(0, 40).replace(/\n/g, " ")}"`
+  );
 
-  const effectiveConfig = { ...config, sourceLang: effectiveSourceLang };
-  const configuredSlots =
-    effectiveConfig.slots && Array.isArray(effectiveConfig.slots)
-      ? effectiveConfig.slots
-      : getDefaultSlots(effectiveSourceLang);
-
+  const effectiveConfig = { ...config, sourceLang: effectiveSourceLang, mode: effectiveMode };
   const rect = evt.w > 0 && evt.h > 0 ? { x: evt.x, y: evt.y, width: evt.w, height: evt.h } : null;
 
-  switchToHudView(true, rect);
+  const shouldFocusHud = effectiveMode === "select";
+  switchToHudView(!shouldFocusHud, rect);
   if (hudWindow && !hudWindow.isDestroyed()) {
     hudWindow.webContents.send("lingual:data", {
       loading: true,
       sourceText: text,
       sourceLang: effectiveConfig.sourceLang,
       targetLang: effectiveConfig.targetLang,
-      autoSent: true,
-      modeLabel: currentMode === "original" ? "Learn" : "Translating",
+      autoSent: !shouldFocusHud,
+      modeLabel:
+        effectiveMode === "original"
+          ? "Learn"
+          : effectiveMode === "select"
+          ? "Pick 1-3"
+          : "Direct ⚡",
     });
   }
 
   try {
-    const res = await executeTranslation(text, effectiveConfig, undefined, configuredSlots);
-    if (mySeq !== passiveSubmitSeq) return; // Discard out-of-order stale turn
+    const res = await executeTranslation(text, effectiveConfig, undefined, undefined, {
+      app: evt.app,
+      title: evt.title,
+      mode: effectiveMode,
+    });
+    if (mySeq !== passiveSubmitSeq) return;
     currentTranslationResponse = res;
 
     if (res.isOfflineOrFailed) {
@@ -375,31 +406,46 @@ async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
           written: text,
           autoSent: false,
           modeLabel: "Offline",
+          appBadge: res.appBadge,
           slots: res.slots,
         });
       }
       return;
     }
 
-    const replacement = res.written || res.spoken;
-    if (currentMode === "english" && replacement) {
-      // Automatically copy primary translation to clipboard so user can immediately Ctrl+V anywhere
+    const firstSlotContent = res.slots?.find((s) => s.role !== "source" && s.role !== "vocab")?.content;
+    const replacement = firstSlotContent || res.written || res.spoken;
+    if ((effectiveMode === "english" || options?.preSendReplace) && replacement) {
       clipboard.writeText(replacement);
-      // Only replace in-place via UIA if the focused input box still holds text (was not cleared by Enter)
+      if (activeTargetHwnd && activeTargetHwnd !== "0") {
+        restoreFocus(activeTargetHwnd);
+      }
       const currentFocusedText = getFocusedElementText();
-      if (currentFocusedText && currentFocusedText.trim().length > 0) {
-        setFocusedElementText(replacement);
+      const shouldReplace = Boolean(options?.preSendReplace) || Boolean(currentFocusedText && currentFocusedText.trim().length > 0);
+      if (shouldReplace) {
+        const uiaReplaced = setFocusedElementText(replacement);
+        if (!uiaReplaced && activeTargetHwnd && activeTargetHwnd !== "0") {
+          await injectTextToTarget(replacement, activeTargetHwnd, "", clipboard);
+        }
       }
     }
 
+    const isSingleFallback = Boolean(res.isZeroKeyFallback);
     if (hudWindow && !hudWindow.isDestroyed() && hudWindow.isVisible()) {
       hudWindow.webContents.send("lingual:data", {
         ...res,
         sourceText: text,
         sourceLang: effectiveConfig.sourceLang,
         targetLang: effectiveConfig.targetLang,
-        autoSent: true,
-        modeLabel: currentMode === "original" ? "Learn" : "Copied ✓",
+        autoSent: effectiveMode !== "select" || isSingleFallback,
+        modeLabel: isSingleFallback
+          ? "Web Fallback ✓"
+          : effectiveMode === "original"
+          ? "Learn"
+          : effectiveMode === "select"
+          ? "Pick 1-3"
+          : "Copied ✓",
+        appBadge: res.appBadge,
         slots: res.slots,
       });
     }
@@ -407,6 +453,10 @@ async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
     logger.error("passive-watcher", "Passive translation error:", err);
     switchToIdleView();
   }
+}
+
+async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
+  await runDesktopTranslationFlow(evt, { preSendReplace: false });
 }
 
 /**
@@ -479,7 +529,14 @@ function updateTrayMenu(): void {
   if (!tray) return;
 
   const config = loadDesktopConfig();
-  const modeDisplay = currentMode === "english" ? "TRANSLATE" : currentMode === "original" ? "LEARN" : "OFF";
+  const modeDisplay =
+    currentMode === "original"
+      ? "1 · LEARN"
+      : currentMode === "english"
+      ? "2 · DIRECT"
+      : currentMode === "select"
+      ? "3 · CANDIDATES"
+      : "0 · OFF";
 
   const contextMenu = Menu.buildFromTemplate([
     {
@@ -496,50 +553,58 @@ function updateTrayMenu(): void {
     },
     { type: "separator" },
     {
-      label: "Translate (Press Enter -> Translate & Send)",
-      type: "radio",
-      checked: currentMode === "english",
-      click: () => {
-        currentMode = "english";
-        saveDesktopConfig({ mode: "english" });
-        registerShortcuts(loadDesktopConfig());
-        notifyCapsuleModeChanged("english");
-        updateTrayMenu();
-      },
-    },
-    {
-      label: "Learn (Press Enter -> Send Original + Card)",
+      label: "1 · Learn (0ms Send + Full Companion Card)",
       type: "radio",
       checked: currentMode === "original",
       click: () => {
         currentMode = "original";
         saveDesktopConfig({ mode: "original" });
         registerShortcuts(loadDesktopConfig());
+        syncPassiveWatcherWithMode("original");
         notifyCapsuleModeChanged("original");
         updateTrayMenu();
       },
     },
     {
-      label: "Off",
+      label: "2 · Direct (Fast 1-Line Translate & Copy/Replace)",
+      type: "radio",
+      checked: currentMode === "english",
+      click: () => {
+        currentMode = "english";
+        saveDesktopConfig({ mode: "english" });
+        registerShortcuts(loadDesktopConfig());
+        syncPassiveWatcherWithMode("english");
+        notifyCapsuleModeChanged("english");
+        updateTrayMenu();
+      },
+    },
+    {
+      label: "3 · Candidates (Pick 1-3: Casual / Polite / Concise)",
+      type: "radio",
+      checked: currentMode === "select",
+      click: () => {
+        currentMode = "select";
+        saveDesktopConfig({ mode: "select" });
+        registerShortcuts(loadDesktopConfig());
+        syncPassiveWatcherWithMode("select");
+        notifyCapsuleModeChanged("select");
+        updateTrayMenu();
+      },
+    },
+    {
+      label: "0 · Off (0 CPU Hooks)",
       type: "radio",
       checked: currentMode === "off",
       click: () => {
         currentMode = "off";
         saveDesktopConfig({ mode: "off" });
         registerShortcuts(loadDesktopConfig());
+        syncPassiveWatcherWithMode("off");
         notifyCapsuleModeChanged("off");
         updateTrayMenu();
       },
     },
     { type: "separator" },
-    {
-      label: "Replace Directly",
-      type: "checkbox",
-      checked: config.autoSend,
-      click: (item) => {
-        saveDesktopConfig({ autoSend: item.checked });
-      },
-    },
     {
       label: "Show Caret Capsule",
       type: "checkbox",
@@ -589,6 +654,43 @@ function setupIpc(): void {
     }
   });
 
+  ipcMain.on("lingual:trigger-rewrite", async () => {
+    const draft = getLatestPassiveDraft();
+    if (draft && draft.text && draft.text.trim()) {
+      if (draft.hwnd && draft.hwnd !== "0") {
+        restoreFocus(draft.hwnd);
+      }
+      await runDesktopTranslationFlow(draft, { preSendReplace: true });
+      return;
+    }
+    const clipText = (clipboard.readText() || "").trim();
+    if (clipText && !isDesktopNoiseInput(clipText)) {
+      await runDesktopTranslationFlow(
+        {
+          type: "submit",
+          hwnd: activeTargetHwnd,
+          x: 0,
+          y: 0,
+          w: 0,
+          h: 0,
+          text: clipText,
+        },
+        { preSendReplace: true }
+      );
+    } else {
+      switchToSpotlightView();
+    }
+  });
+
+  ipcMain.on("lingual:copy-text", (_event, text: string) => {
+    if (typeof text === "string" && text.trim()) {
+      clipboard.writeText(text.trim());
+    }
+    if (activeTargetHwnd && activeTargetHwnd !== "0") {
+      restoreFocus(activeTargetHwnd);
+    }
+  });
+
   ipcMain.on("lingual:select", async (_event, slot: number) => {
     if (!currentTranslationResponse) {
       switchToIdleView();
@@ -615,13 +717,19 @@ function setupIpc(): void {
 
     if (selectedText) {
       clipboard.writeText(selectedText);
+      if (activeTargetHwnd && activeTargetHwnd !== "0") {
+        restoreFocus(activeTargetHwnd);
+      }
       const currentFocusedText = getFocusedElementText();
-      if (currentFocusedText && currentFocusedText.trim().length > 0) {
-        setFocusedElementText(selectedText);
+      const shouldInject = currentMode === "select" || Boolean(currentFocusedText && currentFocusedText.trim().length > 0);
+      if (shouldInject) {
+        const uiaReplaced = setFocusedElementText(selectedText);
+        if (!uiaReplaced && activeTargetHwnd && activeTargetHwnd !== "0") {
+          await injectTextToTarget(selectedText, activeTargetHwnd, "", clipboard);
+        }
       }
     }
 
-    // Keep persistent HUD card visible after copying row; restore focus to target app
     restoreFocus(activeTargetHwnd);
   });
 
@@ -640,6 +748,7 @@ function setupIpc(): void {
     const updated = loadDesktopConfig();
     currentMode = updated.mode || currentMode;
     registerShortcuts(updated);
+    syncPassiveWatcherWithMode(currentMode);
     updateTrayMenu();
     if (capsuleWindow && !capsuleWindow.isDestroyed()) {
       notifyCapsuleModeChanged(currentMode);
@@ -805,7 +914,7 @@ if (!gotTheLock) {
     registerShortcuts(config);
     setupTray();
     setupIpc();
-    startPassiveInputWatcher(handlePassiveSubmit);
+    syncPassiveWatcherWithMode(currentMode);
 
     // Enable Windows autostart on boot (silent mode)
     try {

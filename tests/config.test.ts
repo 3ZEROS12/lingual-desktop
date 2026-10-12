@@ -5,8 +5,14 @@ import {
   loadDesktopConfig,
   saveDesktopConfig,
   getConfigPath,
+  normalizeDesktopMode,
+  resolveInitialUiLang,
+  getDefaultDesktopDirectSlots,
+  getDefaultDesktopCandidateSlots,
   DEFAULT_DESKTOP_CONFIG,
 } from "../src/main/config.js";
+import { classifyDesktopAppContext, isDesktopNoiseInput } from "../src/main/win32.js";
+import { hasMixedCodeSwitch } from "../src/main/engine.js";
 import {
   getLogFilePath,
   logger,
@@ -124,4 +130,81 @@ test("qa: zero globalShortcut Enter hijacking and dynamic language pebble/HUD wi
   const hudHtml = fs.readFileSync("src/renderer/index.html", "utf8");
   assert.ok(hudHtml.includes('id="hud-pair-text"'), "HUD HTML must expose #hud-pair-text");
 });
+
+test("v0.5.4 parity: mode normalization, sourceLang slot sovereignty, and 0-CPU off mode watcher lifecycle", () => {
+  // 1. Mode normalization safely handles 4 isolated desktop modes (original / english / select / off)
+  assert.equal(normalizeDesktopMode("companion"), "original");
+  assert.equal(normalizeDesktopMode("1"), "original");
+  assert.equal(normalizeDesktopMode("direct"), "english");
+  assert.equal(normalizeDesktopMode("2"), "english");
+  assert.equal(normalizeDesktopMode("candidates"), "select");
+  assert.equal(normalizeDesktopMode("select"), "select");
+  assert.equal(normalizeDesktopMode("3"), "select");
+  assert.equal(normalizeDesktopMode("off"), "off");
+  assert.equal(normalizeDesktopMode("0"), "off");
+
+  // 2. 3-Way isolated desktop slot defaults (Direct = 1 fast line; Candidates = 3 tones)
+  assert.equal(getDefaultDesktopDirectSlots("zh").length, 1);
+  assert.equal(getDefaultDesktopDirectSlots("zh")[0].showMeaning, false);
+  const candSlots = getDefaultDesktopCandidateSlots("zh").filter((s) => s.role !== "source");
+  assert.deepEqual(candSlots.map((s) => s.id), ["casual", "polite", "concise"]);
+
+  // 3. App-Aware context sensing & desktop noise filter & code-switch detection
+  assert.equal(classifyDesktopAppContext("slack", "general").category, "chat");
+  assert.equal(classifyDesktopAppContext("outlook", "Inbox").category, "mail");
+  assert.equal(classifyDesktopAppContext("chrome", "Pull Request #12 · GitHub").category, "code");
+  assert.equal(classifyDesktopAppContext("chrome", "Home / X.com").category, "social");
+  assert.equal(isDesktopNoiseInput("https://github.com/3ZEROS12/pi-lingual"), true);
+  assert.equal(isDesktopNoiseInput("C:\\Users\\Jason\\file.txt"), true);
+  assert.equal(isDesktopNoiseInput("好"), true);
+  assert.equal(isDesktopNoiseInput("我们先把核心流程跑通"), false);
+  assert.equal(hasMixedCodeSwitch("Let's hold off on this release until 我们把边界条件测完"), true);
+
+  // 4. Native GUI HUD: zero terminal ASCII tree (┌ ├ └) in index.html, clickable vocab chips & hover auto-dismiss
+  const hudHtml = fs.readFileSync("src/renderer/index.html", "utf8");
+  assert.ok(!/[┌├└]/.test(hudHtml), "Desktop HUD HTML must not use terminal ASCII tree characters");
+  const hudJs = fs.readFileSync("src/renderer/hud.js", "utf8");
+  assert.ok(hudJs.includes("parseVocabIntoChips"), "hud.js must render clickable vocabulary chips");
+  assert.ok(hudJs.includes("startAutoDismissTimer"), "hud.js must include hover-aware auto-dismiss timer");
+
+  // 2. UI language resolution defaults to English baseline and mirrors sourceLang
+  assert.equal(resolveInitialUiLang(undefined, "ja"), "ja");
+  assert.equal(resolveInitialUiLang(undefined, "en"), "en");
+  assert.equal(resolveInitialUiLang(undefined, "zh"), "zh");
+  assert.equal(resolveInitialUiLang(undefined, undefined), "en");
+
+  // 3. Default slots dynamically mirror sourceLang (Japanese user gets Japanese slot labels, not hardcoded English)
+  const configPath = getConfigPath();
+  const originalExists = fs.existsSync(configPath);
+  const originalRaw = originalExists ? fs.readFileSync(configPath, "utf8") : null;
+  try {
+    saveDesktopConfig({ sourceLang: "ja", targetLang: "en", slots: undefined as any });
+    const jaCfg = loadDesktopConfig();
+    assert.deepEqual(
+      jaCfg.slots.map((s) => s.label),
+      ["原文", "口語", "文面", "単語"]
+    );
+  } finally {
+    if (originalExists && originalRaw !== null) {
+      fs.writeFileSync(configPath, originalRaw, "utf8");
+    } else if (fs.existsSync(configPath)) {
+      fs.unlinkSync(configPath);
+    }
+  }
+
+  // 4. Off mode physically stops passive watcher in main.ts and hud.js supports 0/Escape dismiss + 5-Persona QA locks
+  const mainTs = fs.readFileSync("src/main/main.ts", "utf8");
+  assert.ok(mainTs.includes("syncPassiveWatcherWithMode"), "main.ts must sync passive watcher lifecycle with mode");
+  assert.ok(mainTs.includes("CAPSULE_WIDTH = 144"), "Capsule width must be >= 144px to prevent clipping PICK 3 + bolt + gear");
+  assert.ok(mainTs.includes("focusable: false"), "Capsule window must use focusable: false so clicking [⚡] never steals IM focus");
+  assert.ok(mainTs.includes("injectTextToTarget(replacement"), "main.ts must fall back to injectTextToTarget when UIA ValuePattern is unsupported");
+  assert.ok(mainTs.includes("settingsWindow.webContents.send(\"lingual:mode-changed\""), "main.ts must sync mode changes to settingsWindow");
+  assert.ok(hudJs.includes('e.key === "0" || e.key === "Escape"'), "hud.js must support 0 and Escape to dismiss");
+  assert.ok(hudJs.includes("startAutoDismissTimer(900)"), "hud.js must auto-dismiss after candidate selection");
+
+  const settingsJs = fs.readFileSync("src/renderer/settings.js", "utf8");
+  const modeSelMatches = settingsJs.match(/mode_sel_title:/g) || [];
+  assert.equal(modeSelMatches.length, 9, "All 9 languages in settings.js must define mode_sel_title");
+});
+
 

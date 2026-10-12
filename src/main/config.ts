@@ -3,9 +3,69 @@ import path from "node:path";
 import os from "node:os";
 import { getDefaultSlots, type SlotConfig } from "pi-lingual/core";
 
-export type CompanionMode = "english" | "original" | "off";
+export type CompanionMode = "original" | "english" | "select" | "off";
 export type SlotPreset = "developer" | "social" | "japanese" | "academic" | "custom";
 export type EngineProviderMode = "pi" | "free" | "custom";
+
+export function getDefaultDesktopDirectSlots(sourceLang = "en"): SlotConfig[] {
+  const norm = (sourceLang || "en").toLowerCase().split("-")[0];
+  const label = norm === "zh" ? "直出" : norm === "tw" ? "直出" : norm === "ja" ? "直訳" : norm === "ko" ? "직출" : "Direct";
+  return [
+    {
+      id: "direct",
+      label,
+      role: "translation",
+      instruction:
+        "Output 1 single most natural, idiomatic, ready-to-send sentence matching the active application context. If the input mixes target-language and native-language words (Code-Switch), preserve the existing target-language skeleton 100% verbatim and seamlessly splice the native fragments into idiomatic target prose.",
+      showMeaning: false,
+      enabled: true,
+    },
+  ];
+}
+
+export function getDefaultDesktopCandidateSlots(sourceLang = "en"): SlotConfig[] {
+  const norm = (sourceLang || "en").toLowerCase().split("-")[0];
+  const labels: Record<string, { source: string; casual: string; polite: string; concise: string }> = {
+    en: { source: "Source", casual: "Casual", polite: "Polite", concise: "Concise" },
+    zh: { source: "原文", casual: "随和口语", polite: "得体礼貌", concise: "精炼干脆" },
+    tw: { source: "原文", casual: "隨和口語", polite: "得體禮貌", concise: "精煉乾脆" },
+    ja: { source: "原文", casual: "カジュアル", polite: "丁寧・敬語", concise: "簡潔・要点" },
+    ko: { source: "원문", casual: "구어·친근", polite: "정중·비즈니스", concise: "간결·핵심" },
+  };
+  const l = labels[norm] || labels.en;
+  return [
+    {
+      id: "source",
+      label: l.source,
+      role: "source",
+      enabled: true,
+    },
+    {
+      id: "casual",
+      label: l.casual,
+      role: "translation",
+      instruction: "Natural, friendly, conversational phrasing for teammates, friends, and quick IM chat (Slack/WeChat/Discord).",
+      showMeaning: true,
+      enabled: true,
+    },
+    {
+      id: "polite",
+      label: l.polite,
+      role: "translation",
+      instruction: "Warm, tactful, high-EQ polite phrasing suitable for clients, leads, cross-team collaboration, and business emails.",
+      showMeaning: true,
+      enabled: true,
+    },
+    {
+      id: "concise",
+      label: l.concise,
+      role: "translation",
+      instruction: "Crisp, high-signal, direct professional statement without filler — ideal for PRs, issues, and executive updates.",
+      showMeaning: true,
+      enabled: true,
+    },
+  ];
+}
 
 export interface LingualDesktopConfig {
   uiLang: string;
@@ -18,6 +78,8 @@ export interface LingualDesktopConfig {
   mode: CompanionMode;
   slotPreset: SlotPreset;
   slots: SlotConfig[];
+  directSlots?: SlotConfig[];
+  candidateSlots?: SlotConfig[];
   autoSend: boolean;
   showCapsule: boolean;
   hotkeyToggleMode: string;
@@ -39,6 +101,8 @@ export const DEFAULT_DESKTOP_CONFIG: LingualDesktopConfig = {
   mode: "english",
   slotPreset: "developer",
   slots: getDefaultSlots("en"),
+  directSlots: getDefaultDesktopDirectSlots("en"),
+  candidateSlots: getDefaultDesktopCandidateSlots("en"),
   autoSend: true,
   showCapsule: true,
   hotkeyToggleMode: "Alt+Q",
@@ -72,6 +136,28 @@ export function getConfigPath(): string {
   return path.join(getConfigDir(), "config.json");
 }
 
+export function normalizeDesktopMode(raw?: string): CompanionMode {
+  const s = (raw || "").trim().toLowerCase();
+  if (s === "original" || s === "companion" || s === "learn" || s === "1") return "original";
+  if (s === "select" || s === "candidates" || s === "candidate" || s === "3") return "select";
+  if (s === "off" || s === "0") return "off";
+  if (s === "english" || s === "direct" || s === "2") return "english";
+  return DEFAULT_DESKTOP_CONFIG.mode;
+}
+
+const SUPPORTED_UI_LANGS = new Set(["en", "zh", "tw", "ja", "ko", "es", "fr", "de", "ru"]);
+
+export function resolveInitialUiLang(explicitUiLang?: string, sourceLang?: string): string {
+  if (typeof explicitUiLang === "string" && explicitUiLang.trim()) {
+    const clean = explicitUiLang.trim().toLowerCase().split(/[-_]/)[0];
+    if (SUPPORTED_UI_LANGS.has(clean)) return clean;
+  }
+  if (typeof sourceLang === "string" && sourceLang.trim()) {
+    const clean = sourceLang.trim().toLowerCase().split(/[-_]/)[0];
+    if (SUPPORTED_UI_LANGS.has(clean)) return clean;
+  }
+  return "en";
+}
 export function getSharedLingualConfigPath(): string {
   return path.join(os.homedir(), ".pi", "agent", "lingual.json");
 }
@@ -132,7 +218,6 @@ export function loadDesktopConfig(): LingualDesktopConfig {
   const piDiscovered = !isTestEnvironment() ? discoverPiModelConfig() : null;
 
   // Desktop config is primary; shared config is fallback for initial bootstrap
-  const effectiveUiLang = typeof desktopRaw.uiLang === "string" && desktopRaw.uiLang ? desktopRaw.uiLang : DEFAULT_DESKTOP_CONFIG.uiLang;
   const effectiveSourceLang =
     (typeof desktopRaw.sourceLang === "string" && desktopRaw.sourceLang) ||
     (typeof sharedRaw.sourceLang === "string" && sharedRaw.sourceLang) ||
@@ -141,10 +226,9 @@ export function loadDesktopConfig(): LingualDesktopConfig {
     (typeof desktopRaw.targetLang === "string" && desktopRaw.targetLang) ||
     (typeof sharedRaw.targetLang === "string" && sharedRaw.targetLang) ||
     DEFAULT_DESKTOP_CONFIG.targetLang;
-  const effectiveMode =
-    (desktopRaw.mode as CompanionMode) ||
-    (sharedRaw.mode as CompanionMode) ||
-    DEFAULT_DESKTOP_CONFIG.mode;
+  const effectiveUiLang = resolveInitialUiLang(desktopRaw.uiLang, effectiveSourceLang);
+  const rawMode = (desktopRaw.mode as string) || (sharedRaw.mode as string) || DEFAULT_DESKTOP_CONFIG.mode;
+  const effectiveMode = normalizeDesktopMode(rawMode);
   const effectiveSlotPreset =
     (desktopRaw.slotPreset as SlotPreset) ||
     (sharedRaw.slotPreset as SlotPreset) ||
@@ -160,7 +244,15 @@ export function loadDesktopConfig(): LingualDesktopConfig {
     ? desktopRaw.slots
     : isValidSlotArray(sharedRaw.slots)
     ? sharedRaw.slots
-    : getDefaultSlots("en");
+    : getDefaultSlots(effectiveSourceLang);
+
+  const effectiveDirectSlots = isValidSlotArray(desktopRaw.directSlots)
+    ? desktopRaw.directSlots
+    : getDefaultDesktopDirectSlots(effectiveSourceLang);
+
+  const effectiveCandidateSlots = isValidSlotArray(desktopRaw.candidateSlots)
+    ? desktopRaw.candidateSlots
+    : getDefaultDesktopCandidateSlots(effectiveSourceLang);
 
   const rawSubmitKey = typeof desktopRaw.hotkeySubmit === "string" ? desktopRaw.hotkeySubmit : DEFAULT_DESKTOP_CONFIG.hotkeySubmit;
   const safeHotkeySubmit =
@@ -211,6 +303,8 @@ export function loadDesktopConfig(): LingualDesktopConfig {
     mode: effectiveMode,
     slotPreset: effectiveSlotPreset,
     slots: effectiveSlots,
+    directSlots: effectiveDirectSlots,
+    candidateSlots: effectiveCandidateSlots,
     piModelInfo: piDiscovered ? { endpoint: piDiscovered.endpoint, model: piDiscovered.model } : null,
   };
 }
@@ -264,7 +358,9 @@ export function saveDesktopConfig(cfg: Partial<LingualDesktopConfig>): void {
         } catch {}
       }
 
-      const sharedKeys = ["sourceLang", "targetLang", "mode", "slotPreset", "slots"];
+      // Keep desktop `mode` strictly isolated from Pi CLI `~/.pi/agent/lingual.json`
+      // so toggling desktop mode never mutates the terminal coding agent's mode!
+      const sharedKeys = ["sourceLang", "targetLang", "slotPreset", "slots"];
       let hasSharedMutation = false;
       for (const k of sharedKeys) {
         if (k in cfg) {

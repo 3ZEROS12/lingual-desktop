@@ -141,11 +141,35 @@ class Program {
         return null;
     }
 
+    static string GetProcessNameSafe(int pid) {
+        if (pid <= 0) return "";
+        try {
+            var proc = Process.GetProcessById(pid);
+            return (proc.ProcessName ?? "").ToLowerInvariant();
+        } catch {
+            return "";
+        }
+    }
+
+    static string GetWindowTitleSafe(IntPtr hwnd) {
+        if (hwnd == IntPtr.Zero) return "";
+        try {
+            StringBuilder sb = new StringBuilder(256);
+            GetWindowTextW(hwnd, sb, 256);
+            return sb.ToString();
+        } catch {
+            return "";
+        }
+    }
+
     static void RunPassiveWatcher() {
         bool wasEnterDown = false;
         int tickCount = 0;
         string cachedText = "";
+        string lastEmittedDraft = "";
         IntPtr cachedHwnd = IntPtr.Zero;
+        string cachedApp = "";
+        string cachedTitle = "";
         Rect cachedRect = Rect.Empty;
         long cachedTimestamp = 0;
 
@@ -182,6 +206,8 @@ class Program {
                                 if (trimmed.Length > 0 && trimmed.Length <= 1500) {
                                     cachedText = trimmed;
                                     cachedHwnd = fgHwnd;
+                                    cachedApp = GetProcessNameSafe(pid);
+                                    cachedTitle = GetWindowTitleSafe(fgHwnd);
                                     cachedTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                                     try {
                                         var r = el.Current.BoundingRectangle;
@@ -189,6 +215,19 @@ class Program {
                                             cachedRect = r;
                                         }
                                     } catch {}
+
+                                    if (trimmed != lastEmittedDraft) {
+                                        lastEmittedDraft = trimmed;
+                                        int dx = cachedRect.IsEmpty ? 0 : (int)cachedRect.X;
+                                        int dy = cachedRect.IsEmpty ? 0 : (int)cachedRect.Y;
+                                        int dw = cachedRect.IsEmpty ? 0 : (int)cachedRect.Width;
+                                        int dh = cachedRect.IsEmpty ? 0 : (int)cachedRect.Height;
+                                        Console.WriteLine(string.Format(
+                                            "{{\"type\":\"draft\",\"hwnd\":\"{0}\",\"app\":\"{1}\",\"title\":\"{2}\",\"x\":{3},\"y\":{4},\"w\":{5},\"h\":{6},\"text\":\"{7}\"}}",
+                                            fgHwnd.ToInt64(), EscapeJson(cachedApp), EscapeJson(cachedTitle), dx, dy, dw, dh, EscapeJson(trimmed)
+                                        ));
+                                        Console.Out.Flush();
+                                    }
                                 }
                             }
                         }
@@ -201,6 +240,8 @@ class Program {
                 if (!IsImeComposingWindow(fgHwnd)) {
                     string finalDraft = "";
                     Rect finalRect = cachedRect;
+                    string finalApp = GetProcessNameSafe(pid);
+                    string finalTitle = GetWindowTitleSafe(fgHwnd);
 
                     // Try reading right at the moment of Enter, or fall back to cached draft from 120ms ago
                     try {
@@ -229,11 +270,12 @@ class Program {
                         int rh = finalRect.IsEmpty ? 0 : (int)finalRect.Height;
 
                         Console.WriteLine(string.Format(
-                            "{{\"type\":\"submit\",\"hwnd\":\"{0}\",\"x\":{1},\"y\":{2},\"w\":{3},\"h\":{4},\"text\":\"{5}\"}}",
-                            fgHwnd.ToInt64(), rx, ry, rw, rh, EscapeJson(finalDraft)
+                            "{{\"type\":\"submit\",\"hwnd\":\"{0}\",\"app\":\"{1}\",\"title\":\"{2}\",\"x\":{3},\"y\":{4},\"w\":{5},\"h\":{6},\"text\":\"{7}\"}}",
+                            fgHwnd.ToInt64(), EscapeJson(finalApp), EscapeJson(finalTitle), rx, ry, rw, rh, EscapeJson(finalDraft)
                         ));
                         Console.Out.Flush();
                         cachedText = "";
+                        lastEmittedDraft = "";
                     }
                 }
             }

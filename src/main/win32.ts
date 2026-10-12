@@ -461,8 +461,10 @@ export async function injectReplacementText(
 }
 
 export interface PassiveSubmitEvent {
-  type: "submit";
+  type: "submit" | "draft";
   hwnd: string;
+  app?: string;
+  title?: string;
   x: number;
   y: number;
   w: number;
@@ -470,13 +472,100 @@ export interface PassiveSubmitEvent {
   text: string;
 }
 
+export interface DesktopAppContextProfile {
+  category: "chat" | "mail" | "social" | "code" | "general";
+  badge: string;
+  toneHint: string;
+}
+
+/**
+ * App-Aware Context Sensor:
+ * Classifies the active Windows application and window title into a communication register profile.
+ */
+export function classifyDesktopAppContext(app = "", title = ""): DesktopAppContextProfile {
+  const a = (app || "").toLowerCase();
+  const t = (title || "").toLowerCase();
+
+  if (
+    /slack|discord|wechat|weixin|telegram|feishu|lark|dingtalk|teams|skype|qq|whatsapp/i.test(a) ||
+    /slack|discord|wechat|微信|飞书|钉钉|telegram|whatsapp/i.test(t)
+  ) {
+    return {
+      category: "chat",
+      badge: "Chat",
+      toneHint: "Instant messaging (Slack/Discord/WeChat): prioritize natural, conversational, concise chat phrasing.",
+    };
+  }
+
+  if (
+    /outlook|thunderbird|mail|notion|winword|wps|obsidian/i.test(a) ||
+    /gmail|outlook|mail|邮件|邮箱|notion|docs|document/i.test(t)
+  ) {
+    return {
+      category: "mail",
+      badge: "Mail & Docs",
+      toneHint: "Email & Document writing (Outlook/Gmail/Notion): prioritize polite, well-structured, professional prose.",
+    };
+  }
+
+  if (
+    /github|gitlab|pull request|issue|stack overflow/i.test(t) ||
+    /code|cursor|windsurf|devenv|idea64|webstorm|pycharm/i.test(a)
+  ) {
+    return {
+      category: "code",
+      badge: "Dev & PR",
+      toneHint: "Developer collaboration (GitHub PR/Issue/IDE): prioritize Silicon Valley engineering alignment and clear RFC technical prose.",
+    };
+  }
+
+  if (/twitter|x\.com|reddit|linkedin|youtube|threads|小红书|知乎/i.test(t)) {
+    return {
+      category: "social",
+      badge: "Social",
+      toneHint: "Social media & community (X/Reddit/LinkedIn): prioritize engaging hooks, authentic community idioms, and high-signal replies.",
+    };
+  }
+
+  return {
+    category: "general",
+    badge: "Desktop",
+    toneHint: "",
+  };
+}
+
+/**
+ * Desktop Noise Filter Guard:
+ * Prevents accidental popup annoyance on URLs, file paths, pure numbers, email addresses, or single-character noise.
+ */
+export function isDesktopNoiseInput(text: string): boolean {
+  const trimmed = (text || "").trim();
+  if (!trimmed) return true;
+  // Pure URL, email, or Windows/Unix path
+  if (/^(?:https?:\/\/|ftp:\/\/|www\.|[a-zA-Z]:[\\\/]|\/[a-z0-9_.-]+\/)/i.test(trimmed) && !/\s/.test(trimmed)) {
+    return true;
+  }
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return true;
+  // Pure numbers, math expressions, or punctuation
+  if (/^[\d\s+*/=.,:;!?()[\]{}#%^&~`'"_-]+$/.test(trimmed)) return true;
+  // Single CJK character or single short ASCII token (e.g. "好", "嗯", "1", "ok", "y")
+  if (trimmed.length <= 1) return true;
+  if (/^[a-zA-Z]{1,3}$/.test(trimmed)) return true;
+  return false;
+}
+
 let watcherProcess: ChildProcess | null = null;
+let latestPassiveDraft: PassiveSubmitEvent | null = null;
+
+export function getLatestPassiveDraft(): PassiveSubmitEvent | null {
+  return latestPassiveDraft;
+}
 
 /**
  * Starts the single persistent passive UIA watcher process (uia_helper.exe watch).
  * - Occupies ZERO global shortcuts (no RegisterHotKey, no key blocking).
  * - Enter key passes through 100% natively in 0.00ms across all apps.
- * - Passively caches focused input box text via UIA and emits a JSON event on Enter.
+ * - Passively caches focused input box text via UIA and emits JSON events on draft change and Enter.
  */
 export function startPassiveInputWatcher(onSubmit: (evt: PassiveSubmitEvent) => void): void {
   stopPassiveInputWatcher();
@@ -500,7 +589,11 @@ export function startPassiveInputWatcher(onSubmit: (evt: PassiveSubmitEvent) => 
         if (!trimmed || !trimmed.startsWith("{")) continue;
         try {
           const parsed = JSON.parse(trimmed) as PassiveSubmitEvent;
-          if (parsed && parsed.type === "submit" && parsed.text) {
+          if (!parsed || !parsed.text) continue;
+          if (parsed.type === "draft") {
+            latestPassiveDraft = parsed;
+          } else if (parsed.type === "submit") {
+            latestPassiveDraft = parsed;
             onSubmit(parsed);
           }
         } catch {}

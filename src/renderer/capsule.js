@@ -1,9 +1,10 @@
 // ============================================================================
-// Lingual Resident Top Pebble — Quick Mode Switcher & Drag-to-Position
+// Lingual Resident Top Pebble — 4-Mode Switcher, Pre-Send ⚡ Polish & Dragging
 // ============================================================================
 
 (function () {
   const btnMode = document.getElementById("btn-mode");
+  const btnRewrite = document.getElementById("btn-rewrite");
   const btnSettings = document.getElementById("btn-settings");
   const label = document.getElementById("capsule-label");
   const pill = document.getElementById("capsule-pill");
@@ -25,22 +26,24 @@
       }
     }
 
-    document.body.classList.remove("mode-original", "mode-off", "mode-english");
+    document.body.classList.remove("mode-original", "mode-off", "mode-english", "mode-select");
     if (mode === "english") {
       if (label) label.textContent = currentTargetLang || "EN";
       document.body.classList.add("mode-english");
     } else if (mode === "original") {
       if (label) label.textContent = "LEARN";
       document.body.classList.add("mode-original");
+    } else if (mode === "select") {
+      if (label) label.textContent = "PICK 3";
+      document.body.classList.add("mode-select");
     } else {
       if (label) label.textContent = "OFF";
       document.body.classList.add("mode-off");
     }
   }
 
-  // Smooth mouse dragging across screen edge
   pill?.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return; // Left click only
+    if (e.button !== 0) return;
     isDragging = true;
     dragStartX = e.screenX;
     dragStartY = e.screenY;
@@ -68,7 +71,6 @@
     }
   });
 
-  // Left click on mode segment cycles mode (only if not dragging)
   btnMode?.addEventListener("click", (e) => {
     if (hasMoved) return;
     e.preventDefault();
@@ -76,7 +78,13 @@
     window.lingualAPI?.toggleMode();
   });
 
-  // Left click on settings gear opens settings (only if not dragging)
+  btnRewrite?.addEventListener("click", (e) => {
+    if (hasMoved) return;
+    e.preventDefault();
+    e.stopPropagation();
+    window.lingualAPI?.triggerPreSendRewrite();
+  });
+
   btnSettings?.addEventListener("click", (e) => {
     if (hasMoved) return;
     e.preventDefault();
@@ -84,14 +92,12 @@
     window.lingualAPI?.openSettings();
   });
 
-  // Right click anywhere on the pebble opens settings
   pill?.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     e.stopPropagation();
     window.lingualAPI?.openSettings();
   });
 
-  // Listen for mode changes from main process
   window.lingualAPI?.onModeChanged((mode) => {
     updateDisplay(mode);
   });

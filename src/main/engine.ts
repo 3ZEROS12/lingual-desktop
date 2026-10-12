@@ -5,8 +5,16 @@ import {
   type CustomSlotsConfig,
   type SlotConfig,
 } from "pi-lingual/core";
-import { shouldTriggerTranslation } from "pi-lingual";
-import { loadDesktopConfig, discoverPiModelConfig, type LingualDesktopConfig } from "./config.js";
+import { shouldTriggerTranslation, isDynamicLongInput } from "pi-lingual";
+import {
+  loadDesktopConfig,
+  discoverPiModelConfig,
+  getDefaultDesktopDirectSlots,
+  getDefaultDesktopCandidateSlots,
+  type LingualDesktopConfig,
+  type CompanionMode,
+} from "./config.js";
+import { classifyDesktopAppContext } from "./win32.js";
 import { logger } from "./logger.js";
 
 export { shouldTriggerTranslation };
@@ -14,6 +22,19 @@ export { shouldTriggerTranslation };
 export interface DesktopTranslationResult extends LingualResponse {
   isOfflineOrFailed?: boolean;
   isZeroKeyFallback?: boolean;
+  appBadge?: string;
+}
+
+/**
+ * Detects whether the user is typing a mixed-language sentence (Code-Switching, e.g. English sentence with CJK fragments).
+ */
+export function hasMixedCodeSwitch(text: string): boolean {
+  const trimmed = (text || "").trim();
+  if (!trimmed) return false;
+  const hasCjk = /[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/.test(trimmed);
+  if (!hasCjk) return false;
+  const englishWords = trimmed.match(/[a-zA-Z]{2,}/g) || [];
+  return englishWords.length >= 3;
 }
 
 /**
@@ -229,19 +250,50 @@ export async function executeTranslation(
   text: string,
   configOverride?: Partial<LingualDesktopConfig>,
   context?: string,
-  slots?: SlotConfig[] | CustomSlotsConfig
+  slots?: SlotConfig[] | CustomSlotsConfig,
+  appMeta?: { app?: string; title?: string; mode?: CompanionMode }
 ): Promise<DesktopTranslationResult> {
   const config = { ...loadDesktopConfig(), ...configOverride };
   const { completer, didFail } = createHttpCompleter(config);
+  const activeMode = appMeta?.mode || config.mode || "english";
 
-  const effectiveSlots = slots || (config.slots && Array.isArray(config.slots) ? config.slots : undefined);
+  // 3-Way Physical Mode Slot Isolation for Desktop:
+  // - "english" (Direct 2): 1-line fast direct replacement slot (0 nuance/vocab overhead)
+  // - "select" (Candidates 3): 3 interpersonal/desktop tone slots (Casual / Polite / Concise)
+  // - "original" (Learn 1): Full dual-register + nuance + vocab companion slots
+  const modeDefaultSlots =
+    activeMode === "english"
+      ? config.directSlots || getDefaultDesktopDirectSlots(config.sourceLang)
+      : activeMode === "select"
+      ? config.candidateSlots || getDefaultDesktopCandidateSlots(config.sourceLang)
+      : config.slots;
+
+  const effectiveSlots = slots || (Array.isArray(modeDefaultSlots) ? modeDefaultSlots : undefined);
+
+  // App-Aware Context & Mixed Code-Switch Splicing
+  const appProfile = classifyDesktopAppContext(appMeta?.app, appMeta?.title);
+  const isCodeSwitch = hasMixedCodeSwitch(text);
+  const contextParts: string[] = [];
+  if (context && context.trim()) {
+    contextParts.push(context.trim());
+  }
+  if (appProfile.toneHint) {
+    contextParts.push(`[ACTIVE APPLICATION CONTEXT - ${appProfile.badge}]: ${appProfile.toneHint}`);
+  }
+  if (isCodeSwitch) {
+    contextParts.push(
+      `[MIXED-LANGUAGE CODE-SWITCH SPLICING RULE]: The user wrote a sentence mixing target-language words and native-language fragments. Strictly preserve the user's already-written target-language clauses and word choices verbatim, and seamlessly translate/splice ONLY the native-language fragments so the whole sentence reads like natural, cohesive native prose.`
+    );
+  }
+  const mergedContext = contextParts.length > 0 ? contextParts.join("\n") : undefined;
 
   const req: LingualRequest = {
     text,
     sourceLang: config.sourceLang,
     targetLang: config.targetLang,
-    context,
-    tone: "general",
+    context: mergedContext,
+    tone: appProfile.category === "social" ? "social" : appProfile.category === "code" ? "tech" : "general",
+    isLongInput: isDynamicLongInput(text, config.sourceLang),
     slots: effectiveSlots,
   };
 
@@ -263,6 +315,7 @@ export async function executeTranslation(
       const slotList = Array.isArray(effectiveSlots) ? effectiveSlots : undefined;
       const hasSource = !slotList || slotList.some((s) => s.role === "source" && s.enabled !== false);
       const sourceLabel = slotList?.find((s) => s.role === "source")?.label || "Source";
+      const transLabel = slotList?.find((s) => s.role === "translation")?.label || "Translation";
 
       const dynamicSlots: Array<{ id: string; label: string; role: "source" | "translation" | "vocab" | "custom"; content: string }> = [];
       if (hasSource) {
@@ -275,7 +328,7 @@ export async function executeTranslation(
       }
       dynamicSlots.push({
         id: "spoken",
-        label: "Translation",
+        label: transLabel,
         role: "translation",
         content: fallbackText,
       });
@@ -288,6 +341,7 @@ export async function executeTranslation(
         shieldBypassed: false,
         isOfflineOrFailed: false, // 保底成功，不阻断心流！
         isZeroKeyFallback: true,
+        appBadge: appProfile.badge,
         slots: dynamicSlots,
       };
     } else {
@@ -297,6 +351,7 @@ export async function executeTranslation(
 
   return {
     ...res,
+    appBadge: appProfile.badge,
     isOfflineOrFailed: isLlmFailed,
   };
 }

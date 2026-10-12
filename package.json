@@ -1,6 +1,6 @@
 {
   "name": "lingual-desktop",
-  "version": "0.2.16",
+  "version": "0.2.17",
   "description": "Universal Windows dual-register writing companion & in-situ language bridge",
   "main": "dist/main/main.js",
   "type": "module",
@@ -59,7 +59,7 @@
     }
   },
   "dependencies": {
-    "pi-lingual": "^0.3.15"
+    "pi-lingual": "^0.5.4"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",

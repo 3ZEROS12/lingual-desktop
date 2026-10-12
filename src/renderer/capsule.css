@@ -97,6 +97,24 @@ body {
   margin: 0 1px;
 }
 
+.action-btn {
+  padding: 2px 6px;
+  color: #57534e;
+  font-size: 10.5px;
+  line-height: 1;
+}
+
+.action-btn:hover {
+  background: #f5f4ef;
+  color: #1c1917;
+}
+
+.bolt-icon {
+  display: inline-block;
+  font-size: 10.5px;
+  line-height: 1;
+}
+
 .settings-btn {
   padding: 3px 6px;
   border-radius: 0 999px 999px 0;
@@ -119,6 +137,15 @@ body {
 }
 .mode-original .capsule-label {
   color: #44403c;
+}
+
+/* Candidates mode */
+.mode-select .capsule-pill {
+  background: #fbfaf8;
+  border-color: #78716c;
+}
+.mode-select .capsule-label {
+  color: #1c1917;
 }
 
 /* Off mode */

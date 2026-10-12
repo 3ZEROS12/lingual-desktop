@@ -1,6 +1,9 @@
 // ============================================================================
-// Lingual HUD — In-Situ Roof-Docked Card Renderer
-// Displays directly above the active text input box across any Windows app.
+// Lingual Desktop HUD — Native Paper & Stone Card Renderer
+// - Rounded slot cards (zero terminal ASCII tree glyphs)
+// - Clickable individual Vocabulary Chips (click any phrase to copy)
+// - App-Aware context pill badge
+// - 5s Hover-to-Pause auto-dismiss timer
 // ============================================================================
 
 (function () {
@@ -10,26 +13,71 @@
   const loadingState = document.getElementById("loading-state");
   const cardContent = document.getElementById("card-content");
 
-  const textSource = document.getElementById("text-source");
-  const textSpoken = document.getElementById("text-spoken");
-  const meaningSpoken = document.getElementById("meaning-spoken");
-  const textWritten = document.getElementById("text-written");
-  const meaningWritten = document.getElementById("meaning-written");
-  const textVocab = document.getElementById("text-vocab");
-  const vocabRow = document.getElementById("vocab-row");
-
-  const slot1Row = document.getElementById("slot1-row");
-  const slot2Row = document.getElementById("slot2-row");
-  const tagSlot1 = document.getElementById("tag-slot1");
-  const tagSlot2 = document.getElementById("tag-slot2");
   const btnClose = document.getElementById("btn-close");
   const badgeMode = document.getElementById("badge-mode");
+  const badgeApp = document.getElementById("badge-app");
 
   const footerAutoHint = document.getElementById("footer-auto-hint");
   const footerConfirmHint = document.getElementById("footer-confirm-hint");
   const footerStatusBadge = document.getElementById("footer-status-badge");
+  const autoDismissBar = document.getElementById("auto-dismiss-bar");
 
-  let currentData = null;
+  const AUTO_DISMISS_MS = 5200;
+  let dismissTimer = null;
+  let dismissInterval = null;
+  let remainingMs = AUTO_DISMISS_MS;
+  let isHovered = false;
+  let lastTick = 0;
+
+  function clearAutoDismissTimer() {
+    if (dismissTimer) {
+      clearTimeout(dismissTimer);
+      dismissTimer = null;
+    }
+    if (dismissInterval) {
+      clearInterval(dismissInterval);
+      dismissInterval = null;
+    }
+    if (autoDismissBar) {
+      autoDismissBar.style.width = "0%";
+    }
+  }
+
+  function startAutoDismissTimer(customDurationMs) {
+    clearAutoDismissTimer();
+    const totalMs = typeof customDurationMs === "number" && customDurationMs > 0 ? customDurationMs : AUTO_DISMISS_MS;
+    remainingMs = totalMs;
+    lastTick = Date.now();
+    if (autoDismissBar) {
+      autoDismissBar.style.width = "100%";
+    }
+
+    dismissInterval = setInterval(() => {
+      const now = Date.now();
+      if (!isHovered || customDurationMs) {
+        remainingMs -= now - lastTick;
+        if (remainingMs <= 0) {
+          clearAutoDismissTimer();
+          window.lingualAPI?.dismiss();
+          return;
+        }
+        if (autoDismissBar) {
+          const pct = Math.max(0, Math.min(100, (remainingMs / totalMs) * 100));
+          autoDismissBar.style.width = `${pct}%`;
+        }
+      }
+      lastTick = now;
+    }, 80);
+  }
+
+  hudContainer?.addEventListener("mouseenter", () => {
+    isHovered = true;
+  });
+
+  hudContainer?.addEventListener("mouseleave", () => {
+    isHovered = false;
+    lastTick = Date.now();
+  });
 
   function escapeHtml(str) {
     return String(str ?? "")
@@ -40,8 +88,24 @@
       .replace(/'/g, "&#39;");
   }
 
-  // Listen for view state changes
+  function parseVocabIntoChips(vocabRaw) {
+    const raw = String(vocabRaw || "").trim();
+    if (!raw) return [];
+    return raw
+      .split(/\s*(?:·|•|\||；|;)\s*/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((item) => {
+        const m = item.match(/^(.+?)\s*[（(]([^）)]+)[）)]$/);
+        if (m) {
+          return { term: m[1].trim(), meaning: m[2].trim() };
+        }
+        return { term: item, meaning: "" };
+      });
+  }
+
   window.lingualAPI?.onViewState((state) => {
+    clearAutoDismissTimer();
     if (state === "spotlight") {
       spotlightBox.classList.remove("hidden");
       cardContent.classList.add("hidden");
@@ -54,16 +118,24 @@
     }
   });
 
-  // Listen for translation payload
   window.lingualAPI?.onTranslationData((payload) => {
-    currentData = payload;
+    clearAutoDismissTimer();
     loadingState.classList.add("hidden");
     spotlightBox.classList.add("hidden");
     cardContent.classList.remove("hidden");
 
     const hudPairText = document.getElementById("hud-pair-text");
     if (hudPairText && (payload.sourceLang || payload.targetLang)) {
-      hudPairText.textContent = `[${payload.sourceLang || "zh"} ⇄ ${payload.targetLang || "en"}]`;
+      hudPairText.textContent = `${payload.sourceLang || "zh"} ⇄ ${payload.targetLang || "en"}`;
+    }
+
+    if (badgeApp) {
+      if (payload.appBadge && payload.appBadge !== "Desktop") {
+        badgeApp.textContent = payload.appBadge;
+        badgeApp.classList.remove("hidden");
+      } else {
+        badgeApp.classList.add("hidden");
+      }
     }
 
     if (payload.loading) {
@@ -73,25 +145,25 @@
     }
 
     if (payload.isOffline) {
-      badgeMode.textContent = "Offline · Draft Preserved";
+      badgeMode.textContent = "Offline";
       footerAutoHint.classList.add("hidden");
       footerConfirmHint.classList.remove("hidden");
     } else {
-      badgeMode.textContent = payload.modeLabel || (payload.autoSent ? "Ready" : "Ready");
+      badgeMode.textContent = payload.modeLabel || "Ready";
       if (footerStatusBadge) {
-        footerStatusBadge.textContent = "✓ Ready";
+        footerStatusBadge.textContent = payload.modeLabel === "Copied ✓" ? "✓ Copied" : "✓ Ready";
       }
 
       if (payload.autoSent) {
         footerAutoHint.classList.remove("hidden");
         footerConfirmHint.classList.add("hidden");
+        startAutoDismissTimer();
       } else {
         footerAutoHint.classList.add("hidden");
         footerConfirmHint.classList.remove("hidden");
       }
     }
 
-    // Render dynamic slots
     if (Array.isArray(payload.slots) && payload.slots.length > 0) {
       cardContent.innerHTML = "";
 
@@ -100,48 +172,36 @@
         (s) => s.role !== "source" && s.content && s.content.trim()
       );
 
-      // 1. Source row (if enabled)
+      // 1. Source Quote Bar
       if (sourceSlot && sourceSlot.content && sourceSlot.content.trim()) {
         const sourceRow = document.createElement("div");
-        sourceRow.className = "branch-row branch-source";
+        sourceRow.className = "source-quote-bar";
         sourceRow.innerHTML = `
-          <span class="tree-bullet">·</span>
-          <span class="tag tag-source">[${escapeHtml(sourceSlot.label || "Source")}]</span>
-          <span class="branch-text">${escapeHtml(sourceSlot.content)}</span>
+          <span class="source-pill">${escapeHtml(sourceSlot.label || "Source")}</span>
+          <span class="source-text">${escapeHtml(sourceSlot.content)}</span>
         `;
         cardContent.appendChild(sourceRow);
       }
 
-      // 2. Trifecta Left-Rail Tree branches
-      const totalBranches = contentBranches.length;
+      // 2. Rounded Slot Cards & Clickable Vocab Chips
       let translationCount = 0;
 
-      contentBranches.forEach((slot, i) => {
-        const row = document.createElement("div");
-        row.className = "branch-row";
-
-        let glyph = "├";
-        if (totalBranches === 1) {
-          glyph = "└";
-        } else if (i === 0) {
-          glyph = "┌";
-        } else if (i === totalBranches - 1) {
-          glyph = "└";
-        }
-
+      contentBranches.forEach((slot) => {
         if (slot.role === "translation" || slot.role === "custom") {
           translationCount++;
           const num = translationCount;
-          row.classList.add("branch-slot", "interactive-slot");
+          const row = document.createElement("div");
+          row.className = "slot-card interactive-slot";
           row.dataset.slot = String(num);
 
           row.innerHTML = `
-            <div class="key-badge">${num}</div>
-            <span class="tree-glyph">${glyph}</span>
-            <span class="tag">[${escapeHtml(slot.label || "Translation")}]</span>
-            <div class="text-group">
-              <div class="branch-text main-text">${escapeHtml(slot.content)}</div>
-              ${slot.meaning ? `<div class="sub-nuance">(${escapeHtml(slot.meaning)})</div>` : ""}
+            <div class="slot-head">
+              <span class="key-badge">${num}</span>
+              <span class="slot-pill">${escapeHtml(slot.label || "Translation")}</span>
+            </div>
+            <div class="slot-body">
+              <div class="main-text">${escapeHtml(slot.content)}</div>
+              ${slot.meaning ? `<div class="sub-nuance">${escapeHtml(slot.meaning)}</div>` : ""}
             </div>
           `;
 
@@ -149,39 +209,54 @@
             if (badgeMode) badgeMode.textContent = `Copied #${num} ✓`;
             if (footerStatusBadge) footerStatusBadge.textContent = `✓ Copied #${num}`;
             window.lingualAPI?.selectTranslation(num);
+            startAutoDismissTimer(900);
           });
+          cardContent.appendChild(row);
         } else if (slot.role === "vocab") {
-          row.classList.add("branch-vocab");
-          row.innerHTML = `
-            <span class="tree-glyph indent-glyph">${glyph}</span>
-            <span class="tag tag-vocab">[${escapeHtml(slot.label || "Vocab")}]</span>
-            <div class="branch-text vocab-stream">${escapeHtml(slot.content)}</div>
-          `;
+          const chips = parseVocabIntoChips(slot.content);
+          if (chips.length > 0) {
+            const vocabWrap = document.createElement("div");
+            vocabWrap.className = "vocab-section";
+            const chipsContainer = document.createElement("div");
+            chipsContainer.className = "vocab-chips-wrap";
+
+            chips.forEach((c) => {
+              const btn = document.createElement("button");
+              btn.type = "button";
+              btn.className = "vocab-chip";
+              btn.title = "Click to copy phrase";
+              btn.innerHTML = `
+                <span class="chip-term">${escapeHtml(c.term)}</span>
+                ${c.meaning ? `<span class="chip-meaning">${escapeHtml(c.meaning)}</span>` : ""}
+              `;
+              btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                window.lingualAPI?.copyText(c.term);
+                if (badgeMode) badgeMode.textContent = `Copied "${c.term.slice(0, 14)}" ✓`;
+                if (footerStatusBadge) footerStatusBadge.textContent = `✓ Copied term`;
+              });
+              chipsContainer.appendChild(btn);
+            });
+
+            vocabWrap.appendChild(chipsContainer);
+            cardContent.appendChild(vocabWrap);
+          }
         }
-        cardContent.appendChild(row);
       });
-    } else {
-      // Legacy fallback
-      textSource.textContent = payload.sourceText || payload.text || "";
-      if (tagSlot1) tagSlot1.textContent = payload.slot1Label ? `[${payload.slot1Label}]` : "[Casual]";
-      textSpoken.textContent = payload.spoken || "";
-      meaningSpoken.textContent = payload.spokenMeaning ? `(${payload.spokenMeaning})` : "";
-      meaningSpoken.style.display = payload.spokenMeaning ? "block" : "none";
-
-      if (tagSlot2) tagSlot2.textContent = payload.slot2Label ? `[${payload.slot2Label}]` : "[Formal]";
-      textWritten.textContent = payload.written || "";
-      meaningWritten.textContent = payload.writtenMeaning ? `(${payload.writtenMeaning})` : "";
-      meaningWritten.style.display = payload.writtenMeaning ? "block" : "none";
-
-      if (payload.vocab) {
-        textVocab.textContent = payload.vocab;
-        vocabRow.classList.remove("hidden");
-      } else {
-        vocabRow.classList.add("hidden");
-      }
+    } else if (payload.isOffline) {
+      cardContent.innerHTML = `
+        <div class="source-quote-bar">
+          <span class="source-pill">Source</span>
+          <span class="source-text">${escapeHtml(payload.sourceText || "")}</span>
+        </div>
+        <div class="slot-card">
+          <div class="slot-body">
+            <div class="sub-nuance">Offline — original draft preserved. Check network or API settings.</div>
+          </div>
+        </div>
+      `;
     }
 
-    // Dynamic auto-height sensing: report measured height to main process
     requestAnimationFrame(() => {
       if (hudContainer) {
         const measured = Math.ceil(hudContainer.getBoundingClientRect().height + 16);
@@ -190,22 +265,11 @@
     });
   });
 
-  // Slot clicks
-  slot1Row?.addEventListener("click", () => {
-    if (badgeMode) badgeMode.textContent = "Copied #1 ✓";
-    window.lingualAPI?.selectTranslation(1);
-  });
-
-  slot2Row?.addEventListener("click", () => {
-    if (badgeMode) badgeMode.textContent = "Copied #2 ✓";
-    window.lingualAPI?.selectTranslation(2);
-  });
-
   btnClose?.addEventListener("click", () => {
+    clearAutoDismissTimer();
     window.lingualAPI?.dismiss();
   });
 
-  // Spotlight input submission
   spotlightInput?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       const val = spotlightInput.value.trim();
@@ -215,23 +279,27 @@
         window.lingualAPI?.submitSpotlightInput(val);
       }
     } else if (e.key === "Escape") {
+      clearAutoDismissTimer();
       window.lingualAPI?.dismiss();
     }
   });
 
-  // Keydown shortcuts
   window.addEventListener("keydown", (e) => {
     if (document.activeElement === spotlightInput && !spotlightBox.classList.contains("hidden")) {
       return;
     }
 
-    // Dynamic number keys 1~9 to select translation
+    // Dynamic number keys 1~9 to select translation with immediate visual confirmation, 0/Escape to dismiss
     const numKey = parseInt(e.key, 10);
     if (!isNaN(numKey) && numKey >= 1 && numKey <= 9) {
       e.preventDefault();
+      if (badgeMode) badgeMode.textContent = `Copied #${numKey} ✓`;
+      if (footerStatusBadge) footerStatusBadge.textContent = `✓ Copied #${numKey}`;
       window.lingualAPI?.selectTranslation(numKey);
-    } else if (e.key === "Escape") {
+      startAutoDismissTimer(900);
+    } else if (e.key === "0" || e.key === "Escape") {
       e.preventDefault();
+      clearAutoDismissTimer();
       window.lingualAPI?.dismiss();
     }
   });
