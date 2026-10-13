@@ -59,4 +59,5 @@ contextBridge.exposeInMainWorld("lingualSettingsAPI", {
   closeWindow: () => ipcRenderer.send("lingual:close-settings"),
   openLogFile: () => ipcRenderer.send("lingual:open-log-file"),
   getRecentLogs: () => ipcRenderer.invoke("lingual:get-recent-logs"),
+  getShortcutsReport: () => ipcRenderer.invoke("lingual:get-shortcuts-report"),
 });

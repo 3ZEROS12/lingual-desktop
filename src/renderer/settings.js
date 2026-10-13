@@ -25,6 +25,8 @@
       mode_orig_sub: "0ms raw send + full companion card",
       mode_sel_title: "3 · Candidates",
       mode_sel_sub: "Pick 1-3: Casual / Polite / Concise",
+      mode_mod_title: "4 · Modify",
+      mode_mod_sub: "Surgical in-place fix + native sibling",
       mode_off_title: "0 · Off",
       mode_off_sub: "0 CPU hooks · Paused",
       sec_slang_title: "Source:",
@@ -80,6 +82,18 @@
       adv_endpoint_summary: "Endpoint URL & Model ID",
       footer_hint: "Changes save automatically",
       footer_saved: "Saved · Active immediately",
+      sec_hotkeys_title: "Hotkeys & Shortcuts",
+      sec_hotkeys_desc: "Configurable global shortcuts with collision detection and unbind support. Enter key is passively passed through without collision.",
+      tog_shortcuts_title: "Enable Global Shortcuts",
+      tog_shortcuts_desc: "Turn off to completely release all global keys (0 hotkey occupation).",
+      hk_toggle_mode: "Cycle Mode",
+      hk_toggle_mode_desc: "Switch between 1 Learn / 2 Direct / 3 Candidates / 0 Off",
+      hk_rewrite: "Pre-send Rewrite [⚡]",
+      hk_rewrite_desc: "In-place translate and replace input draft before sending",
+      hk_spotlight: "Spotlight Floating Window",
+      hk_spotlight_desc: "Summon floating translate box anywhere on screen",
+      btn_unbind_all_hk: "Unbind All Hotkeys",
+      btn_reset_default_hk: "Reset Default Keys",
       btn_logs: "View Logs",
       btn_close: "Cancel",
       btn_done: "Save",
@@ -100,6 +114,8 @@
       mode_orig_sub: "0ms 原话直发 + 全营养双语词卡",
       mode_sel_title: "3 · 候选 (Pick 3)",
       mode_sel_sub: "按 1-3 秒选：随和 / 礼貌 / 精炼",
+      mode_mod_title: "4 · 修正 (Modify)",
+      mode_mod_sub: "极简原句修补 + 原生表达对照",
       mode_off_title: "0 · 关闭 (Off)",
       mode_off_sub: "进程级停监听 · 0 CPU 零负担",
       sec_slang_title: "源语言:",
@@ -155,6 +171,18 @@
       adv_endpoint_summary: "Endpoint URL & Model ID",
       footer_hint: "所有改动自动保存并即时生效",
       footer_saved: "已保存 · 即时生效",
+      sec_hotkeys_title: "快捷键与全局热键",
+      sec_hotkeys_desc: "支持自定义与安全解绑，内置防冲突检测；回车键为纯被动放行，不占用任何系统快捷键。",
+      tog_shortcuts_title: "启用全局快捷键",
+      tog_shortcuts_desc: "关闭后彻底释放所有全局按键注册（0 键位占用）。",
+      hk_toggle_mode: "切换伴学模式",
+      hk_toggle_mode_desc: "在 1 伴学 / 2 直出 / 3 候选 / 0 关闭 之间快速轮转",
+      hk_rewrite: "预发就地改写 [⚡]",
+      hk_rewrite_desc: "在发送前直接翻译并替换当前输入框中的草稿内容",
+      hk_spotlight: "悬浮翻译输入框 (Spotlight)",
+      hk_spotlight_desc: "在屏幕任意位置居中呼出极简翻译浮窗",
+      btn_unbind_all_hk: "全部解绑（清空）",
+      btn_reset_default_hk: "恢复默认键位",
       btn_logs: "查看日志",
       btn_close: "取消",
       btn_done: "确定",
@@ -175,6 +203,8 @@
       mode_orig_sub: "0ms 原話直發 + 全營養雙語詞卡",
       mode_sel_title: "3 · 候選 (Pick 3)",
       mode_sel_sub: "按 1-3 秒選：隨和 / 禮貌 / 精煉",
+      mode_mod_title: "4 · 修正 (Modify)",
+      mode_mod_sub: "極簡原句修補 + 原生表達對照",
       mode_off_title: "0 · 關閉 (Off)",
       mode_off_sub: "進程級停監聽 · 0 CPU 零負擔",
       sec_slang_title: "源語言:",
@@ -227,6 +257,18 @@
       adv_endpoint_summary: "Endpoint URL & Model ID",
       footer_hint: "所有改動自動保存並即時生效",
       footer_saved: "已保存 · 即時生效",
+      sec_hotkeys_title: "快捷鍵與全域熱鍵",
+      sec_hotkeys_desc: "支援自訂與安全解綁，內建防衝突檢測；Enter 鍵為純被動放行，不佔用任何系統快捷鍵。",
+      tog_shortcuts_title: "啟用全域快捷鍵",
+      tog_shortcuts_desc: "關閉後徹底釋放所有全域按鍵註冊（0 鍵位佔用）。",
+      hk_toggle_mode: "切換伴學模式",
+      hk_toggle_mode_desc: "在 1 伴學 / 2 直出 / 3 候選 / 0 關閉 之間快速循環",
+      hk_rewrite: "預發就地改寫 [⚡]",
+      hk_rewrite_desc: "在發送前直接翻譯並替換當前輸入框中的草稿內容",
+      hk_spotlight: "懸浮翻譯輸入框 (Spotlight)",
+      hk_spotlight_desc: "在螢幕任意位置居中喚出極簡翻譯浮窗",
+      btn_unbind_all_hk: "全部解綁（清空）",
+      btn_reset_default_hk: "恢復預設鍵位",
       btn_logs: "查看日誌",
       btn_close: "取消",
       btn_done: "確定",
@@ -247,6 +289,8 @@
       mode_orig_sub: "0ms原文送信＋双方向学習カード",
       mode_sel_title: "3 · 候補 (Pick 3)",
       mode_sel_sub: "1-3で即選択：口語 / 丁寧 / 簡潔",
+      mode_mod_title: "4 · 修正 (Modify)",
+      mode_mod_sub: "最小限の原文修正＋自然な表現比較",
       mode_off_title: "0 · オフ (Off)",
       mode_off_sub: "監視プロセス停止 · 0 CPU 負荷",
       sec_slang_title: "入力言語:",
@@ -299,6 +343,18 @@
       adv_endpoint_summary: "Endpoint URL & Model ID",
       footer_hint: "変更は自動的に保存・反映されます",
       footer_saved: "保存済み · 即時反映",
+      sec_hotkeys_title: "ショートカットとグローバルキー",
+      sec_hotkeys_desc: "衝突防止と解除に対応。Enterキーは完全パッシブ通過で、システムキーを占有しません。",
+      tog_shortcuts_title: "グローバルショートカットを有効化",
+      tog_shortcuts_desc: "無効にするとすべてのキー登録を完全解放（キー占有ゼロ）。",
+      hk_toggle_mode: "モード切替",
+      hk_toggle_mode_desc: "1 学習 / 2 直訳 / 3 候補 / 0 オフ を素早く切り替え",
+      hk_rewrite: "送信前インプレース推敲 [⚡]",
+      hk_rewrite_desc: "送信前に入力枠のテキストを直接翻訳・置換",
+      hk_spotlight: "スポットライト翻訳ウィンドウ",
+      hk_spotlight_desc: "画面中央にシンプルな翻訳ウィンドウを呼び出し",
+      btn_unbind_all_hk: "すべて解除",
+      btn_reset_default_hk: "デフォルトに戻す",
       btn_logs: "ログを表示",
       btn_close: "キャンセル",
       btn_done: "確定",
@@ -318,6 +374,8 @@
       mode_orig_sub: "0ms 원문 전송 + 이중언어 학습 카드",
       mode_sel_title: "3 · 후보 (Pick 3)",
       mode_sel_sub: "1-3 즉시 선택: 친근 / 정중 / 간결",
+      mode_mod_title: "4 · 수정 (Modify)",
+      mode_mod_sub: "최소한의 원문 수정 + 자연스러운 표현 대조",
       mode_off_title: "0 · 끄기 (Off)",
       mode_off_sub: "감시 프로세스 중지 · 0 CPU",
       sec_slang_title: "입력 언어:",
@@ -367,6 +425,18 @@
       adv_endpoint_summary: "Endpoint URL & Model ID",
       footer_hint: "변경 사항은 자동으로 저장됩니다",
       footer_saved: "저장 완료 · 즉시 적용",
+      sec_hotkeys_title: "단축키 및 글로벌 핫키",
+      sec_hotkeys_desc: "충돌 감지 및 해제 지원. Enter 키는 패시브 통과로 시스템 키를 전혀 점유하지 않습니다.",
+      tog_shortcuts_title: "글로벌 단축키 사용",
+      tog_shortcuts_desc: "끄면 모든 단축키 등록이 완전히 해제됩니다 (키 점유 제로).",
+      hk_toggle_mode: "모드 전환",
+      hk_toggle_mode_desc: "1 동반 / 2 직출 / 3 후보 / 0 끔 간 빠른 전환",
+      hk_rewrite: "전송 전 즉시 윤문 [⚡]",
+      hk_rewrite_desc: "전송 전 입력창의 초안을 직접 번역 및 교체",
+      hk_spotlight: "스포트라이트 번역창",
+      hk_spotlight_desc: "화면 중앙에 미니멀 번역창 호출",
+      btn_unbind_all_hk: "모두 해제",
+      btn_reset_default_hk: "기본값 복원",
       btn_logs: "로그 보기",
       btn_close: "취소",
       btn_done: "확인",
@@ -386,6 +456,8 @@
       mode_orig_sub: "Envío 0ms + tarjeta bilingüe",
       mode_sel_title: "3 · Opciones",
       mode_sel_sub: "Elige 1-3: Coloquial / Cortés / Conciso",
+      mode_mod_title: "4 · Corrección",
+      mode_mod_sub: "Arreglo mínimo in situ + opción nativa",
       mode_off_title: "0 · Apagado",
       mode_off_sub: "0 hooks de CPU · En pausa",
       sec_slang_title: "Idioma origen:",
@@ -435,6 +507,18 @@
       adv_endpoint_summary: "Endpoint URL & Model ID",
       footer_hint: "Los cambios se guardan automáticamente",
       footer_saved: "Guardado · Activo de inmediato",
+      sec_hotkeys_title: "Atajos de teclado globales",
+      sec_hotkeys_desc: "Atajos configurables con protección contra colisiones. La tecla Enter se pasa de forma pasiva sin ocupar teclas.",
+      tog_shortcuts_title: "Activar atajos globales",
+      tog_shortcuts_desc: "Desactiva para liberar completamente todas las teclas (0 ocupación de teclas).",
+      hk_toggle_mode: "Cambiar modo",
+      hk_toggle_mode_desc: "Alternar entre 1 Estudio / 2 Directo / 3 Opciones / 0 Apagado",
+      hk_rewrite: "Reescritura in situ [⚡]",
+      hk_rewrite_desc: "Traduce y reemplaza el borrador antes de enviar",
+      hk_spotlight: "Ventana flotante Spotlight",
+      hk_spotlight_desc: "Abre el cuadro de traducción centrado en pantalla",
+      btn_unbind_all_hk: "Desvincular todo",
+      btn_reset_default_hk: "Restablecer valores",
       btn_logs: "Ver registros",
       btn_close: "Cancelar",
       btn_done: "Aceptar",
@@ -454,6 +538,8 @@
       mode_orig_sub: "Envoi 0ms + carte bilingue",
       mode_sel_title: "3 · Options",
       mode_sel_sub: "Touches 1-3 : Familier / Poli / Concis",
+      mode_mod_title: "4 · Correction",
+      mode_mod_sub: "Correction minimale + variante native",
       mode_off_title: "0 · Désactivé",
       mode_off_sub: "0 hook CPU · En veille",
       sec_slang_title: "Langue source :",
@@ -503,6 +589,18 @@
       adv_endpoint_summary: "Endpoint URL & Model ID",
       footer_hint: "Enregistrement automatique",
       footer_saved: "Enregistré · Immédiatement actif",
+      sec_hotkeys_title: "Raccourcis clavier globaux",
+      sec_hotkeys_desc: "Raccourcis configurables avec gestion des conflits. La touche Entrée est transmise passivement sans blocage.",
+      tog_shortcuts_title: "Activer les raccourcis globaux",
+      tog_shortcuts_desc: "Désactivez pour libérer entièrement les touches (0 occupation de raccourci).",
+      hk_toggle_mode: "Changer de mode",
+      hk_toggle_mode_desc: "Basculer entre 1 Étude / 2 Direct / 3 Options / 0 Éteint",
+      hk_rewrite: "Réécriture sur place [⚡]",
+      hk_rewrite_desc: "Traduit et remplace le texte avant l'envoi",
+      hk_spotlight: "Fenêtre flottante Spotlight",
+      hk_spotlight_desc: "Affiche la boîte de traduction au centre de l'écran",
+      btn_unbind_all_hk: "Tout dissocier",
+      btn_reset_default_hk: "Valeurs par défaut",
       btn_logs: "Voir les logs",
       btn_close: "Annuler",
       btn_done: "Valider",
@@ -522,6 +620,8 @@
       mode_orig_sub: "0ms Senden + zweisprachige Karte",
       mode_sel_title: "3 · Auswahl",
       mode_sel_sub: "Tasten 1-3: Locker / Höflich / Prägnant",
+      mode_mod_title: "4 · Korrektur",
+      mode_mod_sub: "Minimale Reparatur + native Alternative",
       mode_off_title: "0 · Aus",
       mode_off_sub: "0 CPU-Hooks · Pausiert",
       sec_slang_title: "Ausgangssprache:",
@@ -571,6 +671,18 @@
       adv_endpoint_summary: "Endpoint URL & Model ID",
       footer_hint: "Änderungen werden automatisch gespeichert",
       footer_saved: "Gespeichert · Sofort aktiv",
+      sec_hotkeys_title: "Tastenkombinationen",
+      sec_hotkeys_desc: "Konfigurierbare Shortcuts mit Konfliktschutz. Die Eingabetaste wird nativ weitergeleitet ohne Tastenbelegung.",
+      tog_shortcuts_title: "Globale Shortcuts aktivieren",
+      tog_shortcuts_desc: "Ausschalten, um alle Tastenkürzel freizugeben (0 Tastenbelegung).",
+      hk_toggle_mode: "Modus wechseln",
+      hk_toggle_mode_desc: "Schnell zwischen 1 Lernen / 2 Direkt / 3 Optionen / 0 Aus wechseln",
+      hk_rewrite: "Vorab-Umschreiben [⚡]",
+      hk_rewrite_desc: "Entwurf vor dem Absenden direkt übersetzen und ersetzen",
+      hk_spotlight: "Spotlight-Übersetzungsfenster",
+      hk_spotlight_desc: "Zentrales Übersetzungsfenster aufrufen",
+      btn_unbind_all_hk: "Alle aufheben",
+      btn_reset_default_hk: "Standard wiederherstellen",
       btn_logs: "Logs anzeigen",
       btn_close: "Abbrechen",
       btn_done: "Übernehmen",
@@ -590,6 +702,8 @@
       mode_orig_sub: "Отправка 0мс + карточка обучения",
       mode_sel_title: "3 · Варианты",
       mode_sel_sub: "Клавиши 1-3: Живой / Вежливый / Краткий",
+      mode_mod_title: "4 · Правка",
+      mode_mod_sub: "Минимальная правка + нативный вариант",
       mode_off_title: "0 · Выкл",
       mode_off_sub: "0 хуков CPU · На паузе",
       sec_slang_title: "Исходный язык:",
@@ -639,6 +753,18 @@
       adv_endpoint_summary: "Endpoint URL & Model ID",
       footer_hint: "Изменения сохраняются автоматически",
       footer_saved: "Сохранено · Активно",
+      sec_hotkeys_title: "Горячие клавиши",
+      sec_hotkeys_desc: "Настраиваемые горячие клавиши с защитой от конфликтов. Клавиша Enter передается пассивно без перехвата.",
+      tog_shortcuts_title: "Включить глобальные клавиши",
+      tog_shortcuts_desc: "Отключите, чтобы освободить все клавиши (0 занятых клавиш).",
+      hk_toggle_mode: "Переключение режима",
+      hk_toggle_mode_desc: "Быстрое переключение между 1 Учеба / 2 Прямой / 3 Выбор / 0 Выкл",
+      hk_rewrite: "Правка на месте [⚡]",
+      hk_rewrite_desc: "Переводит и заменяет черновик прямо в поле перед отправкой",
+      hk_spotlight: "Окно Spotlight",
+      hk_spotlight_desc: "Вызов окна перевода по центру экрана",
+      btn_unbind_all_hk: "Очистить все",
+      btn_reset_default_hk: "Сбросить по умолчанию",
       btn_logs: "Открыть логи",
       btn_close: "Отмена",
       btn_done: "Сохранить",
@@ -651,7 +777,7 @@
   let activeUiLang = "zh";
   let activeSourceLang = "zh";
   let activeTargetLang = "en";
-  let activeCompanionMode = "english";
+  let activeCompanionMode = "original";
   let activeEngineMode = "pi";
   let activeSlotPreset = "developer";
   let currentSlots = [];
@@ -1448,6 +1574,103 @@
   const btnOpenLogs = document.getElementById("btn-open-logs");
   const saveStatus = document.getElementById("save-status");
 
+  // Hotkey controls
+  const checkEnableShortcuts = document.getElementById("check-enable-shortcuts");
+  const hotkeysConfigArea = document.getElementById("hotkeys-config-area");
+  const inputHkToggle = document.getElementById("input-hk-toggle");
+  const btnClearHkToggle = document.getElementById("btn-clear-hk-toggle");
+  const inputHkRewrite = document.getElementById("input-hk-rewrite");
+  const btnClearHkRewrite = document.getElementById("btn-clear-hk-rewrite");
+  const inputHkSpotlight = document.getElementById("input-hk-spotlight");
+  const btnClearHkSpotlight = document.getElementById("btn-clear-hk-spotlight");
+  const shortcutConflictNotice = document.getElementById("shortcut-conflict-notice");
+  const btnUnbindAllHk = document.getElementById("btn-unbind-all-hk");
+  const btnResetDefaultHk = document.getElementById("btn-reset-default-hk");
+
+  function updateShortcutStatusUI(report) {
+    if (!shortcutConflictNotice) return;
+    if (!report || !report.enabled) {
+      shortcutConflictNotice.classList.add("hidden");
+      return;
+    }
+    const conflicts = [];
+    if (report.toggleMode?.shortcut && !report.toggleMode?.registered) {
+      conflicts.push(`[${report.toggleMode.shortcut}] 模式切换已冲突`);
+    }
+    if (report.rewrite?.shortcut && !report.rewrite?.registered) {
+      conflicts.push(`[${report.rewrite.shortcut}] 预发改写已冲突`);
+    }
+    if (report.spotlight?.shortcut && !report.spotlight?.registered) {
+      conflicts.push(`[${report.spotlight.shortcut}] 居中浮窗已冲突`);
+    }
+
+    if (conflicts.length > 0) {
+      shortcutConflictNotice.textContent = `⚠️ 快捷键已被系统或其他应用占用：${conflicts.join("，")}。建议点击清除或更换其他按键组合。`;
+      shortcutConflictNotice.style.color = "#dc2626";
+      shortcutConflictNotice.style.background = "#fef2f2";
+      shortcutConflictNotice.style.border = "1px solid #fecaca";
+      shortcutConflictNotice.classList.remove("hidden");
+    } else {
+      shortcutConflictNotice.textContent = "✓ 全局快捷键已成功注册生效，无冲突。";
+      shortcutConflictNotice.style.color = "#16a34a";
+      shortcutConflictNotice.style.background = "#f0fdf4";
+      shortcutConflictNotice.style.border = "1px solid #bbf7d0";
+      shortcutConflictNotice.classList.remove("hidden");
+      setTimeout(() => {
+        shortcutConflictNotice.classList.add("hidden");
+      }, 3000);
+    }
+  }
+
+  checkEnableShortcuts?.addEventListener("change", () => {
+    if (hotkeysConfigArea) {
+      const on = checkEnableShortcuts.checked;
+      hotkeysConfigArea.style.opacity = on ? "1" : "0.45";
+      hotkeysConfigArea.style.pointerEvents = on ? "auto" : "none";
+    }
+    autoSaveNow();
+  });
+
+  btnClearHkToggle?.addEventListener("click", () => {
+    if (inputHkToggle) inputHkToggle.value = "";
+    autoSaveNow();
+  });
+
+  btnClearHkRewrite?.addEventListener("click", () => {
+    if (inputHkRewrite) inputHkRewrite.value = "";
+    autoSaveNow();
+  });
+
+  btnClearHkSpotlight?.addEventListener("click", () => {
+    if (inputHkSpotlight) inputHkSpotlight.value = "";
+    autoSaveNow();
+  });
+
+  btnUnbindAllHk?.addEventListener("click", () => {
+    if (inputHkToggle) inputHkToggle.value = "";
+    if (inputHkRewrite) inputHkRewrite.value = "";
+    if (inputHkSpotlight) inputHkSpotlight.value = "";
+    autoSaveNow();
+  });
+
+  btnResetDefaultHk?.addEventListener("click", () => {
+    if (checkEnableShortcuts) {
+      checkEnableShortcuts.checked = true;
+      if (hotkeysConfigArea) {
+        hotkeysConfigArea.style.opacity = "1";
+        hotkeysConfigArea.style.pointerEvents = "auto";
+      }
+    }
+    if (inputHkToggle) inputHkToggle.value = "Alt+Q";
+    if (inputHkRewrite) inputHkRewrite.value = "Alt+E";
+    if (inputHkSpotlight) inputHkSpotlight.value = "Alt+Space";
+    autoSaveNow();
+  });
+
+  [inputHkToggle, inputHkRewrite, inputHkSpotlight].forEach((inp) => {
+    inp?.addEventListener("change", () => autoSaveNow());
+  });
+
   btnOpenLogs?.addEventListener("click", () => {
     window.lingualSettingsAPI?.openLogFile?.();
   });
@@ -1463,6 +1686,10 @@
       slotPreset: activeSlotPreset,
       slots: currentSlots,
       hotkeySubmit: "Enter",
+      enableGlobalShortcuts: checkEnableShortcuts ? checkEnableShortcuts.checked : true,
+      hotkeyToggleMode: inputHkToggle ? inputHkToggle.value.trim() : "",
+      hotkeyRewrite: inputHkRewrite ? inputHkRewrite.value.trim() : "",
+      hotkeySpotlight: inputHkSpotlight ? inputHkSpotlight.value.trim() : "",
       autoSend: true,
       showCapsule: checkShowCapsule ? checkShowCapsule.checked : true,
     };
@@ -1475,6 +1702,8 @@
 
     try {
       await window.lingualSettingsAPI?.saveConfig(patch);
+      const report = await window.lingualSettingsAPI?.getShortcutsReport?.();
+      updateShortcutStatusUI(report);
       if (saveStatus) {
         saveStatus.textContent = t("footer_saved");
         saveStatus.style.color = "#16a34a";
@@ -1523,12 +1752,28 @@
         return;
       }
 
-      setCompanionModeState(cfg.mode || "english");
+      setCompanionModeState(cfg.mode || "original");
       setSourceLangState(cfg.sourceLang || "zh");
       setTargetLangState(cfg.targetLang || "en");
       if (checkShowCapsule) {
         checkShowCapsule.checked = cfg.showCapsule !== false;
       }
+
+      if (checkEnableShortcuts) {
+        checkEnableShortcuts.checked = cfg.enableGlobalShortcuts !== false;
+        if (hotkeysConfigArea) {
+          hotkeysConfigArea.style.opacity = checkEnableShortcuts.checked ? "1" : "0.45";
+          hotkeysConfigArea.style.pointerEvents = checkEnableShortcuts.checked ? "auto" : "none";
+        }
+      }
+      if (inputHkToggle) inputHkToggle.value = cfg.hotkeyToggleMode || "Alt+Q";
+      if (inputHkRewrite) inputHkRewrite.value = cfg.hotkeyRewrite || "Alt+E";
+      if (inputHkSpotlight) inputHkSpotlight.value = cfg.hotkeySpotlight || "Alt+Space";
+
+      try {
+        const report = await window.lingualSettingsAPI?.getShortcutsReport?.();
+        updateShortcutStatusUI(report);
+      } catch {}
 
       currentSlots = Array.isArray(cfg.slots) && cfg.slots.length > 0 ? cfg.slots : getDefaultSlotsList();
       setUiLangState(cfg.uiLang || "zh");

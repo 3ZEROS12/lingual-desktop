@@ -80,17 +80,21 @@
           </div>
 
           <div class="segmented-control" id="companion-mode-segmented">
-            <button type="button" class="seg-btn" data-mode="original">
+            <button type="button" class="seg-btn active" data-mode="original">
               <span class="seg-title" data-i18n="mode_orig_title">1 · Learn</span>
               <span class="seg-sub" data-i18n="mode_orig_sub">0ms send + dual-register card</span>
             </button>
-            <button type="button" class="seg-btn active" data-mode="english">
+            <button type="button" class="seg-btn" data-mode="english">
               <span class="seg-title" data-i18n="mode_en_title">2 · Direct</span>
               <span class="seg-sub" data-i18n="mode_en_sub">Fast 1-line translate &amp; copy</span>
             </button>
             <button type="button" class="seg-btn" data-mode="select">
               <span class="seg-title" data-i18n="mode_sel_title">3 · Candidates</span>
               <span class="seg-sub" data-i18n="mode_sel_sub">Pick 1-3: Casual / Polite / Concise</span>
+            </button>
+            <button type="button" class="seg-btn" data-mode="modify">
+              <span class="seg-title" data-i18n="mode_mod_title">4 · Modify</span>
+              <span class="seg-sub" data-i18n="mode_mod_sub">Surgical fix + native sibling</span>
             </button>
             <button type="button" class="seg-btn" data-mode="off">
               <span class="seg-title" data-i18n="mode_off_title">0 · Off</span>
@@ -150,6 +154,64 @@
               <span data-i18n="tog_widget_desc">Anchored at screen top edge. Click to cycle mode; drag to move anywhere.</span>
             </div>
           </label>
+        </div>
+
+        <!-- 4. Hotkeys & Shortcuts -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title" data-i18n="sec_hotkeys_title">Hotkeys &amp; Shortcuts</h2>
+            <p class="card-desc" data-i18n="sec_hotkeys_desc">Configurable global shortcuts with collision detection and unbind support. Enter key is passively passed through without collision.</p>
+          </div>
+
+          <label class="toggle-item">
+            <input type="checkbox" id="check-enable-shortcuts" checked />
+            <div class="toggle-text">
+              <strong data-i18n="tog_shortcuts_title">Enable Global Shortcuts</strong>
+              <span data-i18n="tog_shortcuts_desc">Turn off to completely release all global keys (0 hotkey occupation).</span>
+            </div>
+          </label>
+
+          <div id="hotkeys-config-area" style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
+            <div class="hotkey-field-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 12px; font-weight: 600; color: var(--ink-primary);" data-i18n="hk_toggle_mode">Cycle Mode</span>
+                <span style="font-size: 11px; color: var(--ink-muted);" data-i18n="hk_toggle_mode_desc">Switch between 1 Learn / 2 Direct / 3 Candidates / 0 Off</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="text" id="input-hk-toggle" class="input-text" style="width: 130px; text-align: center; font-family: monospace; font-size: 12px;" placeholder="Alt+Q" />
+                <button type="button" class="btn-secondary" id="btn-clear-hk-toggle" style="padding: 4px 8px; font-size: 11px;" title="Unbind">Clear</button>
+              </div>
+            </div>
+
+            <div class="hotkey-field-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 12px; font-weight: 600; color: var(--ink-primary);" data-i18n="hk_rewrite">Pre-send Rewrite [⚡]</span>
+                <span style="font-size: 11px; color: var(--ink-muted);" data-i18n="hk_rewrite_desc">In-place translate and replace input draft before sending</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="text" id="input-hk-rewrite" class="input-text" style="width: 130px; text-align: center; font-family: monospace; font-size: 12px;" placeholder="Alt+E" />
+                <button type="button" class="btn-secondary" id="btn-clear-hk-rewrite" style="padding: 4px 8px; font-size: 11px;" title="Unbind">Clear</button>
+              </div>
+            </div>
+
+            <div class="hotkey-field-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 12px; font-weight: 600; color: var(--ink-primary);" data-i18n="hk_spotlight">Spotlight Floating Window</span>
+                <span style="font-size: 11px; color: var(--ink-muted);" data-i18n="hk_spotlight_desc">Summon floating translate box anywhere on screen</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="text" id="input-hk-spotlight" class="input-text" style="width: 130px; text-align: center; font-family: monospace; font-size: 12px;" placeholder="Alt+Space" />
+                <button type="button" class="btn-secondary" id="btn-clear-hk-spotlight" style="padding: 4px 8px; font-size: 11px;" title="Unbind">Clear</button>
+              </div>
+            </div>
+
+            <div id="shortcut-conflict-notice" class="ai-status-msg hidden" style="font-size: 11px;"></div>
+
+            <div style="display: flex; gap: 8px; margin-top: 4px;">
+              <button type="button" class="btn-secondary" id="btn-unbind-all-hk" style="font-size: 11px;" data-i18n="btn_unbind_all_hk">Unbind All Hotkeys</button>
+              <button type="button" class="btn-secondary" id="btn-reset-default-hk" style="font-size: 11px;" data-i18n="btn_reset_default_hk">Reset Default Keys</button>
+            </div>
+          </div>
         </div>
       </section>
 

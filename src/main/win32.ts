@@ -556,9 +556,19 @@ export function isDesktopNoiseInput(text: string): boolean {
 
 let watcherProcess: ChildProcess | null = null;
 let latestPassiveDraft: PassiveSubmitEvent | null = null;
+let isWatcherExplicitlyStopped = false;
+let currentSubmitCallback: ((evt: PassiveSubmitEvent) => void) | null = null;
+let reconnectTimer: NodeJS.Timeout | null = null;
+let reconnectAttempts = 0;
+let lastHeartbeatTimestamp = 0;
+let healthCheckTimer: NodeJS.Timeout | null = null;
 
 export function getLatestPassiveDraft(): PassiveSubmitEvent | null {
   return latestPassiveDraft;
+}
+
+export function isWatcherRunning(): boolean {
+  return watcherProcess !== null && !watcherProcess.killed;
 }
 
 /**
@@ -566,9 +576,44 @@ export function getLatestPassiveDraft(): PassiveSubmitEvent | null {
  * - Occupies ZERO global shortcuts (no RegisterHotKey, no key blocking).
  * - Enter key passes through 100% natively in 0.00ms across all apps.
  * - Passively caches focused input box text via UIA and emits JSON events on draft change and Enter.
+ * - Includes automatic self-healing, exponential backoff restart, and heartbeat health checks.
  */
 export function startPassiveInputWatcher(onSubmit: (evt: PassiveSubmitEvent) => void): void {
-  stopPassiveInputWatcher();
+  isWatcherExplicitlyStopped = false;
+  currentSubmitCallback = onSubmit;
+  reconnectAttempts = 0;
+
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  if (healthCheckTimer) {
+    clearInterval(healthCheckTimer);
+    healthCheckTimer = null;
+  }
+
+  spawnWatcherProcess();
+
+  healthCheckTimer = setInterval(() => {
+    if (isWatcherExplicitlyStopped) return;
+    const now = Date.now();
+    if (watcherProcess && lastHeartbeatTimestamp > 0 && now - lastHeartbeatTimestamp > 18000) {
+      console.warn("[win32] Passive watcher heartbeat timed out (>18s). Self-healing restart triggered...");
+      spawnWatcherProcess();
+    }
+  }, 8000);
+}
+
+function spawnWatcherProcess(): void {
+  if (watcherProcess) {
+    try {
+      watcherProcess.kill();
+    } catch {}
+    watcherProcess = null;
+  }
+
+  if (isWatcherExplicitlyStopped) return;
+
   try {
     const helper = getHelperPath("uia_helper.exe");
     const child = spawn(helper, ["watch"], {
@@ -576,6 +621,7 @@ export function startPassiveInputWatcher(onSubmit: (evt: PassiveSubmitEvent) => 
       windowsHide: true,
     });
     watcherProcess = child;
+    lastHeartbeatTimestamp = Date.now();
 
     let buffer = "";
     child.stdout?.setEncoding("utf8");
@@ -588,29 +634,59 @@ export function startPassiveInputWatcher(onSubmit: (evt: PassiveSubmitEvent) => 
         const trimmed = line.trim();
         if (!trimmed || !trimmed.startsWith("{")) continue;
         try {
-          const parsed = JSON.parse(trimmed) as PassiveSubmitEvent;
-          if (!parsed || !parsed.text) continue;
-          if (parsed.type === "draft") {
-            latestPassiveDraft = parsed;
-          } else if (parsed.type === "submit") {
-            latestPassiveDraft = parsed;
-            onSubmit(parsed);
+          const parsed = JSON.parse(trimmed);
+          if (parsed.type === "heartbeat") {
+            lastHeartbeatTimestamp = Date.now();
+            continue;
+          }
+          if (parsed.type === "draft" && parsed.text) {
+            latestPassiveDraft = parsed as PassiveSubmitEvent;
+          } else if (parsed.type === "submit" && parsed.text) {
+            latestPassiveDraft = parsed as PassiveSubmitEvent;
+            if (currentSubmitCallback) {
+              currentSubmitCallback(parsed as PassiveSubmitEvent);
+            }
           }
         } catch {}
       }
     });
 
-    child.on("exit", () => {
+    child.on("error", (err) => {
+      console.error("[win32] Watcher process error:", err);
+    });
+
+    child.on("exit", (code, signal) => {
       if (watcherProcess === child) {
         watcherProcess = null;
       }
+      if (isWatcherExplicitlyStopped) return;
+
+      reconnectAttempts++;
+      const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts - 1), 6000);
+      console.warn(`[win32] Watcher process exited (code=${code}, signal=${signal}). Self-healing in ${Math.round(delay)}ms (attempt #${reconnectAttempts})...`);
+
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => {
+        if (!isWatcherExplicitlyStopped && currentSubmitCallback) {
+          spawnWatcherProcess();
+        }
+      }, delay);
     });
   } catch (err) {
-    console.error("[win32] Failed to start passive input watcher:", err);
+    console.error("[win32] Failed to spawn passive input watcher:", err);
   }
 }
 
 export function stopPassiveInputWatcher(): void {
+  isWatcherExplicitlyStopped = true;
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  if (healthCheckTimer) {
+    clearInterval(healthCheckTimer);
+    healthCheckTimer = null;
+  }
   if (watcherProcess) {
     try {
       watcherProcess.kill();

@@ -28,11 +28,70 @@ class Program {
     [DllImport("imm32.dll")]
     static extern bool ImmReleaseContext(IntPtr hWnd, IntPtr hIMC);
 
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool UnhookWindowsHookEx(IntPtr hhk);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    static extern IntPtr GetModuleHandle(string lpModuleName);
+
+    [DllImport("user32.dll")]
+    static extern sbyte GetMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
+
+    [DllImport("user32.dll")]
+    static extern bool TranslateMessage([In] ref MSG lpMsg);
+
+    [DllImport("user32.dll")]
+    static extern IntPtr DispatchMessage([In] ref MSG lpMsg);
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct MSG {
+        public IntPtr hwnd;
+        public uint message;
+        public IntPtr wParam;
+        public IntPtr lParam;
+        public uint time;
+        public POINT pt;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct POINT {
+        public int x;
+        public int y;
+    }
+
+    delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+
+    const int WH_KEYBOARD_LL = 13;
+    const int WM_KEYDOWN = 0x0100;
+    const int WM_KEYUP = 0x0101;
+    const int WM_SYSKEYDOWN = 0x0104;
+    const int WM_SYSKEYUP = 0x0105;
+
     const int VK_RETURN = 0x0D;
     const int VK_SHIFT = 0x10;
     const int VK_CONTROL = 0x11;
     const int VK_MENU = 0x12;
     const uint GCS_COMPSTR = 0x0008;
+
+    static readonly object syncLock = new object();
+    static string cachedText = "";
+    static string lastEmittedDraft = "";
+    static IntPtr cachedHwnd = IntPtr.Zero;
+    static string cachedApp = "";
+    static string cachedTitle = "";
+    static Rect cachedRect = Rect.Empty;
+    static long cachedTimestamp = 0;
+    static long lastHeartbeatTimestamp = 0;
+
+    static LowLevelKeyboardProc hookProc;
+    static IntPtr hookId = IntPtr.Zero;
 
     static bool IsTerminalProcess(int pid) {
         if (pid <= 0) return false;
@@ -162,125 +221,230 @@ class Program {
         }
     }
 
-    static void RunPassiveWatcher() {
-        bool wasEnterDown = false;
-        int tickCount = 0;
-        string cachedText = "";
-        string lastEmittedDraft = "";
-        IntPtr cachedHwnd = IntPtr.Zero;
-        string cachedApp = "";
-        string cachedTitle = "";
-        Rect cachedRect = Rect.Empty;
-        long cachedTimestamp = 0;
-
+    static void SnapshotWorker() {
+        int loopCount = 0;
         while (true) {
-            Thread.Sleep(40);
-            tickCount++;
+            try {
+                Thread.Sleep(30);
+                loopCount++;
 
+                long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+                // 1. Emit periodic heartbeat every 5 seconds for health supervisor
+                if (now - lastHeartbeatTimestamp > 5000) {
+                    lastHeartbeatTimestamp = now;
+                    Console.WriteLine(string.Format("{{\"type\":\"heartbeat\",\"timestamp\":{0}}}", now));
+                    Console.Out.Flush();
+                }
+
+                IntPtr fgHwnd = GetForegroundWindow();
+                if (fgHwnd == IntPtr.Zero) continue;
+
+                int pid = 0;
+                GetWindowThreadProcessId(fgHwnd, out pid);
+
+                if (IsTerminalProcess(pid) || IsLingualOwnWindow(fgHwnd, pid)) {
+                    continue;
+                }
+
+                if (IsImeComposingWindow(fgHwnd)) {
+                    continue;
+                }
+
+                // Sample active draft every ~60ms
+                if (loopCount % 2 == 0) {
+                    var el = AutomationElement.FocusedElement;
+                    if (el != null && !IsTerminalProcess(el.Current.ProcessId)) {
+                        string txt = ReadElementTextPassive(el);
+                        if (!string.IsNullOrWhiteSpace(txt)) {
+                            string trimmed = txt.Trim();
+                            if (trimmed.Length > 0 && trimmed.Length <= 2000) {
+                                Rect r = Rect.Empty;
+                                try {
+                                    var br = el.Current.BoundingRectangle;
+                                    if (!br.IsEmpty && !double.IsInfinity(br.X) && !double.IsInfinity(br.Y)) {
+                                        r = br;
+                                    }
+                                } catch {}
+
+                                string app = GetProcessNameSafe(pid);
+                                string title = GetWindowTitleSafe(fgHwnd);
+
+                                bool shouldEmitDraft = false;
+                                lock (syncLock) {
+                                    cachedText = trimmed;
+                                    cachedHwnd = fgHwnd;
+                                    cachedApp = app;
+                                    cachedTitle = title;
+                                    cachedRect = r;
+                                    cachedTimestamp = now;
+
+                                    if (trimmed != lastEmittedDraft) {
+                                        lastEmittedDraft = trimmed;
+                                        shouldEmitDraft = true;
+                                    }
+                                }
+
+                                if (shouldEmitDraft) {
+                                    int dx = r.IsEmpty ? 0 : (int)r.X;
+                                    int dy = r.IsEmpty ? 0 : (int)r.Y;
+                                    int dw = r.IsEmpty ? 0 : (int)r.Width;
+                                    int dh = r.IsEmpty ? 0 : (int)r.Height;
+
+                                    Console.WriteLine(string.Format(
+                                        "{{\"type\":\"draft\",\"hwnd\":\"{0}\",\"app\":\"{1}\",\"title\":\"{2}\",\"x\":{3},\"y\":{4},\"w\":{5},\"h\":{6},\"text\":\"{7}\"}}",
+                                        fgHwnd.ToInt64(), EscapeJson(app), EscapeJson(title), dx, dy, dw, dh, EscapeJson(trimmed)
+                                    ));
+                                    Console.Out.Flush();
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch {
+                // Ignore transient COM exceptions in background snapshot thread
+            }
+        }
+    }
+
+    static void HandleEnterTrigger(object state) {
+        try {
             IntPtr fgHwnd = GetForegroundWindow();
-            if (fgHwnd == IntPtr.Zero) continue;
+            if (fgHwnd == IntPtr.Zero) return;
 
             int pid = 0;
             GetWindowThreadProcessId(fgHwnd, out pid);
 
             if (IsTerminalProcess(pid) || IsLingualOwnWindow(fgHwnd, pid)) {
+                return;
+            }
+
+            if (IsImeComposingWindow(fgHwnd)) {
+                return;
+            }
+
+            string finalDraft = "";
+            Rect finalRect = Rect.Empty;
+            string finalApp = GetProcessNameSafe(pid);
+            string finalTitle = GetWindowTitleSafe(fgHwnd);
+
+            // 1. Try reading input box right now (if not cleared yet by target app)
+            try {
+                var el = AutomationElement.FocusedElement;
+                if (el != null && !IsTerminalProcess(el.Current.ProcessId)) {
+                    string nowTxt = ReadElementTextPassive(el);
+                    if (!string.IsNullOrWhiteSpace(nowTxt)) {
+                        finalDraft = nowTxt.Trim();
+                    }
+                    var r = el.Current.BoundingRectangle;
+                    if (!r.IsEmpty && !double.IsInfinity(r.X) && !double.IsInfinity(r.Y)) {
+                        finalRect = r;
+                    }
+                }
+            } catch {}
+
+            // 2. If target app already cleared input box (<10ms), seamlessly fallback to our high-frequency draft snapshot!
+            long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            lock (syncLock) {
+                if (string.IsNullOrWhiteSpace(finalDraft) && cachedHwnd == fgHwnd && (nowMs - cachedTimestamp) < 3500) {
+                    finalDraft = cachedText;
+                    if (finalRect.IsEmpty) {
+                        finalRect = cachedRect;
+                    }
+                }
+                cachedText = "";
+                lastEmittedDraft = "";
+            }
+
+            if (!string.IsNullOrWhiteSpace(finalDraft)) {
+                int rx = finalRect.IsEmpty ? 0 : (int)finalRect.X;
+                int ry = finalRect.IsEmpty ? 0 : (int)finalRect.Y;
+                int rw = finalRect.IsEmpty ? 0 : (int)finalRect.Width;
+                int rh = finalRect.IsEmpty ? 0 : (int)finalRect.Height;
+
+                Console.WriteLine(string.Format(
+                    "{{\"type\":\"submit\",\"hwnd\":\"{0}\",\"app\":\"{1}\",\"title\":\"{2}\",\"x\":{3},\"y\":{4},\"w\":{5},\"h\":{6},\"text\":\"{7}\"}}",
+                    fgHwnd.ToInt64(), EscapeJson(finalApp), EscapeJson(finalTitle), rx, ry, rw, rh, EscapeJson(finalDraft)
+                ));
+                Console.Out.Flush();
+            }
+        } catch {}
+    }
+
+    static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam) {
+        if (nCode >= 0) {
+            int msg = (int)wParam;
+            if (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN) {
+                int vkCode = Marshal.ReadInt32(lParam);
+                if (vkCode == VK_RETURN) {
+                    bool modifierDown =
+                        ((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0) ||
+                        ((GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0) ||
+                        ((GetAsyncKeyState(VK_MENU) & 0x8000) != 0);
+
+                    if (!modifierDown) {
+                        ThreadPool.QueueUserWorkItem(HandleEnterTrigger);
+                    }
+                }
+            }
+        }
+        return CallNextHookEx(hookId, nCode, wParam, lParam);
+    }
+
+    static void RunPollingFallbackWatcher() {
+        bool wasEnterDown = false;
+        while (true) {
+            Thread.Sleep(30);
+            IntPtr fgHwnd = GetForegroundWindow();
+            if (fgHwnd == IntPtr.Zero) continue;
+            int pid = 0;
+            GetWindowThreadProcessId(fgHwnd, out pid);
+            if (IsTerminalProcess(pid) || IsLingualOwnWindow(fgHwnd, pid)) {
                 wasEnterDown = (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
                 continue;
             }
-
             bool enterDown = (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
             bool modifierDown =
                 ((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0) ||
                 ((GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0) ||
                 ((GetAsyncKeyState(VK_MENU) & 0x8000) != 0);
 
-            // 1. Passive draft observation while user is typing (every ~120ms)
-            if (!enterDown && (tickCount % 3 == 0)) {
-                if (!IsImeComposingWindow(fgHwnd)) {
-                    try {
-                        var el = AutomationElement.FocusedElement;
-                        if (el != null && !IsTerminalProcess(el.Current.ProcessId)) {
-                            string txt = ReadElementTextPassive(el);
-                            if (!string.IsNullOrWhiteSpace(txt)) {
-                                string trimmed = txt.Trim();
-                                if (trimmed.Length > 0 && trimmed.Length <= 1500) {
-                                    cachedText = trimmed;
-                                    cachedHwnd = fgHwnd;
-                                    cachedApp = GetProcessNameSafe(pid);
-                                    cachedTitle = GetWindowTitleSafe(fgHwnd);
-                                    cachedTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                                    try {
-                                        var r = el.Current.BoundingRectangle;
-                                        if (!r.IsEmpty && !double.IsInfinity(r.X) && !double.IsInfinity(r.Y)) {
-                                            cachedRect = r;
-                                        }
-                                    } catch {}
-
-                                    if (trimmed != lastEmittedDraft) {
-                                        lastEmittedDraft = trimmed;
-                                        int dx = cachedRect.IsEmpty ? 0 : (int)cachedRect.X;
-                                        int dy = cachedRect.IsEmpty ? 0 : (int)cachedRect.Y;
-                                        int dw = cachedRect.IsEmpty ? 0 : (int)cachedRect.Width;
-                                        int dh = cachedRect.IsEmpty ? 0 : (int)cachedRect.Height;
-                                        Console.WriteLine(string.Format(
-                                            "{{\"type\":\"draft\",\"hwnd\":\"{0}\",\"app\":\"{1}\",\"title\":\"{2}\",\"x\":{3},\"y\":{4},\"w\":{5},\"h\":{6},\"text\":\"{7}\"}}",
-                                            fgHwnd.ToInt64(), EscapeJson(cachedApp), EscapeJson(cachedTitle), dx, dy, dw, dh, EscapeJson(trimmed)
-                                        ));
-                                        Console.Out.Flush();
-                                    }
-                                }
-                            }
-                        }
-                    } catch {}
-                }
-            }
-
-            // 2. Passive Enter key edge detection (0ms native pass-through, NEVER blocks or hooks Enter!)
             if (enterDown && !wasEnterDown && !modifierDown) {
-                if (!IsImeComposingWindow(fgHwnd)) {
-                    string finalDraft = "";
-                    Rect finalRect = cachedRect;
-                    string finalApp = GetProcessNameSafe(pid);
-                    string finalTitle = GetWindowTitleSafe(fgHwnd);
-
-                    // Try reading right at the moment of Enter, or fall back to cached draft from 120ms ago
-                    try {
-                        var el = AutomationElement.FocusedElement;
-                        if (el != null && !IsTerminalProcess(el.Current.ProcessId)) {
-                            string nowTxt = ReadElementTextPassive(el);
-                            if (!string.IsNullOrWhiteSpace(nowTxt)) {
-                                finalDraft = nowTxt.Trim();
-                            }
-                            var r = el.Current.BoundingRectangle;
-                            if (!r.IsEmpty && !double.IsInfinity(r.X) && !double.IsInfinity(r.Y)) {
-                                finalRect = r;
-                            }
-                        }
-                    } catch {}
-
-                    long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    if (string.IsNullOrWhiteSpace(finalDraft) && cachedHwnd == fgHwnd && (nowMs - cachedTimestamp) < 4000) {
-                        finalDraft = cachedText;
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(finalDraft)) {
-                        int rx = finalRect.IsEmpty ? 0 : (int)finalRect.X;
-                        int ry = finalRect.IsEmpty ? 0 : (int)finalRect.Y;
-                        int rw = finalRect.IsEmpty ? 0 : (int)finalRect.Width;
-                        int rh = finalRect.IsEmpty ? 0 : (int)finalRect.Height;
-
-                        Console.WriteLine(string.Format(
-                            "{{\"type\":\"submit\",\"hwnd\":\"{0}\",\"app\":\"{1}\",\"title\":\"{2}\",\"x\":{3},\"y\":{4},\"w\":{5},\"h\":{6},\"text\":\"{7}\"}}",
-                            fgHwnd.ToInt64(), EscapeJson(finalApp), EscapeJson(finalTitle), rx, ry, rw, rh, EscapeJson(finalDraft)
-                        ));
-                        Console.Out.Flush();
-                        cachedText = "";
-                        lastEmittedDraft = "";
-                    }
-                }
+                HandleEnterTrigger(null);
             }
-
             wasEnterDown = enterDown;
+        }
+    }
+
+    static void RunPassiveWatcher() {
+        Thread snapshotThread = new Thread(SnapshotWorker);
+        snapshotThread.IsBackground = true;
+        snapshotThread.Priority = ThreadPriority.BelowNormal;
+        snapshotThread.Start();
+
+        hookProc = new LowLevelKeyboardProc(HookCallback);
+        using (Process curProcess = Process.GetCurrentProcess())
+        using (ProcessModule curModule = curProcess.MainModule) {
+            hookId = SetWindowsHookEx(WH_KEYBOARD_LL, hookProc, GetModuleHandle(curModule.ModuleName), 0);
+        }
+
+        if (hookId == IntPtr.Zero) {
+            Console.Error.WriteLine("Failed to install WH_KEYBOARD_LL hook. Falling back to polling mode.");
+            RunPollingFallbackWatcher();
+            return;
+        }
+
+        try {
+            MSG msg;
+            while (GetMessage(out msg, IntPtr.Zero, 0, 0) > 0) {
+                TranslateMessage(ref msg);
+                DispatchMessage(ref msg);
+            }
+        } finally {
+            if (hookId != IntPtr.Zero) {
+                UnhookWindowsHookEx(hookId);
+                hookId = IntPtr.Zero;
+            }
         }
     }
 

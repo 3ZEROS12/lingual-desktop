@@ -16,11 +16,11 @@
   let currentTargetLang = "EN";
 
   function updateDisplay(data) {
-    let mode = "english";
+    let mode = "original";
     if (typeof data === "string") {
       mode = data;
     } else if (data && typeof data === "object") {
-      mode = data.mode || "english";
+      mode = data.mode || "original";
       if (data.targetLang) {
         currentTargetLang = String(data.targetLang).toUpperCase();
       }

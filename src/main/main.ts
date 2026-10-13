@@ -1,7 +1,13 @@
-import { app, BrowserWindow, globalShortcut, Tray, Menu, ipcMain, screen, clipboard } from "electron";
+import { app, BrowserWindow, globalShortcut, Tray, Menu, ipcMain, screen, clipboard, powerMonitor } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadDesktopConfig, saveDesktopConfig, type LingualDesktopConfig, type CompanionMode } from "./config.js";
+import {
+  loadDesktopConfig,
+  saveDesktopConfig,
+  sanitizeAccelerator,
+  type LingualDesktopConfig,
+  type CompanionMode,
+} from "./config.js";
 import {
   getActiveWindowHwnd,
   restoreFocus,
@@ -31,7 +37,7 @@ let hudWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 
-let currentMode: CompanionMode = "english";
+let currentMode: CompanionMode = "original";
 let activeTargetHwnd = "0";
 let activeBackupText = "";
 let currentTranslationResponse: any = null;
@@ -294,7 +300,7 @@ function syncPassiveWatcherWithMode(mode: CompanionMode = currentMode): void {
 }
 
 function cycleCompanionMode(): void {
-  const modes: CompanionMode[] = ["original", "english", "select", "off"];
+  const modes: CompanionMode[] = ["original", "english", "select", "modify", "off"];
   const idx = modes.indexOf(currentMode);
   const nextIdx = (idx === -1 ? 0 : idx + 1) % modes.length;
   currentMode = modes[nextIdx];
@@ -312,6 +318,8 @@ function cycleCompanionMode(): void {
         ? "2 · Direct Mode"
         : currentMode === "select"
         ? "3 · Candidates Mode"
+        : currentMode === "modify"
+        ? "4 · Modify Mode"
         : "0 · Off";
     const desc =
       currentMode === "original"
@@ -320,6 +328,8 @@ function cycleCompanionMode(): void {
         ? "Fast 1-line direct translation & copy/replace"
         : currentMode === "select"
         ? "Pick from 3 tones (1 Casual / 2 Polite / 3 Concise)"
+        : currentMode === "modify"
+        ? "Surgical in-place fix + native sibling comparison"
         : "Companion paused · 0 CPU hooks";
     tray.displayBalloon({ title, content: desc });
   }
@@ -382,6 +392,8 @@ async function runDesktopTranslationFlow(
           ? "Learn"
           : effectiveMode === "select"
           ? "Pick 1-3"
+          : effectiveMode === "modify"
+          ? "Modify ⚡"
           : "Direct ⚡",
     });
   }
@@ -413,9 +425,13 @@ async function runDesktopTranslationFlow(
       return;
     }
 
-    const firstSlotContent = res.slots?.find((s) => s.role !== "source" && s.role !== "vocab")?.content;
-    const replacement = firstSlotContent || res.written || res.spoken;
-    if ((effectiveMode === "english" || options?.preSendReplace) && replacement) {
+    const fixedSlotContent = res.slots?.find((s: any) => s.id === "fixed")?.content;
+    const firstSlotContent = res.slots?.find((s: any) => s.role !== "source" && s.role !== "vocab")?.content;
+    const replacement = (effectiveMode === "modify" && fixedSlotContent)
+      ? fixedSlotContent
+      : firstSlotContent || res.written || res.spoken;
+    const shouldReplaceMode = effectiveMode === "english" || effectiveMode === "modify" || options?.preSendReplace;
+    if (shouldReplaceMode && replacement) {
       clipboard.writeText(replacement);
       if (activeTargetHwnd && activeTargetHwnd !== "0") {
         restoreFocus(activeTargetHwnd);
@@ -444,6 +460,8 @@ async function runDesktopTranslationFlow(
           ? "Learn"
           : effectiveMode === "select"
           ? "Pick 1-3"
+          : effectiveMode === "modify"
+          ? "Fixed ✓"
           : "Copied ✓",
         appBadge: res.appBadge,
         slots: res.slots,
@@ -459,15 +477,137 @@ async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
   await runDesktopTranslationFlow(evt, { preSendReplace: false });
 }
 
+export interface ShortcutRegistrationReport {
+  enabled: boolean;
+  toggleMode: { shortcut: string; registered: boolean; error?: string };
+  rewrite: { shortcut: string; registered: boolean; error?: string };
+  spotlight: { shortcut: string; registered: boolean; error?: string };
+}
+
+let lastShortcutReport: ShortcutRegistrationReport = {
+  enabled: false,
+  toggleMode: { shortcut: "", registered: false },
+  rewrite: { shortcut: "", registered: false },
+  spotlight: { shortcut: "", registered: false },
+};
+
 /**
- * Zero Global Shortcut Occupation Policy:
- * Lingual NEVER calls globalShortcut.register() to hijack Enter, Alt+Q, Alt+E, or Alt+Space.
- * Every key on the user's keyboard passes through 100% natively with 0.00ms latency!
+ * Compliant and Safe Global Shortcut Registration:
+ * 1. Honors user master toggle (`enableGlobalShortcuts`).
+ * 2. Never hijacks plain keys or Enter (Enter is 100% passive pass-through).
+ * 3. Gracefully handles key conflicts (PowerToys/system) without crashing or blocking.
+ * 4. Allows unbinding/disabling shortcuts by setting empty string or "None".
  */
-function registerShortcuts(_config: LingualDesktopConfig): void {
+export function registerShortcuts(config: LingualDesktopConfig): ShortcutRegistrationReport {
   try {
     globalShortcut.unregisterAll();
   } catch {}
+
+  const report: ShortcutRegistrationReport = {
+    enabled: config.enableGlobalShortcuts !== false,
+    toggleMode: { shortcut: "", registered: false },
+    rewrite: { shortcut: "", registered: false },
+    spotlight: { shortcut: "", registered: false },
+  };
+
+  if (!report.enabled) {
+    lastShortcutReport = report;
+    logger.info("shortcuts", "Global shortcuts disabled by user configuration (0 keys registered)");
+    return report;
+  }
+
+  // 1. Cycle companion mode (Learn / Direct / Candidates / Off)
+  const toggleKey = sanitizeAccelerator(config.hotkeyToggleMode);
+  if (toggleKey) {
+    report.toggleMode.shortcut = toggleKey;
+    try {
+      const ok = globalShortcut.register(toggleKey, () => {
+        cycleCompanionMode();
+        if (activeTargetHwnd && activeTargetHwnd !== "0") {
+          restoreFocus(activeTargetHwnd);
+        }
+      });
+      report.toggleMode.registered = ok;
+      if (!ok) {
+        report.toggleMode.error = "Conflict: already in use by system or another tool";
+        logger.warn("shortcuts", `Failed to register hotkeyToggleMode [${toggleKey}] - already occupied`);
+      } else {
+        logger.info("shortcuts", `Successfully registered hotkeyToggleMode: ${toggleKey}`);
+      }
+    } catch (err: any) {
+      report.toggleMode.error = err.message || "Registration failed";
+      logger.warn("shortcuts", `Error registering hotkeyToggleMode [${toggleKey}]:`, err);
+    }
+  }
+
+  // 2. Pre-send in-place rewrite [⚡]
+  const rewriteKey = sanitizeAccelerator(config.hotkeyRewrite);
+  if (rewriteKey) {
+    report.rewrite.shortcut = rewriteKey;
+    try {
+      const ok = globalShortcut.register(rewriteKey, async () => {
+        const draft = getLatestPassiveDraft();
+        if (draft && draft.text && draft.text.trim()) {
+          if (draft.hwnd && draft.hwnd !== "0") {
+            restoreFocus(draft.hwnd);
+          }
+          await runDesktopTranslationFlow(draft, { preSendReplace: true });
+          return;
+        }
+        const clipText = (clipboard.readText() || "").trim();
+        if (clipText && !isDesktopNoiseInput(clipText)) {
+          await runDesktopTranslationFlow(
+            {
+              type: "submit",
+              hwnd: activeTargetHwnd,
+              x: 0,
+              y: 0,
+              w: 0,
+              h: 0,
+              text: clipText,
+            },
+            { preSendReplace: true }
+          );
+        } else {
+          switchToSpotlightView();
+        }
+      });
+      report.rewrite.registered = ok;
+      if (!ok) {
+        report.rewrite.error = "Conflict: already in use by system or another tool";
+        logger.warn("shortcuts", `Failed to register hotkeyRewrite [${rewriteKey}] - already occupied`);
+      } else {
+        logger.info("shortcuts", `Successfully registered hotkeyRewrite: ${rewriteKey}`);
+      }
+    } catch (err: any) {
+      report.rewrite.error = err.message || "Registration failed";
+      logger.warn("shortcuts", `Error registering hotkeyRewrite [${rewriteKey}]:`, err);
+    }
+  }
+
+  // 3. Spotlight Quick Translation Window
+  const spotlightKey = sanitizeAccelerator(config.hotkeySpotlight);
+  if (spotlightKey) {
+    report.spotlight.shortcut = spotlightKey;
+    try {
+      const ok = globalShortcut.register(spotlightKey, () => {
+        switchToSpotlightView();
+      });
+      report.spotlight.registered = ok;
+      if (!ok) {
+        report.spotlight.error = "Conflict: already in use by system or another tool";
+        logger.warn("shortcuts", `Failed to register hotkeySpotlight [${spotlightKey}] - already occupied`);
+      } else {
+        logger.info("shortcuts", `Successfully registered hotkeySpotlight: ${spotlightKey}`);
+      }
+    } catch (err: any) {
+      report.spotlight.error = err.message || "Registration failed";
+      logger.warn("shortcuts", `Error registering hotkeySpotlight [${spotlightKey}]:`, err);
+    }
+  }
+
+  lastShortcutReport = report;
+  return report;
 }
 
 function openSettingsWindow(): void {
@@ -510,9 +650,7 @@ function openSettingsWindow(): void {
   });
 
   settingsWindow.on("focus", () => {
-    try {
-      globalShortcut.unregister("Enter");
-    } catch {}
+    // Focus settings
   });
 
   settingsWindow.on("blur", () => {
@@ -536,6 +674,8 @@ function updateTrayMenu(): void {
       ? "2 · DIRECT"
       : currentMode === "select"
       ? "3 · CANDIDATES"
+      : currentMode === "modify"
+      ? "4 · MODIFY"
       : "0 · OFF";
 
   const contextMenu = Menu.buildFromTemplate([
@@ -588,6 +728,19 @@ function updateTrayMenu(): void {
         registerShortcuts(loadDesktopConfig());
         syncPassiveWatcherWithMode("select");
         notifyCapsuleModeChanged("select");
+        updateTrayMenu();
+      },
+    },
+    {
+      label: "4 · Modify (Surgical In-Place Fix + Native Sibling)",
+      type: "radio",
+      checked: currentMode === "modify",
+      click: () => {
+        currentMode = "modify";
+        saveDesktopConfig({ mode: "modify" });
+        registerShortcuts(loadDesktopConfig());
+        syncPassiveWatcherWithMode("modify");
+        notifyCapsuleModeChanged("modify");
         updateTrayMenu();
       },
     },
@@ -866,6 +1019,10 @@ function setupIpc(): void {
     return readRecentLogs(100);
   });
 
+  ipcMain.handle("lingual:get-shortcuts-report", async () => {
+    return lastShortcutReport;
+  });
+
   ipcMain.on("lingual:submit-spotlight", async (_event, input: string) => {
     try {
       const res = await executeTranslation(input);
@@ -907,7 +1064,7 @@ if (!gotTheLock) {
     initLogger();
 
     const config = loadDesktopConfig();
-    currentMode = config.mode || "english";
+    currentMode = config.mode || "original";
 
     capsuleWindow = createCapsuleWindow();
     hudWindow = createHudWindow();
@@ -915,6 +1072,15 @@ if (!gotTheLock) {
     setupTray();
     setupIpc();
     syncPassiveWatcherWithMode(currentMode);
+
+    // Auto self-heal on system resume from sleep
+    try {
+      powerMonitor.on("resume", () => {
+        logger.info("system", "System resumed from sleep. Auto-recovering passive input watcher & shortcuts...");
+        syncPassiveWatcherWithMode(currentMode);
+        registerShortcuts(loadDesktopConfig());
+      });
+    } catch {}
 
     // Enable Windows autostart on boot (silent mode)
     try {

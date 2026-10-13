@@ -3,7 +3,7 @@ import path from "node:path";
 import os from "node:os";
 import { getDefaultSlots, type SlotConfig } from "pi-lingual/core";
 
-export type CompanionMode = "original" | "english" | "select" | "off";
+export type CompanionMode = "original" | "english" | "select" | "modify" | "off";
 export type SlotPreset = "developer" | "social" | "japanese" | "academic" | "custom";
 export type EngineProviderMode = "pi" | "free" | "custom";
 
@@ -67,6 +67,56 @@ export function getDefaultDesktopCandidateSlots(sourceLang = "en"): SlotConfig[]
   ];
 }
 
+export function getDefaultDesktopModifySlots(sourceLang = "en", explainLang?: string): SlotConfig[] {
+  const norm = (sourceLang || "en").toLowerCase().split("-")[0];
+  const expNorm = (explainLang || norm).toLowerCase().split("-")[0];
+  const labels: Record<string, { fixed: string; native: string; fixes: string }> = {
+    en: { fixed: "Fixed", native: "Native", fixes: "Takeaway" },
+    zh: { fixed: "原句修补", native: "地道表达", fixes: "收获复盘" },
+    tw: { fixed: "原句修補", native: "道地表達", fixes: "收穫複盤" },
+    ja: { fixed: "原文修正", native: "自然表現", fixes: "重要ポイント" },
+    ko: { fixed: "원문수정", native: "자연스러운표현", fixes: "핵심포인트" },
+  };
+  const l = labels[norm] || labels.en;
+
+  const explainLangDesc =
+    expNorm === "zh"
+      ? "Explain the intuition/rule briefly in Chinese (中文)."
+      : expNorm === "ja"
+        ? "Explain the intuition/rule briefly in Japanese (日本語)."
+        : expNorm === "ko"
+          ? "Explain the intuition/rule briefly in Korean (한국어)."
+          : "Explain the intuition/rule briefly in simple, clear English.";
+
+  return [
+    {
+      id: "fixed",
+      label: l.fixed,
+      role: "translation",
+      instruction:
+        "Surgically correct ONLY spelling mistakes, fast typos, syntax structure (e.g. 'want that you can' ➔ 'want you to'), wrong prepositions/articles (e.g. 'in X' ➔ 'on X', 'as I\\'m' ➔ 'as if I\\'m'), and grammatical slips in the user's sentence. CRITICAL RULES: (1) Zero Level Leap (水平绝不跃迁 / i+1 Rule): STRICTLY match the user's current vocabulary tier and tone! If user writes everyday dev or junior-high level English, do NOT artificially inflate it into university academic GRE/SAT prose or corporate fluff. Fix the joints and syntax, but NEVER replace their words with alien SAT vocabulary! (2) Zero Tone Sanitization: NEVER sanitize, censor, or tone down swear words or raw emotions (e.g. 'fuck', 'suck', 'shit', 'idiot')—passion and emotional heat are natural and MUST be preserved 100%! (3) Zero Punctuation/Casing Nitpicking: Do NOT obsess over casual lowercase casing (e.g. 'l' vs 'L') or missing trailing periods/commas ('.', ',') if the user writes informally. (4) 100% preserve original sentence structure, words, and cadence so the user can send it immediately with zero hesitation.",
+      showMeaning: false,
+      enabled: true,
+    },
+    {
+      id: "native",
+      label: l.native,
+      role: "translation",
+      instruction:
+        "Provide a natural, idiomatic native phrasing expressing the exact same intent. Keep the gap between 'Fixed' and 'Native' small and realistic—do NOT jump vocabulary tiers and do NOT turn it into an essay.",
+      showMeaning: true,
+      enabled: true,
+    },
+    {
+      id: "fixes",
+      label: l.fixes,
+      role: "vocab",
+      instruction: `Extract 1-3 essential takeaways covering syntax structure, word choice & collocations, and grammar slips in the format: 'typo ➔ fix · in X ➔ on X (concise takeaway)'. ${explainLangDesc}`,
+      enabled: true,
+    },
+  ];
+}
+
 export interface LingualDesktopConfig {
   uiLang: string;
   engineProvider: EngineProviderMode;
@@ -75,13 +125,16 @@ export interface LingualDesktopConfig {
   model: string;
   sourceLang: string;
   targetLang: string;
+  explainLang?: string;
   mode: CompanionMode;
   slotPreset: SlotPreset;
   slots: SlotConfig[];
   directSlots?: SlotConfig[];
   candidateSlots?: SlotConfig[];
+  modifySlots?: SlotConfig[];
   autoSend: boolean;
   showCapsule: boolean;
+  enableGlobalShortcuts: boolean;
   hotkeyToggleMode: string;
   hotkeySubmit: string;
   hotkeyRewrite: string;
@@ -98,19 +151,75 @@ export const DEFAULT_DESKTOP_CONFIG: LingualDesktopConfig = {
   model: "",
   sourceLang: "zh",
   targetLang: "en",
-  mode: "english",
+  mode: "original",
   slotPreset: "developer",
   slots: getDefaultSlots("en"),
   directSlots: getDefaultDesktopDirectSlots("en"),
   candidateSlots: getDefaultDesktopCandidateSlots("en"),
+  modifySlots: getDefaultDesktopModifySlots("en"),
   autoSend: true,
   showCapsule: true,
+  enableGlobalShortcuts: true,
   hotkeyToggleMode: "Alt+Q",
   hotkeySubmit: "Enter",
   hotkeyRewrite: "Alt+E",
   hotkeySpotlight: "Alt+Space",
   capsulePos: null,
 };
+
+/**
+ * Validates and normalizes Electron global accelerator strings.
+ * Disallows bare keys without modifiers (e.g. "Enter", "Space", "A") to prevent hijacking system keys.
+ * Returns empty string if disabled ("none", "off", empty) or invalid.
+ */
+export function sanitizeAccelerator(acc?: string): string {
+  if (!acc || typeof acc !== "string") return "";
+  const trimmed = acc.trim();
+  if (!trimmed || trimmed.toLowerCase() === "none" || trimmed.toLowerCase() === "off") {
+    return "";
+  }
+
+  // Split tokens by '+'
+  const tokens = trimmed.split("+").map((t) => t.trim()).filter(Boolean);
+  if (tokens.length <= 1) {
+    // Single bare key without modifier is strictly forbidden to protect user input!
+    return "";
+  }
+
+  const modifiers: string[] = [];
+  let mainKey = "";
+
+  for (const token of tokens) {
+    const lower = token.toLowerCase();
+    if (lower === "ctrl" || lower === "control") {
+      modifiers.push("CommandOrControl");
+    } else if (lower === "alt") {
+      modifiers.push("Alt");
+    } else if (lower === "shift") {
+      modifiers.push("Shift");
+    } else if (lower === "meta" || lower === "win" || lower === "super" || lower === "cmd" || lower === "command") {
+      modifiers.push("Super");
+    } else {
+      if (lower === "space") {
+        mainKey = "Space";
+      } else if (lower === "return" || lower === "enter") {
+        // Disallow Enter as a global shortcut combination to avoid hijacking
+        return "";
+      } else if (lower.length === 1) {
+        mainKey = lower.toUpperCase();
+      } else {
+        mainKey = token.charAt(0).toUpperCase() + token.slice(1);
+      }
+    }
+  }
+
+  if (modifiers.length === 0 || !mainKey) {
+    return "";
+  }
+
+  const uniqueMods = Array.from(new Set(modifiers));
+  return [...uniqueMods, mainKey].join("+");
+}
 
 function isTestEnvironment(): boolean {
   return (
@@ -140,6 +249,7 @@ export function normalizeDesktopMode(raw?: string): CompanionMode {
   const s = (raw || "").trim().toLowerCase();
   if (s === "original" || s === "companion" || s === "learn" || s === "1") return "original";
   if (s === "select" || s === "candidates" || s === "candidate" || s === "3") return "select";
+  if (s === "modify" || s === "polish" || s === "fix" || s === "4") return "modify";
   if (s === "off" || s === "0") return "off";
   if (s === "english" || s === "direct" || s === "2") return "english";
   return DEFAULT_DESKTOP_CONFIG.mode;
@@ -254,6 +364,10 @@ export function loadDesktopConfig(): LingualDesktopConfig {
     ? desktopRaw.candidateSlots
     : getDefaultDesktopCandidateSlots(effectiveSourceLang);
 
+  const effectiveModifySlots = isValidSlotArray(desktopRaw.modifySlots)
+    ? desktopRaw.modifySlots
+    : getDefaultDesktopModifySlots(effectiveSourceLang);
+
   const rawSubmitKey = typeof desktopRaw.hotkeySubmit === "string" ? desktopRaw.hotkeySubmit : DEFAULT_DESKTOP_CONFIG.hotkeySubmit;
   const safeHotkeySubmit =
     rawSubmitKey.toLowerCase() === "ctrl+enter" ? "Enter" : rawSubmitKey;
@@ -305,6 +419,7 @@ export function loadDesktopConfig(): LingualDesktopConfig {
     slots: effectiveSlots,
     directSlots: effectiveDirectSlots,
     candidateSlots: effectiveCandidateSlots,
+    modifySlots: effectiveModifySlots,
     piModelInfo: piDiscovered ? { endpoint: piDiscovered.endpoint, model: piDiscovered.model } : null,
   };
 }
