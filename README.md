@@ -3,9 +3,9 @@
 > **The zero-friction desktop writing companion that lives alongside your existing IME.**  
 > Type naturally with your preferred input method (Microsoft Pinyin, WeChat IME, Sogou, Rime) in any Windows app (X/Twitter, Slack, Discord, Chrome, Notion, WeChat, Email). Upon pressing Enter, `lingual-desktop` automatically detects natural language, translates via your chosen engine, and delivers authentic spoken flow or technical precision—while keeping you in complete flow state.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 24/24 Pass](https://img.shields.io/badge/Tests-24%2F24%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 28/28 Pass](https://img.shields.io/badge/Tests-28%2F28%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
 
-**English** | [简体中文](README_zh.md)
+**English** | [简体中文](README_zh.md) | [日本語](README_ja.md)
 
 ---
 
@@ -114,9 +114,23 @@ npm run build:native
 # Compile Electron main process and preload bundle
 npm run build:main
 
-# Run full physical unit test suite (24/24 Pass)
+# Run full physical unit test suite (28/28 Pass)
 npm test
 ```
+
+---
+
+## Ecosystem: Pi Terminal & Desktop Suite
+
+Each extension occupies a distinct terminal or desktop slot so all tools run together with zero interference:
+
+| Package | Environment & Slot | Mechanism & Responsibility | Install / Link |
+| :--- | :--- | :--- | :--- |
+| **[`lingual-desktop`](https://github.com/3ZEROS12/lingual-desktop)** *(Current)* | Windows Desktop Dynamic Island | Driver-level low-level keyboard hook (`WH_KEYBOARD_LL`), roof-docked 3s card & system-wide input bridge | [GitHub Release](https://github.com/3ZEROS12/lingual-desktop/releases) |
+| **[`pi-lingual`](https://github.com/3ZEROS12/pi-lingual)** | Terminal `aboveEditor` HUD | Dynamic dual-register companion card (≤9 lines, UAX #11 tree) & 0-token prompt rewrites | `pi install npm:pi-lingual` |
+| **[`toolflow`](https://github.com/3ZEROS12/toolflow)** | Terminal Tool Sandbox | Stage-gated capability mounting & >40-line log dehydration to disk (-95% context tokens) | `pi install npm:toolflow` |
+| **[`pi-tui-status-beautifier`](https://github.com/3ZEROS12/pi-tui-status-beautifier)** | Terminal Footer Status Bar | 6 badge presets, `<80`-col idle folding `(+N idle)`, 0 render-loop disk reads | `pi install npm:pi-tui-status-beautifier` |
+| **[`pi-anchor`](https://github.com/3ZEROS12/anchor)** | Terminal `belowEditor` Dock | 1-line sticky strip, 0ms `pin:` intercept, `[■■□□]` step bar & `↪` session jump | `pi install npm:pi-anchor` |
 
 ---
 

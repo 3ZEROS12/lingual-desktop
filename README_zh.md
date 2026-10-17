@@ -3,9 +3,9 @@
 > **不替代你的输入法 · 回车即发即翻 · 常驻可自由拖拽微胶囊 · 剪贴板历史零污染**  
 > 你完全照旧使用最顺手的**微软拼音、微信输入法、搜狗或 Rime**，在任何软件（X/推特、Slack、Discord、必应/谷歌搜索、Notion、微信、邮件）中打字。打完敲回车（Enter），`lingual-desktop` 自动判断自然语言并按模式分流，直接发出地道外语或原文，并就地展开双轨伴学视窗。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 24/24 Pass](https://img.shields.io/badge/Tests-24%2F24%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 28/28 Pass](https://img.shields.io/badge/Tests-28%2F28%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
 
-[English](README.md) | **简体中文**
+[English](README.md) | **简体中文** | [日本語](README_ja.md)
 
 ---
 
@@ -114,9 +114,23 @@ npm run build:native
 # 编译 Electron 主进程与 Preload 脚本
 npm run build:main
 
-# 运行全量单元测试套件 (24/24 Pass)
+# 运行全量单元测试套件 (28/28 Pass)
 npm test
 ```
+
+---
+
+## 生态协同：Pi 终端与桌面套件
+
+每个工具均占用互斥的终端或桌面插槽，协同运行零干扰：
+
+| 工具包 | 运行环境与插槽 | 机制与职责 | 安装 / 链接 |
+| :--- | :--- | :--- | :--- |
+| **[`lingual-desktop`](https://github.com/3ZEROS12/lingual-desktop)** *(当前)* | Windows 桌面极简灵动岛 | 底层低级键盘钩子（`WH_KEYBOARD_LL`），顶部原位 3 秒卡片与全局输入桥接 | [GitHub Release](https://github.com/3ZEROS12/lingual-desktop/releases) |
+| **[`pi-lingual`](https://github.com/3ZEROS12/pi-lingual)** | 终端 `aboveEditor` 视窗 | 双语双寄存器伴学卡片（≤9 行，UAX #11 树状）与 0-token 提示词规范化 | `pi install npm:pi-lingual` |
+| **[`toolflow`](https://github.com/3ZEROS12/toolflow)** | 终端工具沙箱 | 阶段门控工具挂载与 >40 行冗长日志落盘脱水（-95% 上下文消耗） | `pi install npm:toolflow` |
+| **[`pi-tui-status-beautifier`](https://github.com/3ZEROS12/pi-tui-status-beautifier)** | 终端底部状态栏 | 6 套预设徽章，`<80` 列静默折叠（`+N idle`），0 渲染循环读盘开销 | `pi install npm:pi-tui-status-beautifier` |
+| **[`pi-anchor`](https://github.com/3ZEROS12/anchor)** | 终端 `belowEditor` 便签条 | 1 行常驻便签，0ms `pin:` 拦截，`[■■□□]` 进度条与 `↪` 会话跳转 | `pi install npm:pi-anchor` |
 
 ---
 
