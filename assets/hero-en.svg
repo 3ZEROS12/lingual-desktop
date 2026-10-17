@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" width="880" height="500">
+  <defs>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2b3339" />
+      <stop offset="100%" stop-color="#232a2e" />
+    </linearGradient>
+    <linearGradient id="capsuleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a7c080" />
+      <stop offset="100%" stop-color="#83c092" />
+    </linearGradient>
+  </defs>
+
+  <!-- Window Container with Shadow -->
+  <g filter="url(#shadow)">
+    <rect x="20" y="15" width="840" height="460" rx="12" fill="#1e2326" stroke="#343f44" stroke-width="1.2" />
+
+    <!-- Titlebar -->
+    <path d="M 20,27 A 12,12 0 0,1 32,15 L 848,15 A 12,12 0 0,1 860,27 L 860,52 L 20,52 Z" fill="url(#headerGrad)" stroke="#343f44" stroke-width="1" />
+    <line x1="20" y1="52" x2="860" y2="52" stroke="#2d353b" stroke-width="1" />
+
+    <!-- Window Controls -->
+    <circle cx="44" cy="33.5" r="5.5" fill="#e67e80" />
+    <circle cx="62" cy="33.5" r="5.5" fill="#dbbc7f" />
+    <circle cx="80" cy="33.5" r="5.5" fill="#a7c080" />
+
+    <!-- Window Title -->
+    <text x="440" y="38" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#859289" letter-spacing="0.3">
+      lingual-desktop (v0.2.18) · Universal Desktop Writing Companion
+    </text>
+
+    <!-- Top Floating Island Capsule (Resident Dock) -->
+    <g transform="translate(380, 24)">
+      <rect x="0" y="0" width="120" height="20" rx="10" fill="#2d353b" stroke="#4f5b58" stroke-width="1" />
+      <circle cx="12" cy="10" r="3.5" fill="#a7c080" />
+      <text x="65" y="14" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="bold" fill="#d3c6aa">⇄ EN</text>
+      <text x="105" y="14" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#859289">⚙</text>
+    </g>
+  </g>
+
+  <!-- Desktop Input & In-Situ Roof-Docked HUD Content -->
+  <g font-family="'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Consolas, monospace" font-size="12.5" xml:space="preserve">
+    <!-- Active App Indicator -->
+    <text x="45" y="84">
+      <tspan fill="#7fbbb3" font-weight="bold">Active Target App</tspan>
+      <tspan fill="#859289"> ❯ </tspan>
+      <tspan fill="#d3c6aa">Slack / Discord / Web Input Box</tspan>
+      <tspan fill="#7a8478"> (WH_KEYBOARD_LL Low-Level Hook)</tspan>
+    </text>
+
+    <!-- User Input in Target App -->
+    <text x="45" y="116">
+      <tspan fill="#7fbbb3" font-weight="bold">&gt; </tspan>
+      <tspan fill="#e5c07b" font-weight="bold">这个方案有点过度设计了，不如直接用标准库实现</tspan>
+      <tspan fill="#859289"> [Enter Pressed ↵]</tspan>
+    </text>
+
+    <!-- In-Situ Roof-Docked Translation Card (3-Second HUD) -->
+    <g transform="translate(45, 138)">
+      <rect x="0" y="0" width="790" height="236" rx="8" fill="#272e33" stroke="#3d484d" stroke-width="1" />
+
+      <!-- Card Header -->
+      <path d="M 0,8 A 8,8 0 0,1 8,0 L 782,0 A 8,8 0 0,1 790,8 L 790,26 L 0,26 Z" fill="#232a2e" />
+      <text x="14" y="18" font-size="11" font-weight="bold" fill="#a7c080">LINGUAL DESKTOP COMPANION</text>
+      <text x="776" y="18" text-anchor="end" font-size="10.5" fill="#7a8478">Esc to Undo · 3s Auto-Dismiss</text>
+      <line x1="0" y1="26" x2="790" y2="26" stroke="#343f44" stroke-width="1" />
+
+      <!-- Left Rail Open-Tree Annotation -->
+      <!-- Source Text Anchor -->
+      <text x="18" y="54">
+        <tspan fill="#7a8478">· </tspan>
+        <tspan fill="#859289">[Source]   </tspan>
+        <tspan fill="#d3c6aa">这个方案有点过度设计了，不如直接用标准库实现</tspan>
+      </text>
+
+      <!-- Casual Register -->
+      <text x="18" y="82">
+        <tspan fill="#7a8478">┌ </tspan>
+        <tspan fill="#a7c080" font-weight="bold">[Casual]   </tspan>
+        <tspan fill="#e5c07b">This feels a bit </tspan>
+        <tspan fill="#e5c07b" text-decoration="underline">over-engineered</tspan>
+        <tspan fill="#e5c07b">; we'd be much </tspan>
+        <tspan fill="#e5c07b" text-decoration="underline">better off</tspan>
+        <tspan fill="#e5c07b"> with the standard library.</tspan>
+      </text>
+      <text x="18" y="104">
+        <tspan fill="#7a8478">│            </tspan>
+        <tspan fill="#859289">(Natural conversational tone for Slack chat and daily standups)</tspan>
+      </text>
+
+      <!-- Formal Register -->
+      <text x="18" y="132">
+        <tspan fill="#7a8478">├ </tspan>
+        <tspan fill="#7fbbb3" font-weight="bold">[Formal]   </tspan>
+        <tspan fill="#d3c6aa">The proposed approach introduces unnecessary complexity. Standard library is preferred.</tspan>
+      </text>
+      <text x="18" y="154">
+        <tspan fill="#7a8478">│            </tspan>
+        <tspan fill="#859289">(High-precision technical prose for RFCs, PR reviews, and documentation)</tspan>
+      </text>
+
+      <!-- Vocab Register -->
+      <text x="18" y="182">
+        <tspan fill="#7a8478">└ </tspan>
+        <tspan fill="#d699b6" font-weight="bold">[Vocab]    </tspan>
+        <tspan fill="#d3c6aa">over-engineered (过度工程化) · be better off (更合适) · stick with (沿用)</tspan>
+      </text>
+
+      <!-- Footer Micro Status -->
+      <line x1="0" y1="206" x2="790" y2="206" stroke="#2d353b" stroke-width="1" />
+      <text x="14" y="224" font-size="10" fill="#7a8478">Injected in-place via Win32 UIA &amp; Clipboard Transaction (0ms native typing pass-through)</text>
+      <text x="776" y="224" text-anchor="end" font-size="10" fill="#a7c080">✔ Sent to App</text>
+    </g>
+
+    <!-- Bottom Terminal/Desktop Status Bar -->
+    <rect x="20" y="443" width="840" height="32" rx="0" fill="#181b1d" />
+    <text x="45" y="464" font-size="11.5">
+      <tspan fill="#a7c080">✔ Low-Level Hook Active</tspan>
+      <tspan fill="#4f5b58"> │ </tspan>
+      <tspan fill="#d3c6aa">Mode: [EN] Translate</tspan>
+      <tspan fill="#4f5b58"> │ </tspan>
+      <tspan fill="#859289">Engine: Pi Model Bridge ($0 Extra)</tspan>
+      <tspan fill="#4f5b58"> │ </tspan>
+      <tspan fill="#7fbbb3">Terminal Guard: Isolated</tspan>
+    </text>
+    <text x="835" y="464" text-anchor="end" font-size="11" fill="#7a8478">
+      lingual-desktop v0.2.18
+    </text>
+  </g>
+</svg>
