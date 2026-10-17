@@ -50,6 +50,9 @@ class Program {
     [DllImport("user32.dll")]
     static extern IntPtr DispatchMessage([In] ref MSG lpMsg);
 
+    [DllImport("user32.dll")]
+    static extern short GetKeyState(int nVirtKey);
+
     [StructLayout(LayoutKind.Sequential)]
     struct MSG {
         public IntPtr hwnd;
@@ -78,6 +81,14 @@ class Program {
     const int VK_SHIFT = 0x10;
     const int VK_CONTROL = 0x11;
     const int VK_MENU = 0x12;
+    const int VK_LSHIFT = 0xA0;
+    const int VK_RSHIFT = 0xA1;
+    const int VK_LCONTROL = 0xA2;
+    const int VK_RCONTROL = 0xA3;
+    const int VK_LMENU = 0xA4;
+    const int VK_RMENU = 0xA5;
+    const int VK_LWIN = 0x5B;
+    const int VK_RWIN = 0x5C;
     const uint GCS_COMPSTR = 0x0008;
 
     static readonly object syncLock = new object();
@@ -371,18 +382,32 @@ class Program {
         } catch {}
     }
 
+    static bool IsModifierKeyDown() {
+        return ((GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0) ||
+               ((GetAsyncKeyState(VK_LCONTROL) & 0x8000) != 0) ||
+               ((GetAsyncKeyState(VK_RCONTROL) & 0x8000) != 0) ||
+               ((GetKeyState(VK_CONTROL) & 0x8000) != 0) ||
+               ((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0) ||
+               ((GetAsyncKeyState(VK_LSHIFT) & 0x8000) != 0) ||
+               ((GetAsyncKeyState(VK_RSHIFT) & 0x8000) != 0) ||
+               ((GetKeyState(VK_SHIFT) & 0x8000) != 0) ||
+               ((GetAsyncKeyState(VK_MENU) & 0x8000) != 0) ||
+               ((GetAsyncKeyState(VK_LMENU) & 0x8000) != 0) ||
+               ((GetAsyncKeyState(VK_RMENU) & 0x8000) != 0) ||
+               ((GetKeyState(VK_MENU) & 0x8000) != 0) ||
+               ((GetAsyncKeyState(VK_LWIN) & 0x8000) != 0) ||
+               ((GetAsyncKeyState(VK_RWIN) & 0x8000) != 0);
+    }
+
     static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam) {
         if (nCode >= 0) {
             int msg = (int)wParam;
             if (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN) {
                 int vkCode = Marshal.ReadInt32(lParam);
                 if (vkCode == VK_RETURN) {
-                    bool modifierDown =
-                        ((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0) ||
-                        ((GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0) ||
-                        ((GetAsyncKeyState(VK_MENU) & 0x8000) != 0);
-
-                    if (!modifierDown) {
+                    // Strictly disallow any modified Enter (Ctrl+Enter, Shift+Enter, Alt+Enter, Win+Enter)
+                    // so regular newlines and shortcut submits in IDEs, chat apps, and terminals pass through untouched.
+                    if (!IsModifierKeyDown() && msg != WM_SYSKEYDOWN) {
                         ThreadPool.QueueUserWorkItem(HandleEnterTrigger);
                     }
                 }
@@ -404,12 +429,7 @@ class Program {
                 continue;
             }
             bool enterDown = (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
-            bool modifierDown =
-                ((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0) ||
-                ((GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0) ||
-                ((GetAsyncKeyState(VK_MENU) & 0x8000) != 0);
-
-            if (enterDown && !wasEnterDown && !modifierDown) {
+            if (enterDown && !wasEnterDown && !IsModifierKeyDown()) {
                 HandleEnterTrigger(null);
             }
             wasEnterDown = enterDown;

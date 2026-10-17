@@ -39,6 +39,8 @@
       sec_widget_desc: "A minimal status island anchored at the top edge of your screen:",
       tog_widget_title: "Show Top Floating Island (⇄ EN)",
       tog_widget_desc: "Anchored at screen top edge. Click to cycle mode; drag to move anywhere.",
+      tog_autostart_title: "Launch at Windows Startup",
+      tog_autostart_desc: "Start automatically in background when Windows boots (Default: Off).",
       preview_title: "Live Preview",
       preview_hint: 'Sample: "Can we release this feature tomorrow?"',
       free_engine_card_notice:
@@ -97,6 +99,7 @@
       btn_logs: "View Logs",
       btn_close: "Cancel",
       btn_done: "Save",
+      btn_quit_app: "Quit Lingual",
       meta_orig: "Original input",
       meta_key: "Key {n}",
       meta_vocab: "Key terms",
@@ -128,6 +131,8 @@
       sec_widget_desc: "常驻屏幕最顶部中央的极简状态胶囊，实时显示模式状态并支持拖拽位置：",
       tog_widget_title: "显示屏幕顶端悬浮岛 (⇄ EN)",
       tog_widget_desc: "常驻屏幕顶端，点击切换模式，支持鼠标按住拖拽至屏幕任意位置。",
+      tog_autostart_title: "开机自启动",
+      tog_autostart_desc: "Windows 登录时在后台静默启动（默认关闭，需手动开启）。",
       preview_title: "实时预览",
       preview_hint: "示例：「这个功能明天能上线吗？」",
       free_engine_card_notice:
@@ -186,6 +191,7 @@
       btn_logs: "查看日志",
       btn_close: "取消",
       btn_done: "确定",
+      btn_quit_app: "彻底退出",
       meta_orig: "输入原文",
       meta_key: "按 {n} 选择",
       meta_vocab: "重点短语",
@@ -217,6 +223,8 @@
       sec_widget_desc: "常駐螢幕頂部的極簡狀態膠囊，即時顯示模式狀態並支援拖拽位置：",
       tog_widget_title: "顯示螢幕頂端懸浮島 (⇄ EN)",
       tog_widget_desc: "常駐螢幕頂端，點擊切換模式，支援滑鼠按住拖拽至螢幕任意位置。",
+      tog_autostart_title: "開機自啟動",
+      tog_autostart_desc: "Windows 登入時在後台靜默啟動（預設關閉，需手動開啟）。",
       preview_title: "即時預覽",
       preview_hint: "示例：「這個功能明天能上線嗎？」",
       ai_tuner_title: "一句話定制版式",
@@ -272,6 +280,7 @@
       btn_logs: "查看日誌",
       btn_close: "取消",
       btn_done: "確定",
+      btn_quit_app: "徹底退出",
       meta_orig: "輸入原文",
       meta_key: "按 {n} 選擇",
       meta_vocab: "重點短語",
@@ -303,6 +312,8 @@
       sec_widget_desc: "画面上部に常駐するミニマルなカプセルで、動作状態を一目で確認：",
       tog_widget_title: "画面上部フローティングアイランドを表示 (⇄ EN)",
       tog_widget_desc: "画面最上部に常駐。クリックでモード切替、ドラッグで自由移動。",
+      tog_autostart_title: "Windows 起動時に自動実行",
+      tog_autostart_desc: "ログイン時にバックグラウンドで起動（デフォルト：オフ）。",
       preview_title: "プレビュー",
       preview_hint: "例：「この機能、明日リリースできる？」",
       ai_tuner_title: "自然言語プリセット",
@@ -358,6 +369,7 @@
       btn_logs: "ログを表示",
       btn_close: "キャンセル",
       btn_done: "確定",
+      btn_quit_app: "アプリを完全に終了",
       meta_orig: "入力原文",
       meta_key: "{n} キーで選択",
       meta_vocab: "重要語彙",
@@ -388,6 +400,8 @@
       sec_widget_desc: "화면 최상단에 상주하는 미니멀 상태 캡슐:",
       tog_widget_title: "화면 상단 플로팅 아일랜드 표시 (⇄ EN)",
       tog_widget_desc: "화면 최상단 상주. 클릭하여 모드 전환, 드래그하여 자유 이동.",
+      tog_autostart_title: "Windows 시작 시 자동 실행",
+      tog_autostart_desc: "로그인 시 백그라운드 자동 실행 (기본값: 꺼짐).",
       preview_title: "실시간 미리보기",
       preview_hint: '예: "이 기능 내일 배포할 수 있을까요?"',
       ai_tuner_title: "자연어 레이아웃 튜너",
@@ -440,6 +454,7 @@
       btn_logs: "로그 보기",
       btn_close: "취소",
       btn_done: "확인",
+      btn_quit_app: "완전 종료",
       meta_orig: "입력 원문",
       meta_key: "{n}번 선택",
       meta_vocab: "핵심 어휘",
@@ -470,6 +485,8 @@
       sec_widget_desc: "Cápsula mínima anclada en el borde superior de la pantalla:",
       tog_widget_title: "Mostrar isla flotante superior (⇄ EN)",
       tog_widget_desc: "Anclada en la parte superior. Clic para cambiar modo; arrastra para mover.",
+      tog_autostart_title: "Iniciar con Windows",
+      tog_autostart_desc: "Iniciar automáticamente en segundo plano (Predeterminado: Desactivado).",
       preview_title: "Vista previa en vivo",
       preview_hint: 'Ejemplo: "¿Podemos lanzar esta función mañana?"',
       ai_tuner_title: "Ajuste de diseño en lenguaje natural",
@@ -522,6 +539,7 @@
       btn_logs: "Ver registros",
       btn_close: "Cancelar",
       btn_done: "Aceptar",
+      btn_quit_app: "Salir por completo",
       meta_orig: "Texto original",
       meta_key: "Tecla {n}",
       meta_vocab: "Términos clave",
@@ -552,6 +570,8 @@
       sec_widget_desc: "Capsule minimale ancrée en haut de l'écran :",
       tog_widget_title: "Afficher l'îlot flottant supérieur (⇄ EN)",
       tog_widget_desc: "Ancré en haut de l'écran. Clic pour changer de mode ; glisser pour déplacer.",
+      tog_autostart_title: "Démarrer avec Windows",
+      tog_autostart_desc: "Démarrer automatiquement en arrière-plan (Par défaut : Désactivé).",
       preview_title: "Aperçu en direct",
       preview_hint: 'Exemple : "On peut lancer cette fonctionnalité demain ?"',
       ai_tuner_title: "Personnalisation en langage naturel",
@@ -604,6 +624,7 @@
       btn_logs: "Voir les logs",
       btn_close: "Annuler",
       btn_done: "Valider",
+      btn_quit_app: "Quitter complètement",
       meta_orig: "Texte original",
       meta_key: "Touche {n}",
       meta_vocab: "Mots clés",
@@ -634,6 +655,8 @@
       sec_widget_desc: "Minimale Statuskapsel am oberen Bildschirmrand:",
       tog_widget_title: "Obere schwebende Insel anzeigen (⇄ EN)",
       tog_widget_desc: "Am oberen Bildschirmrand verankert. Klicken zum Umschalten; Ziehen zum Bewegen.",
+      tog_autostart_title: "Mit Windows starten",
+      tog_autostart_desc: "Automatisch im Hintergrund starten (Standard: Aus).",
       preview_title: "Live-Vorschau",
       preview_hint: 'Beispiel: "Können wir das Feature morgen live schalten?"',
       ai_tuner_title: "Layout-Anpassung in natürlicher Sprache",
@@ -686,6 +709,7 @@
       btn_logs: "Logs anzeigen",
       btn_close: "Abbrechen",
       btn_done: "Übernehmen",
+      btn_quit_app: "Beenden",
       meta_orig: "Originaltext",
       meta_key: "Taste {n}",
       meta_vocab: "Schlüsselwörter",
@@ -716,6 +740,8 @@
       sec_widget_desc: "Компактная капсула в верхней части экрана:",
       tog_widget_title: "Показывать плавающий остров (⇄ EN)",
       tog_widget_desc: "Закреплен вверху экрана. Клик для смены режима, перетаскивание мышью.",
+      tog_autostart_title: "Запуск при старте Windows",
+      tog_autostart_desc: "Автозапуск в фоновом режиме (по умолчанию: выключено).",
       preview_title: "Предпросмотр",
       preview_hint: 'Пример: "Сможем выкатить эту фичу завтра?"',
       ai_tuner_title: "Настройка на естественном языке",
@@ -768,6 +794,7 @@
       btn_logs: "Открыть логи",
       btn_close: "Отмена",
       btn_done: "Сохранить",
+      btn_quit_app: "Полный выход",
       meta_orig: "Оригинал",
       meta_key: "Клавиша {n}",
       meta_vocab: "Ключевые слова",
@@ -879,9 +906,13 @@
   const sourceLangChips = document.querySelectorAll("#source-lang-chips .chip");
   const targetLangChips = document.querySelectorAll("#target-lang-chips .chip");
   const checkShowCapsule = document.getElementById("check-show-capsule");
+  const checkAutostart = document.getElementById("check-autostart");
 
   if (checkShowCapsule) {
     checkShowCapsule.addEventListener("change", () => autoSaveNow());
+  }
+  if (checkAutostart) {
+    checkAutostart.addEventListener("change", () => autoSaveNow());
   }
 
   function setCompanionModeState(mode) {
@@ -1692,6 +1723,7 @@
       hotkeySpotlight: inputHkSpotlight ? inputHkSpotlight.value.trim() : "",
       autoSend: true,
       showCapsule: checkShowCapsule ? checkShowCapsule.checked : true,
+      autoStartOnBoot: checkAutostart ? checkAutostart.checked : false,
     };
 
     if (activeEngineMode === "custom") {
@@ -1728,6 +1760,11 @@
     } catch {}
   }
 
+  const btnQuitApp = document.getElementById("btn-quit-app");
+  btnQuitApp?.addEventListener("click", () => {
+    window.lingualSettingsAPI?.quitApp?.();
+  });
+
   btnClose?.addEventListener("click", handleCloseWindow);
   btnCancel?.addEventListener("click", handleCloseWindow);
   btnSave?.addEventListener("click", async () => {
@@ -1757,6 +1794,9 @@
       setTargetLangState(cfg.targetLang || "en");
       if (checkShowCapsule) {
         checkShowCapsule.checked = cfg.showCapsule !== false;
+      }
+      if (checkAutostart) {
+        checkAutostart.checked = cfg.autoStartOnBoot === true;
       }
 
       if (checkEnableShortcuts) {

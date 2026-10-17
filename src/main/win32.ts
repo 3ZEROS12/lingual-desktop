@@ -548,7 +548,7 @@ export function isDesktopNoiseInput(text: string): boolean {
   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return true;
   // Pure numbers, math expressions, or punctuation
   if (/^[\d\s+*/=.,:;!?()[\]{}#%^&~`'"_-]+$/.test(trimmed)) return true;
-  // Single CJK character or single short ASCII token (e.g. "好", "嗯", "1", "ok", "y")
+  // Single CJK character or single short ASCII token (e.g. "1", "ok", "y")
   if (trimmed.length <= 1) return true;
   if (/^[a-zA-Z]{1,3}$/.test(trimmed)) return true;
   return false;

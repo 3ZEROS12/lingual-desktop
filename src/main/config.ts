@@ -94,7 +94,7 @@ export function getDefaultDesktopModifySlots(sourceLang = "en", explainLang?: st
       label: l.fixed,
       role: "translation",
       instruction:
-        "Surgically correct ONLY spelling mistakes, fast typos, syntax structure (e.g. 'want that you can' ➔ 'want you to'), wrong prepositions/articles (e.g. 'in X' ➔ 'on X', 'as I\\'m' ➔ 'as if I\\'m'), and grammatical slips in the user's sentence. CRITICAL RULES: (1) Zero Level Leap (水平绝不跃迁 / i+1 Rule): STRICTLY match the user's current vocabulary tier and tone! If user writes everyday dev or junior-high level English, do NOT artificially inflate it into university academic GRE/SAT prose or corporate fluff. Fix the joints and syntax, but NEVER replace their words with alien SAT vocabulary! (2) Zero Tone Sanitization: NEVER sanitize, censor, or tone down swear words or raw emotions (e.g. 'fuck', 'suck', 'shit', 'idiot')—passion and emotional heat are natural and MUST be preserved 100%! (3) Zero Punctuation/Casing Nitpicking: Do NOT obsess over casual lowercase casing (e.g. 'l' vs 'L') or missing trailing periods/commas ('.', ',') if the user writes informally. (4) 100% preserve original sentence structure, words, and cadence so the user can send it immediately with zero hesitation.",
+        "Surgically correct ONLY spelling mistakes, fast typos, syntax structure (e.g. 'want that you can' ➔ 'want you to'), wrong prepositions/articles (e.g. 'in X' ➔ 'on X', 'as I\\'m' ➔ 'as if I\\'m'), and grammatical slips in the user's sentence. CRITICAL RULES: (1) Zero Level Leap (i+1 Rule): STRICTLY match the user's current vocabulary tier and tone! If user writes everyday dev or junior-high level English, do NOT artificially inflate it into university academic GRE/SAT prose or corporate fluff. Fix the joints and syntax, but NEVER replace their words with alien SAT vocabulary! (2) Zero Tone Sanitization: NEVER sanitize, censor, or tone down swear words or raw emotions (e.g. 'fuck', 'suck', 'shit', 'idiot')—passion and emotional heat are natural and MUST be preserved 100%! (3) Zero Punctuation/Casing Nitpicking: Do NOT obsess over casual lowercase casing (e.g. 'l' vs 'L') or missing trailing periods/commas ('.', ',') if the user writes informally. (4) 100% preserve original sentence structure, words, and cadence so the user can send it immediately with zero hesitation.",
       showMeaning: false,
       enabled: true,
     },
@@ -135,12 +135,13 @@ export interface LingualDesktopConfig {
   autoSend: boolean;
   showCapsule: boolean;
   enableGlobalShortcuts: boolean;
+  autoStartOnBoot?: boolean;
   hotkeyToggleMode: string;
   hotkeySubmit: string;
   hotkeyRewrite: string;
   hotkeySpotlight: string;
   capsulePos?: { x: number; y: number } | null;
-  piModelInfo?: { endpoint: string; model: string } | null;
+  piModelInfo?: { endpoint: string; model: string; apiKey?: string } | null;
 }
 
 export const DEFAULT_DESKTOP_CONFIG: LingualDesktopConfig = {
@@ -160,6 +161,7 @@ export const DEFAULT_DESKTOP_CONFIG: LingualDesktopConfig = {
   autoSend: true,
   showCapsule: true,
   enableGlobalShortcuts: true,
+  autoStartOnBoot: false,
   hotkeyToggleMode: "Alt+Q",
   hotkeySubmit: "Enter",
   hotkeyRewrite: "Alt+E",
@@ -417,6 +419,7 @@ export function loadDesktopConfig(): LingualDesktopConfig {
     mode: effectiveMode,
     slotPreset: effectiveSlotPreset,
     slots: effectiveSlots,
+    autoStartOnBoot: desktopRaw.autoStartOnBoot === true,
     directSlots: effectiveDirectSlots,
     candidateSlots: effectiveCandidateSlots,
     modifySlots: effectiveModifySlots,

@@ -38,9 +38,9 @@ export function hasMixedCodeSwitch(text: string): boolean {
 }
 
 /**
- * Layer 0: 免 Key 开箱即用极速翻译引擎 (Zero-Key Fast Translation Fallback)
- * 同时并发竞速国内直连免代理通道 (MyMemory) 与国际通道 (Google GTX)，
- * 确保在纯国内网络无代理、无 API Key、无 Ollama 的裸机环境下 100% 稳定秒出译文！
+ * Layer 0: Zero-Key Fast Translation Fallback
+ * Concurrently races direct translation channels (MyMemory + Google GTX)
+ * to guarantee translation output even on bare machines without local Ollama or API keys.
  */
 export async function fetchZeroKeyTranslation(
   text: string,
@@ -110,7 +110,7 @@ export async function fetchZeroKeyTranslation(
 }
 
 /**
- * Layer 1: 本地私有开源推理端点自动嗅探探测器 (500ms 快速探活)
+ * Layer 1: Local private inference endpoint detector (500ms probe)
  */
 export async function detectLocalEndpoints(): Promise<{
   ollama: boolean;
@@ -155,7 +155,7 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
     let apiKey = (config.apiKey || "").trim();
     let model = (config.model || "").trim();
 
-    // 自动接入 Pi Agent 本地模型通道（零配置复用 ~/.pi/agent/models.json）
+    // Automatically connect to local Pi Agent model channel (zero-config ~/.pi/agent/models.json)
     if (config.engineProvider === "pi" || !endpoint) {
       const piCfg = config.piModelInfo || discoverPiModelConfig();
       if (piCfg && piCfg.endpoint) {
@@ -307,7 +307,7 @@ export async function executeTranslation(
     logger.info("engine:translate", `Translation cache hit!`);
   }
 
-  // 若 LLM 调用失败（或用户初次使用未配置任何模型端点），平滑降级至 Layer 0 免 Key 极速保底引擎
+  // Gracefully fall back to Layer 0 zero-key fallback engine if LLM completion fails
   if (isLlmFailed && !res.shieldBypassed) {
     logger.warn("engine:translate", `LLM completion did not produce translation. Initiating Zero-Key web fallback...`);
     const fallbackText = await fetchZeroKeyTranslation(text, config.sourceLang, config.targetLang);
@@ -339,7 +339,7 @@ export async function executeTranslation(
         written: fallbackText,
         cached: false,
         shieldBypassed: false,
-        isOfflineOrFailed: false, // 保底成功，不阻断心流！
+        isOfflineOrFailed: false, // Fallback succeeded without interrupting user flow
         isZeroKeyFallback: true,
         appBadge: appProfile.badge,
         slots: dynamicSlots,

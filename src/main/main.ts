@@ -89,7 +89,7 @@ function getInitialCapsulePos(config: LingualDesktopConfig): { x: number; y: num
   }
   try {
     const primary = screen.getPrimaryDisplay();
-    // 默认居中常驻在屏幕最顶部（灵动岛极简胶囊，稳固不跳动，可随意拖拽）
+    // Centered at top of screen by default (Dynamic Island capsule, draggable)
     return {
       x: Math.round(primary.workArea.x + (primary.workArea.width - CAPSULE_WIDTH) / 2),
       y: Math.round(primary.workArea.y + 10),
@@ -100,12 +100,12 @@ function getInitialCapsulePos(config: LingualDesktopConfig): { x: number; y: num
 }
 
 /**
- * 屏幕最顶部常驻极简悬浮小岛 (Resident Top Floating Island)
- * - 常驻在屏幕最上方，100% 稳固，绝不忽上忽下，绝不意外消失；
- * - 随时左键点击 [⇄ EN] 快速轮转模式 (EN / LEARN / OFF)；
- * - 随时点击 [⚙] 或右键呼出设置控制中心；
- * - 鼠标按住胶囊可自由平滑拖拽至屏幕任意边缘，松手即自动记忆位置；
- * - 打字敲回车时，就地在输入框正上方展开 3 秒双语对照卡片。
+ * Resident Top Floating Island
+ * - Anchored at the very top of the screen; stable position without erratic jumping or disappearance.
+ * - Left-click [⇄ EN] anytime to cycle modes (LEARN / DIRECT / CANDIDATES / MODIFY / OFF).
+ * - Click [⚙] or right-click to summon Settings Control Center.
+ * - Drag the capsule freely to any screen edge; position is remembered upon release.
+ * - Upon pressing Enter while typing, expands a 3-second bilingual card right above the active input box.
  */
 function createCapsuleWindow(): BrowserWindow {
   const config = loadDesktopConfig();
@@ -149,7 +149,7 @@ function createCapsuleWindow(): BrowserWindow {
 }
 
 /**
- * 2. In-Situ Roof-Docked Translation Card Window (输入框正上方 3 秒卡片)
+ * 2. In-Situ Roof-Docked Translation Card Window
  * Pops up directly above the active text box when Enter is pressed; auto-dismisses after 3s.
  */
 function createHudWindow(): BrowserWindow {
@@ -197,7 +197,7 @@ function switchToIdleView(): void {
 }
 
 /**
- * Dynamic Island In-Situ Expansion (灵动岛原位展开):
+ * Dynamic Island In-Situ Expansion:
  * Always expands directly beneath (or above, if near screen bottom) the Top Floating Island (`capsuleWindow`).
  * 100% predictable position, zero eye-hunting across the screen, and never covers bottom chat input history!
  */
@@ -773,8 +773,11 @@ function updateTrayMenu(): void {
     },
     { type: "separator" },
     {
-      label: "Quit",
-      click: () => app.quit(),
+      label: "Quit Lingual (Exit Process)",
+      click: () => {
+        stopPassiveInputWatcher();
+        app.exit(0);
+      },
     },
   ]);
 
@@ -902,6 +905,14 @@ function setupIpc(): void {
     currentMode = updated.mode || currentMode;
     registerShortcuts(updated);
     syncPassiveWatcherWithMode(currentMode);
+    if (patch.autoStartOnBoot !== undefined) {
+      try {
+        app.setLoginItemSettings({
+          openAtLogin: Boolean(patch.autoStartOnBoot),
+          args: ["--hidden"],
+        });
+      } catch {}
+    }
     updateTrayMenu();
     if (capsuleWindow && !capsuleWindow.isDestroyed()) {
       notifyCapsuleModeChanged(currentMode);
@@ -948,7 +959,7 @@ function setupIpc(): void {
         return { success: false, latencyMs, error: `HTTP ${res.status} ${res.statusText}` };
       }
     } catch (err: any) {
-      return { success: false, latencyMs: Date.now() - start, error: err.message || "连接失败" };
+      return { success: false, latencyMs: Date.now() - start, error: err.message || "Connection failed" };
     }
   });
 
@@ -1009,6 +1020,12 @@ function setupIpc(): void {
 
   ipcMain.on("lingual:open-settings", () => {
     openSettingsWindow();
+  });
+
+  ipcMain.on("lingual:quit-app", () => {
+    logger.info("system", "User requested explicit application exit.");
+    stopPassiveInputWatcher();
+    app.exit(0);
   });
 
   ipcMain.on("lingual:open-log-file", () => {
@@ -1082,10 +1099,10 @@ if (!gotTheLock) {
       });
     } catch {}
 
-    // Enable Windows autostart on boot (silent mode)
+    // Sync Windows autostart on boot strictly with user configuration (defaults to false!)
     try {
       app.setLoginItemSettings({
-        openAtLogin: true,
+        openAtLogin: Boolean(config.autoStartOnBoot),
         args: ["--hidden"],
       });
     } catch {}
