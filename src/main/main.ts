@@ -198,13 +198,14 @@ function switchToIdleView(): void {
 
 /**
  * Dynamic Island In-Situ Expansion:
- * Always expands directly beneath (or above, if near screen bottom) the Top Floating Island (`capsuleWindow`).
+ * Predictably expands beneath the Top Floating Island (`capsuleWindow`) on the active screen.
+ * On multi-monitor setups, if user typed on a secondary monitor, expands at the top of that monitor.
  * 100% predictable position, zero eye-hunting across the screen, and never covers bottom chat input history!
  */
 function calculateRoofDockingPosition(
   winWidth: number,
   winHeight: number,
-  _overrideRect?: { x: number; y: number; width: number; height: number } | null
+  overrideRect?: { x: number; y: number; width: number; height: number } | null
 ): { x: number; y: number } {
   let capX = currentCapsulePos.x;
   let capY = currentCapsulePos.y;
@@ -216,23 +217,49 @@ function calculateRoofDockingPosition(
     } catch {}
   }
 
-  const display = screen.getDisplayNearestPoint({ x: capX, y: capY });
-  const { workArea } = display;
+  // 1. Determine active display:
+  // If overrideRect is provided (e.g. user typed in a window on a secondary monitor with negative coords),
+  // prioritize the display where the user's active input box actually resides.
+  let targetDisplay = screen.getDisplayNearestPoint({ x: capX, y: capY });
+  let isCapsuleOnActiveDisplay = true;
 
-  // 1. Center horizontally beneath the Top Floating Island, clamped cleanly within screen workArea
-  let x = capX + Math.round((CAPSULE_WIDTH - winWidth) / 2);
-  if (x + winWidth > workArea.x + workArea.width - 12) {
-    x = workArea.x + workArea.width - winWidth - 12;
-  }
-  if (x < workArea.x + 12) {
-    x = workArea.x + 12;
+  if (overrideRect && overrideRect.width > 0 && overrideRect.height > 0) {
+    const activePoint = {
+      x: Math.round(overrideRect.x + overrideRect.width / 2),
+      y: Math.round(overrideRect.y),
+    };
+    const inputDisplay = screen.getDisplayNearestPoint(activePoint);
+    if (inputDisplay.id !== targetDisplay.id) {
+      targetDisplay = inputDisplay;
+      isCapsuleOnActiveDisplay = false;
+    }
   }
 
-  // 2. Expand 6px directly below the Top Floating Island (or flip 6px above if island is near screen bottom)
-  let y = capY + CAPSULE_HEIGHT + 6;
-  if (y + winHeight > workArea.y + workArea.height - 12) {
-    y = Math.max(workArea.y + 12, capY - winHeight - 6);
+  const { workArea } = targetDisplay;
+
+  let x: number;
+  let y: number;
+
+  if (isCapsuleOnActiveDisplay) {
+    // Dock directly beneath the Top Floating Island (or flip above if near screen bottom)
+    x = capX + Math.round((CAPSULE_WIDTH - winWidth) / 2);
+    y = capY + CAPSULE_HEIGHT + 6;
+    if (y + winHeight > workArea.y + workArea.height - 12) {
+      y = Math.max(workArea.y + 12, capY - winHeight - 6);
+    }
+  } else {
+    // User is typing on a secondary monitor where capsule is not present:
+    // Expand predictably at the top-center of that monitor's work area!
+    x = Math.round(workArea.x + (workArea.width - winWidth) / 2);
+    y = Math.round(workArea.y + 10 + CAPSULE_HEIGHT + 6);
+    if (y + winHeight > workArea.y + workArea.height - 12) {
+      y = workArea.y + 12;
+    }
   }
+
+  // Boundary clamping supporting negative screen coordinates across multi-monitor setups
+  x = Math.max(workArea.x + 12, Math.min(x, workArea.x + workArea.width - winWidth - 12));
+  y = Math.max(workArea.y + 12, Math.min(y, workArea.y + workArea.height - winHeight - 12));
 
   return { x: Math.round(x), y: Math.round(y) };
 }

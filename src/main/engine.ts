@@ -11,6 +11,7 @@ import {
   discoverPiModelConfig,
   getDefaultDesktopDirectSlots,
   getDefaultDesktopCandidateSlots,
+  getDefaultDesktopModifySlots,
   type LingualDesktopConfig,
   type CompanionMode,
 } from "./config.js";
@@ -257,15 +258,18 @@ export async function executeTranslation(
   const { completer, didFail } = createHttpCompleter(config);
   const activeMode = appMeta?.mode || config.mode || "english";
 
-  // 3-Way Physical Mode Slot Isolation for Desktop:
+  // 4-Way Physical Mode Slot Isolation for Desktop:
   // - "english" (Direct 2): 1-line fast direct replacement slot (0 nuance/vocab overhead)
   // - "select" (Candidates 3): 3 interpersonal/desktop tone slots (Casual / Polite / Concise)
+  // - "modify" (Modify 4): Surgical in-place fix + native sibling comparison
   // - "original" (Learn 1): Full dual-register + nuance + vocab companion slots
   const modeDefaultSlots =
     activeMode === "english"
       ? config.directSlots || getDefaultDesktopDirectSlots(config.sourceLang)
       : activeMode === "select"
-      ? config.candidateSlots || getDefaultDesktopCandidateSlots(config.sourceLang)
+      ? config.candidateSlots || config.promptSlots || getDefaultDesktopCandidateSlots(config.sourceLang)
+      : activeMode === "modify"
+      ? config.modifySlots || getDefaultDesktopModifySlots(config.sourceLang, config.explainLang)
       : config.slots;
 
   const effectiveSlots = slots || (Array.isArray(modeDefaultSlots) ? modeDefaultSlots : undefined);

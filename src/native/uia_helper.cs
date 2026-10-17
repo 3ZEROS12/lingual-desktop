@@ -41,6 +41,12 @@ class Program {
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     static extern IntPtr GetModuleHandle(string lpModuleName);
 
+    [DllImport("kernel32.dll")]
+    static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll", SetLastError = true)]
+    static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
     [DllImport("user32.dll")]
     static extern sbyte GetMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
 
@@ -146,11 +152,24 @@ class Program {
     static bool IsImeComposingWindow(IntPtr hwnd) {
         if (hwnd == IntPtr.Zero) return false;
         try {
-            IntPtr imc = ImmGetContext(hwnd);
-            if (imc != IntPtr.Zero) {
-                int len = ImmGetCompositionStringW(imc, GCS_COMPSTR, null, 0);
-                ImmReleaseContext(hwnd, imc);
-                return len > 0;
+            int pid = 0;
+            uint targetTid = GetWindowThreadProcessId(hwnd, out pid);
+            uint curTid = GetCurrentThreadId();
+            bool attached = false;
+            if (targetTid != 0 && targetTid != curTid) {
+                attached = AttachThreadInput(curTid, targetTid, true);
+            }
+            try {
+                IntPtr imc = ImmGetContext(hwnd);
+                if (imc != IntPtr.Zero) {
+                    int len = ImmGetCompositionStringW(imc, GCS_COMPSTR, null, 0);
+                    ImmReleaseContext(hwnd, imc);
+                    return len > 0;
+                }
+            } finally {
+                if (attached) {
+                    AttachThreadInput(curTid, targetTid, false);
+                }
             }
         } catch {}
         return false;

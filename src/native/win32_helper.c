@@ -129,13 +129,22 @@ int main(int argc, char* argv[]) {
             ZeroMemory(&gti, sizeof(gti));
             gti.cbSize = sizeof(GUITHREADINFO);
 
-            if (GetGUIThreadInfo(thread_id, &gti) && gti.hwndCaret) {
-                POINT pt;
-                pt.x = gti.rcCaret.left;
-                pt.y = gti.rcCaret.bottom;
-                ClientToScreen(gti.hwndCaret, &pt);
-                printf("%ld %ld\n", pt.x, pt.y);
-                return 0;
+            if (GetGUIThreadInfo(thread_id, &gti)) {
+                if (gti.hwndCaret) {
+                    POINT pt;
+                    pt.x = gti.rcCaret.left;
+                    pt.y = gti.rcCaret.bottom;
+                    ClientToScreen(gti.hwndCaret, &pt);
+                    printf("%ld %ld\n", pt.x, pt.y);
+                    return 0;
+                }
+                if (gti.hwndFocus) {
+                    RECT rc;
+                    if (GetWindowRect(gti.hwndFocus, &rc)) {
+                        printf("%ld %ld\n", rc.left, rc.bottom);
+                        return 0;
+                    }
+                }
             }
         }
         printf("none\n");
@@ -184,14 +193,25 @@ int main(int argc, char* argv[]) {
     if (strcmp(cmd, "ime-composing") == 0) {
         HWND hwnd = GetForegroundWindow();
         if (hwnd) {
+            DWORD thread_id = GetWindowThreadProcessId(hwnd, NULL);
+            DWORD cur_thread = GetCurrentThreadId();
+            BOOL attached = FALSE;
+            if (thread_id && thread_id != cur_thread) {
+                attached = AttachThreadInput(cur_thread, thread_id, TRUE);
+            }
             HIMC imc = ImmGetContext(hwnd);
             if (imc) {
                 LONG compLen = ImmGetCompositionStringW(imc, GCS_COMPSTR, NULL, 0);
                 ImmReleaseContext(hwnd, imc);
+                if (attached) {
+                    AttachThreadInput(cur_thread, thread_id, FALSE);
+                }
                 if (compLen > 0) {
                     printf("1\n");
                     return 0;
                 }
+            } else if (attached) {
+                AttachThreadInput(cur_thread, thread_id, FALSE);
             }
         }
         printf("0\n");

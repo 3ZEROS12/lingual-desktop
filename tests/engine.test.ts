@@ -81,3 +81,17 @@ test("engine: generateSlotsFromUserIntent understands Japanese learning with voc
   assert.equal(transSlots.length, 2);
 });
 
+test("engine: executeTranslation correctly isolates 4 desktop modes (modify, select, english, original)", async () => {
+  // Test code bypass in modify mode
+  const resModifyBypass = await executeTranslation("git checkout -b feature/test", undefined, undefined, undefined, {
+    mode: "modify",
+  });
+  assert.equal(resModifyBypass.shieldBypassed, true);
+
+  // Test code bypass in english mode
+  const resEnglishBypass = await executeTranslation("npm test", undefined, undefined, undefined, {
+    mode: "english",
+  });
+  assert.equal(resEnglishBypass.shieldBypassed, true);
+});
+

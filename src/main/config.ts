@@ -131,6 +131,7 @@ export interface LingualDesktopConfig {
   slots: SlotConfig[];
   directSlots?: SlotConfig[];
   candidateSlots?: SlotConfig[];
+  promptSlots?: SlotConfig[];
   modifySlots?: SlotConfig[];
   autoSend: boolean;
   showCapsule: boolean;
@@ -157,6 +158,7 @@ export const DEFAULT_DESKTOP_CONFIG: LingualDesktopConfig = {
   slots: getDefaultSlots("en"),
   directSlots: getDefaultDesktopDirectSlots("en"),
   candidateSlots: getDefaultDesktopCandidateSlots("en"),
+  promptSlots: getDefaultDesktopCandidateSlots("en"),
   modifySlots: getDefaultDesktopModifySlots("en"),
   autoSend: true,
   showCapsule: true,
@@ -257,7 +259,7 @@ export function normalizeDesktopMode(raw?: string): CompanionMode {
   return DEFAULT_DESKTOP_CONFIG.mode;
 }
 
-const SUPPORTED_UI_LANGS = new Set(["en", "zh", "tw", "ja", "ko", "es", "fr", "de", "ru"]);
+const SUPPORTED_UI_LANGS = new Set(["en", "zh", "tw", "ja", "ko", "es", "fr", "de", "ru", "pt"]);
 
 export function resolveInitialUiLang(explicitUiLang?: string, sourceLang?: string): string {
   if (typeof explicitUiLang === "string" && explicitUiLang.trim()) {
@@ -274,7 +276,7 @@ export function getSharedLingualConfigPath(): string {
   return path.join(os.homedir(), ".pi", "agent", "lingual.json");
 }
 
-export function discoverPiModelConfig(): { endpoint: string; apiKey: string; model: string } | null {
+export function discoverPiModelConfig(preferredModel?: string): { endpoint: string; apiKey: string; model: string } | null {
   try {
     const modelsPath = path.join(os.homedir(), ".pi", "agent", "models.json");
     if (!fs.existsSync(modelsPath)) return null;
@@ -282,16 +284,36 @@ export function discoverPiModelConfig(): { endpoint: string; apiKey: string; mod
     const providers = raw?.providers;
     if (!providers || typeof providers !== "object") return null;
 
+    // 1. If preferredModel (e.g. from ~/.pi/agent/lingual.json) is specified, match exact model first
+    if (preferredModel && typeof preferredModel === "string" && preferredModel.trim()) {
+      const targetModelId = preferredModel.trim();
+      for (const p of Object.values(providers) as any[]) {
+        if (p && typeof p.baseUrl === "string" && Array.isArray(p.models) && p.models.length > 0) {
+          const match = p.models.find((m: any) => m.id === targetModelId || m === targetModelId);
+          if (match) {
+            const base = p.baseUrl.replace(/\/+$/, "");
+            const endpoint = base.endsWith("/chat/completions") ? base : `${base}/chat/completions`;
+            return {
+              endpoint,
+              apiKey: p.apiKey || "",
+              model: typeof match === "string" ? match : match.id,
+            };
+          }
+        }
+      }
+    }
+
+    // 2. Default heuristic: preferred fast reasoning/flash model
     for (const p of Object.values(providers) as any[]) {
       if (p && typeof p.baseUrl === "string" && Array.isArray(p.models) && p.models.length > 0) {
         const base = p.baseUrl.replace(/\/+$/, "");
         const endpoint = base.endsWith("/chat/completions") ? base : `${base}/chat/completions`;
         const preferred =
-          p.models.find((m: any) => /flash|mini|haiku|fast/i.test(m.id)) || p.models[0];
+          p.models.find((m: any) => /flash|mini|haiku|fast/i.test(m.id || m)) || p.models[0];
         return {
           endpoint,
           apiKey: p.apiKey || "",
-          model: preferred.id,
+          model: typeof preferred === "string" ? preferred : preferred.id,
         };
       }
     }
@@ -327,7 +349,8 @@ export function loadDesktopConfig(): LingualDesktopConfig {
     }
   }
 
-  const piDiscovered = !isTestEnvironment() ? discoverPiModelConfig() : null;
+  const piPreferredModel = desktopRaw.model || sharedRaw.model;
+  const piDiscovered = !isTestEnvironment() ? discoverPiModelConfig(piPreferredModel) : null;
 
   // Desktop config is primary; shared config is fallback for initial bootstrap
   const effectiveSourceLang =
@@ -360,14 +383,24 @@ export function loadDesktopConfig(): LingualDesktopConfig {
 
   const effectiveDirectSlots = isValidSlotArray(desktopRaw.directSlots)
     ? desktopRaw.directSlots
+    : isValidSlotArray(sharedRaw.directSlots)
+    ? sharedRaw.directSlots
     : getDefaultDesktopDirectSlots(effectiveSourceLang);
 
   const effectiveCandidateSlots = isValidSlotArray(desktopRaw.candidateSlots)
     ? desktopRaw.candidateSlots
+    : isValidSlotArray(desktopRaw.promptSlots)
+    ? desktopRaw.promptSlots
+    : isValidSlotArray(sharedRaw.candidateSlots)
+    ? sharedRaw.candidateSlots
+    : isValidSlotArray(sharedRaw.promptSlots)
+    ? sharedRaw.promptSlots
     : getDefaultDesktopCandidateSlots(effectiveSourceLang);
 
   const effectiveModifySlots = isValidSlotArray(desktopRaw.modifySlots)
     ? desktopRaw.modifySlots
+    : isValidSlotArray(sharedRaw.modifySlots)
+    ? sharedRaw.modifySlots
     : getDefaultDesktopModifySlots(effectiveSourceLang);
 
   const rawSubmitKey = typeof desktopRaw.hotkeySubmit === "string" ? desktopRaw.hotkeySubmit : DEFAULT_DESKTOP_CONFIG.hotkeySubmit;
@@ -422,6 +455,7 @@ export function loadDesktopConfig(): LingualDesktopConfig {
     autoStartOnBoot: desktopRaw.autoStartOnBoot === true,
     directSlots: effectiveDirectSlots,
     candidateSlots: effectiveCandidateSlots,
+    promptSlots: effectiveCandidateSlots,
     modifySlots: effectiveModifySlots,
     piModelInfo: piDiscovered ? { endpoint: piDiscovered.endpoint, model: piDiscovered.model } : null,
   };
@@ -443,6 +477,11 @@ export function saveDesktopConfig(cfg: Partial<LingualDesktopConfig>): void {
     ...existingDesktop,
     ...cfg,
   };
+  if (cfg.promptSlots && !cfg.candidateSlots) {
+    (merged as any).candidateSlots = cfg.promptSlots;
+  } else if (cfg.candidateSlots && !cfg.promptSlots) {
+    (merged as any).promptSlots = cfg.candidateSlots;
+  }
   delete (merged as any).piModelInfo;
 
   // 1. Atomic write to ~/.lingual/config.json
@@ -478,13 +517,17 @@ export function saveDesktopConfig(cfg: Partial<LingualDesktopConfig>): void {
 
       // Keep desktop `mode` strictly isolated from Pi CLI `~/.pi/agent/lingual.json`
       // so toggling desktop mode never mutates the terminal coding agent's mode!
-      const sharedKeys = ["sourceLang", "targetLang", "slotPreset", "slots"];
+      const sharedKeys = ["sourceLang", "targetLang", "slotPreset", "slots", "directSlots", "modifySlots"];
       let hasSharedMutation = false;
       for (const k of sharedKeys) {
         if (k in cfg) {
           existingShared[k] = (cfg as any)[k];
           hasSharedMutation = true;
         }
+      }
+      if ("candidateSlots" in cfg || "promptSlots" in cfg) {
+        existingShared["promptSlots"] = (cfg as any).promptSlots || (cfg as any).candidateSlots;
+        hasSharedMutation = true;
       }
 
       if (hasSharedMutation) {

@@ -3,7 +3,7 @@
 > **既存の日本語入力（IME）を置き換えない · Enter キーを押すだけのシームレス翻訳 ＆ 伴走学習 · 画面上部に常駐する自由ドラッグ対応カプセル · クリップボード履歴を一切汚さない**  
 > Windows 標準の Microsoft IME、Google 日本語入力、ATOK などをそのまま使えます。普段通りにタイピングし、Enter キーを押すだけで、`lingual-desktop` が自然言語を検知して自動分流。入力欄のテキストをそのまま送信、あるいは洗練された英語に置き換えて送信し、その場に 3 秒間のデュアルレジスター伴走カードを展開します。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 28/28 Pass](https://img.shields.io/badge/Tests-28%2F28%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 30/30 Pass](https://img.shields.io/badge/Tests-30%2F30%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
 
 [English](README.md) | [简体中文](README_zh.md) | **日本語**
 

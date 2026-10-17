@@ -110,19 +110,27 @@ export function getCaretPosition(): { x: number; y: number } | null {
   try {
     const helper = getHelperPath("win32_helper.exe");
     const out = execFileSync(helper, ["caret"], { encoding: "utf8", timeout: 2000 }).trim();
-    if (!out || out === "none") return null;
-    const parts = out.split(/\s+/);
-    if (parts.length >= 2) {
-      const x = parseInt(parts[0], 10);
-      const y = parseInt(parts[1], 10);
-      if (!isNaN(x) && !isNaN(y)) {
-        return { x, y };
+    if (out && out !== "none") {
+      const parts = out.split(/\s+/);
+      if (parts.length >= 2) {
+        const x = parseInt(parts[0], 10);
+        const y = parseInt(parts[1], 10);
+        if (!isNaN(x) && !isNaN(y)) {
+          return { x, y };
+        }
       }
     }
-    return null;
-  } catch {
-    return null;
-  }
+  } catch {}
+
+  // Fallback for Chromium/Electron/WPF inputs where Win32 system caret is absent
+  try {
+    const rect = getFocusedElementRect();
+    if (rect && rect.width > 0 && rect.height > 0) {
+      return { x: rect.x, y: rect.y + rect.height };
+    }
+  } catch {}
+
+  return null;
 }
 
 export function probeFocusedElement(): { isEditable: boolean; text: string | null; isTerminal?: boolean } {
@@ -265,19 +273,27 @@ export async function getCaretPositionAsync(): Promise<{ x: number; y: number } 
     const helper = getHelperPath("win32_helper.exe");
     const { stdout } = await execFileAsync(helper, ["caret"], { encoding: "utf8", timeout: 1000 });
     const trimmed = stdout ? stdout.trim() : "";
-    if (!trimmed || trimmed === "none") return null;
-    const parts = trimmed.split(/\s+/);
-    if (parts.length >= 2) {
-      const x = parseInt(parts[0], 10);
-      const y = parseInt(parts[1], 10);
-      if (!isNaN(x) && !isNaN(y)) {
-        return { x, y };
+    if (trimmed && trimmed !== "none") {
+      const parts = trimmed.split(/\s+/);
+      if (parts.length >= 2) {
+        const x = parseInt(parts[0], 10);
+        const y = parseInt(parts[1], 10);
+        if (!isNaN(x) && !isNaN(y)) {
+          return { x, y };
+        }
       }
     }
-    return null;
-  } catch {
-    return null;
-  }
+  } catch {}
+
+  // Fallback for Chromium/Electron/WPF inputs where Win32 system caret is absent
+  try {
+    const rect = await getFocusedElementRectAsync();
+    if (rect && rect.width > 0 && rect.height > 0) {
+      return { x: rect.x, y: rect.y + rect.height };
+    }
+  } catch {}
+
+  return null;
 }
 
 export interface ClipboardLike {

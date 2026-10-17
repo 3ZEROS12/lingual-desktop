@@ -11,6 +11,7 @@ import {
   getDefaultDesktopCandidateSlots,
   getDefaultDesktopModifySlots,
   sanitizeAccelerator,
+  discoverPiModelConfig,
   DEFAULT_DESKTOP_CONFIG,
 } from "../src/main/config.js";
 import { classifyDesktopAppContext, isDesktopNoiseInput } from "../src/main/win32.js";
@@ -112,7 +113,7 @@ test("qa: zero banned buzzwords and complete 10-language matrix in settings UI",
     assert.ok(!settingsHtml.includes(banned), `Found banned term '${banned}' in settings.html`);
   }
 
-  for (const lang of ["zh:", "en:", "ja:", "ko:", "es:", "fr:", "de:", "ru:"]) {
+  for (const lang of ["zh:", "en:", "ja:", "ko:", "es:", "fr:", "de:", "ru:", "pt:"]) {
     assert.ok(settingsJs.includes(lang), `Missing UI_I18N dictionary for ${lang}`);
   }
 
@@ -211,9 +212,9 @@ test("v0.5.4 parity: mode normalization, sourceLang slot sovereignty, and 0-CPU 
 
   const settingsJs = fs.readFileSync("src/renderer/settings.js", "utf8");
   const modeSelMatches = settingsJs.match(/mode_sel_title:/g) || [];
-  assert.equal(modeSelMatches.length, 9, "All 9 languages in settings.js must define mode_sel_title");
+  assert.equal(modeSelMatches.length, 10, "All 10 languages in settings.js must define mode_sel_title");
   const modeModMatches = settingsJs.match(/mode_mod_title:/g) || [];
-  assert.equal(modeModMatches.length, 9, "All 9 languages in settings.js must define mode_mod_title");
+  assert.equal(modeModMatches.length, 10, "All 10 languages in settings.js must define mode_mod_title");
 });
 
 test("shortcuts: sanitizeAccelerator validates combinations and rejects dangerous bare keys", () => {
@@ -279,7 +280,7 @@ test("shortcuts: persists custom hotkeys, unbinds cleanly, and supports master t
   }
 });
 
-test("shortcuts: settings UI exposes hotkey configuration with complete 9-language i18n", () => {
+test("shortcuts: settings UI exposes hotkey configuration with complete 10-language i18n", () => {
   const settingsHtml = fs.readFileSync("src/renderer/settings.html", "utf8");
   assert.ok(settingsHtml.includes('id="check-enable-shortcuts"'), "Settings must have enable shortcuts toggle");
   assert.ok(settingsHtml.includes('id="input-hk-toggle"'), "Settings must have input for toggle mode");
@@ -288,9 +289,50 @@ test("shortcuts: settings UI exposes hotkey configuration with complete 9-langua
 
   const settingsJs = fs.readFileSync("src/renderer/settings.js", "utf8");
   const hkTitleMatches = settingsJs.match(/sec_hotkeys_title:/g) || [];
-  assert.equal(hkTitleMatches.length, 9, "All 9 languages in settings.js must define sec_hotkeys_title");
+  assert.equal(hkTitleMatches.length, 10, "All 10 languages in settings.js must define sec_hotkeys_title");
   const unbindMatches = settingsJs.match(/btn_unbind_all_hk:/g) || [];
-  assert.equal(unbindMatches.length, 9, "All 9 languages in settings.js must define btn_unbind_all_hk");
+  assert.equal(unbindMatches.length, 10, "All 10 languages in settings.js must define btn_unbind_all_hk");
+});
+
+test("pi-lingual v0.6.0 handshake: 4-way slot schemas, promptSlots aliasing & model sync", () => {
+  const configPath = getConfigPath();
+  const originalExists = fs.existsSync(configPath);
+  const originalRaw = originalExists ? fs.readFileSync(configPath, "utf8") : null;
+
+  try {
+    // 1. Accepts promptSlots as schema alias for candidateSlots
+    const customPromptSlots = [
+      { id: "cand1", label: "Friendly", role: "translation" as const, enabled: true },
+      { id: "cand2", label: "Formal", role: "translation" as const, enabled: true },
+    ];
+    saveDesktopConfig({
+      promptSlots: customPromptSlots,
+      directSlots: [
+        { id: "direct", label: "Direct", role: "translation" as const, enabled: true },
+      ],
+    });
+
+    const cfg = loadDesktopConfig();
+    assert.deepEqual(cfg.promptSlots, customPromptSlots);
+    assert.deepEqual(cfg.candidateSlots, customPromptSlots);
+    assert.equal(cfg.directSlots?.length, 1);
+
+    // 2. 10-language resolution includes Portuguese (pt)
+    assert.equal(resolveInitialUiLang("pt"), "pt");
+    assert.equal(resolveInitialUiLang(undefined, "pt"), "pt");
+    assert.equal(resolveInitialUiLang("pt-BR"), "pt");
+
+    // 3. discoverPiModelConfig prefers model passed from shared config
+    const discovered = discoverPiModelConfig("non-existent-model-xyz");
+    // Should fall back gracefully or return null without throwing
+    assert.ok(discovered === null || typeof discovered.endpoint === "string");
+  } finally {
+    if (originalExists && originalRaw !== null) {
+      fs.writeFileSync(configPath, originalRaw, "utf8");
+    } else if (fs.existsSync(configPath)) {
+      fs.unlinkSync(configPath);
+    }
+  }
 });
 
 
