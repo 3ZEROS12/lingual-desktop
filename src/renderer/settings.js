@@ -67,6 +67,10 @@
       adv_slots_summary: "Advanced slot configuration",
       btn_add_row: "+ Add Row",
       btn_reset_rows: "Reset Default",
+      sec_quality_title: "Writing Quality",
+      sec_quality_desc: "Keeps generated text plain and human instead of corporate AI filler.",
+      tog_killlist_title: "Natural writing (ban AI buzzwords)",
+      tog_killlist_desc: "Suppresses clichés such as delve, seamless, robust, streamline, game-changer.",
       engine_choose_title: "Translation Engine & Trade-offs",
       engine_choose_desc: "Compare capabilities, accuracy, and token costs across the 3 engines:",
       emode_pi_title: "1. Reuse Local Pi Model (Zero Setup)",
@@ -94,6 +98,11 @@
       hk_rewrite_desc: "In-place translate and replace input draft before sending",
       hk_spotlight: "Spotlight Floating Window",
       hk_spotlight_desc: "Summon floating translate box anywhere on screen",
+      hk_reply: "Reply Copilot",
+      hk_reply_desc: "Select a message you received, then draft 3 replies in one press",
+      hk_conflict_prefix: "⚠️ Already taken by the system or another app:",
+      hk_conflict_tail: "Change or clear these keys.",
+      hk_conflict_ok: "✓ All global shortcuts registered with no conflicts.",
       btn_unbind_all_hk: "Unbind All Hotkeys",
       btn_reset_default_hk: "Reset Default Keys",
       btn_logs: "View Logs",
@@ -159,6 +168,10 @@
       adv_slots_summary: "高级行项配置",
       btn_add_row: "+ 新增行",
       btn_reset_rows: "重置默认",
+      sec_quality_title: "写作质感",
+      sec_quality_desc: "让译文保持朴素自然，不出现 AI 套话与官腔。",
+      tog_killlist_title: "自然写作（屏蔽 AI 套话）",
+      tog_killlist_desc: "自动抑制 delve、seamless、robust、streamline 等陈词滥调。",
       engine_choose_title: "翻译驱动引擎（含各方案优缺点对比）",
       engine_choose_desc: "请根据你对翻译准确度、版式定制与 Token 成本的偏好选择：",
       emode_pi_title: "1. 复用本地 Pi Agent 模型（免配 Key · 共享 Pi 额度）",
@@ -186,6 +199,11 @@
       hk_rewrite_desc: "在发送前直接翻译并替换当前输入框中的草稿内容",
       hk_spotlight: "悬浮翻译输入框 (Spotlight)",
       hk_spotlight_desc: "在屏幕任意位置居中呼出极简翻译浮窗",
+      hk_reply: "回信助手",
+      hk_reply_desc: "选中对方发来的消息，一键生成 3 条可直接发送的回复",
+      hk_conflict_prefix: "⚠️ 快捷键已被系统或其他应用占用：",
+      hk_conflict_tail: "建议点击清除或更换其他按键组合。",
+      hk_conflict_ok: "✓ 全局快捷键已成功注册生效，无冲突。",
       btn_unbind_all_hk: "全部解绑（清空）",
       btn_reset_default_hk: "恢复默认键位",
       btn_logs: "查看日志",
@@ -227,6 +245,8 @@
       tog_autostart_desc: "Windows 登入時在後台靜默啟動（預設關閉，需手動開啟）。",
       preview_title: "即時預覽",
       preview_hint: "示例：「這個功能明天能上線嗎？」",
+      free_engine_card_notice:
+        "⚠️ <strong>目前引擎為「公共網頁基礎翻譯（傳統機翻）」</strong>：傳統機器翻譯非大模型，僅能固定輸出 <strong>1 行基礎譯文</strong>（下方僅「原文行」開關生效）。若需「一句話定製版式」、口語／書面雙語氣對照及重點詞彙擷取，請在「引擎」頁切換為 <strong>1. 複用本機 Pi 模型</strong> 或 <strong>3. 自訂大模型 API</strong>。",
       ai_tuner_title: "一句話定制版式",
       ai_tuner_desc: "輸入你的日常用途或點選下方預設：",
       ai_tuner_placeholder: "例如：只要一行極簡譯文，不顯示原文和詞彙...",
@@ -248,6 +268,10 @@
       adv_slots_summary: "高級行項配置",
       btn_add_row: "+ 新增行",
       btn_reset_rows: "重置默認",
+      sec_quality_title: "寫作質感",
+      sec_quality_desc: "讓譯文保持樸素自然，不出現 AI 套話與官腔。",
+      tog_killlist_title: "自然寫作（屏蔽 AI 套話）",
+      tog_killlist_desc: "自動抑制 delve、seamless、robust、streamline 等陳腔濫調。",
       engine_choose_title: "翻譯驅動引擎 (支援 3 種透明配置方案)",
       engine_choose_desc: "根據你的使用習慣選擇翻譯來源：",
       emode_pi_title: "1. 複用本地 Pi Agent 模型 (推薦 · 零額外配置)",
@@ -275,6 +299,11 @@
       hk_rewrite_desc: "在發送前直接翻譯並替換當前輸入框中的草稿內容",
       hk_spotlight: "懸浮翻譯輸入框 (Spotlight)",
       hk_spotlight_desc: "在螢幕任意位置居中喚出極簡翻譯浮窗",
+      hk_reply: "回信助手",
+      hk_reply_desc: "選中對方傳來的訊息，一鍵產生 3 條可直接送出的回覆",
+      hk_conflict_prefix: "⚠️ 快速鍵已被系統或其他應用程式佔用：",
+      hk_conflict_tail: "建議點擊清除或更換其他按鍵組合。",
+      hk_conflict_ok: "✓ 全域快速鍵已成功註冊生效，無衝突。",
       btn_unbind_all_hk: "全部解綁（清空）",
       btn_reset_default_hk: "恢復預設鍵位",
       btn_logs: "查看日誌",
@@ -316,6 +345,8 @@
       tog_autostart_desc: "ログイン時にバックグラウンドで起動（デフォルト：オフ）。",
       preview_title: "プレビュー",
       preview_hint: "例：「この機能、明日リリースできる？」",
+      free_engine_card_notice:
+        "⚠️ <strong>現在のエンジン：無料 Web 翻訳（非 LLM）</strong> — 従来の機械翻訳は<strong>基礎訳文 1 行</strong>のみを出力します（下の「原文行」スイッチのみ有効）。自然言語によるレイアウト調整、口語／文語の二重表示、語彙抽出を使うには、「エンジン」タブで <strong>1. ローカル Pi モデル</strong> または <strong>3. カスタム LLM API</strong> に切り替えてください。",
       ai_tuner_title: "自然言語プリセット",
       ai_tuner_desc: "用途を入力するか下のプリセットを選択：",
       ai_tuner_placeholder: "例：シンプルな翻訳1行のみ、原文と単語は非表示...",
@@ -337,6 +368,10 @@
       adv_slots_summary: "詳細スロット設定",
       btn_add_row: "+ 行を追加",
       btn_reset_rows: "リセット",
+      sec_quality_title: "文章の質感",
+      sec_quality_desc: "生成文を AI らしい定型句ではなく、素朴で自然な表現に保ちます。",
+      tog_killlist_title: "自然な文章（AI 定型句を禁止）",
+      tog_killlist_desc: "delve、seamless、robust、streamline などの決まり文句を抑制します。",
       engine_choose_title: "翻訳エンジン（3つの方式から選択）",
       engine_choose_desc: "翻訳エンジンの駆動方式を選択：",
       emode_pi_title: "1. ローカル Pi モデルを共有（推奨 · 追加費用 $0）",
@@ -364,6 +399,11 @@
       hk_rewrite_desc: "送信前に入力枠のテキストを直接翻訳・置換",
       hk_spotlight: "スポットライト翻訳ウィンドウ",
       hk_spotlight_desc: "画面中央にシンプルな翻訳ウィンドウを呼び出し",
+      hk_reply: "返信コパイロット",
+      hk_reply_desc: "受信メッセージを選択し、そのまま送れる返信を3案生成",
+      hk_conflict_prefix: "⚠️ システムまたは他のアプリが使用中：",
+      hk_conflict_tail: "キーをクリアするか別の組み合わせに変更してください。",
+      hk_conflict_ok: "✓ グローバルショートカットは競合なく登録されました。",
       btn_unbind_all_hk: "すべて解除",
       btn_reset_default_hk: "デフォルトに戻す",
       btn_logs: "ログを表示",
@@ -404,6 +444,8 @@
       tog_autostart_desc: "로그인 시 백그라운드 자동 실행 (기본값: 꺼짐).",
       preview_title: "실시간 미리보기",
       preview_hint: '예: "이 기능 내일 배포할 수 있을까요?"',
+      free_engine_card_notice:
+        "⚠️ <strong>현재 엔진: 무료 웹 번역(비 LLM)</strong> — 기존 기계 번역은 <strong>기본 번역 1줄</strong>만 출력합니다(아래에서는 '원문 행' 스위치만 적용). 자연어 레이아웃 조정, 구어/문어 이중 비교, 어휘 추출을 사용하려면 '엔진' 탭에서 <strong>1. 로컬 Pi 모델</strong> 또는 <strong>3. 사용자 지정 LLM API</strong>로 전환하세요.",
       ai_tuner_title: "자연어 레이아웃 튜너",
       ai_tuner_desc: "원하는 레이아웃을 입력하거나 아래 프리셋을 클릭하세요:",
       ai_tuner_placeholder: "예: 원문 없이 한 줄 요약만 간결하게...",
@@ -425,6 +467,10 @@
       adv_slots_summary: "고급 슬롯 설정",
       btn_add_row: "+ 행 추가",
       btn_reset_rows: "초기화",
+      sec_quality_title: "문장 품질",
+      sec_quality_desc: "AI 상투어 대신 담백하고 자연스러운 문장을 유지합니다.",
+      tog_killlist_title: "자연스러운 문장 (AI 상투어 금지)",
+      tog_killlist_desc: "delve, seamless, robust, streamline 같은 상투적 표현을 억제합니다.",
       engine_choose_title: "번역 엔진 옵션",
       engine_choose_desc: "번역을 구동할 방식을 선택하세요:",
       emode_pi_title: "1. 로컬 Pi 모델 공유 (권장 · 추가비용 $0)",
@@ -449,6 +495,11 @@
       hk_rewrite_desc: "전송 전 입력창의 초안을 직접 번역 및 교체",
       hk_spotlight: "스포트라이트 번역창",
       hk_spotlight_desc: "화면 중앙에 미니멀 번역창 호출",
+      hk_reply: "답장 코파일럿",
+      hk_reply_desc: "받은 메시지를 선택하면 바로 보낼 수 있는 답장 3개를 생성",
+      hk_conflict_prefix: "⚠️ 시스템 또는 다른 앱이 이미 사용 중:",
+      hk_conflict_tail: "키를 지우거나 다른 조합으로 변경하세요.",
+      hk_conflict_ok: "✓ 모든 전역 단축키가 충돌 없이 등록되었습니다.",
       btn_unbind_all_hk: "모두 해제",
       btn_reset_default_hk: "기본값 복원",
       btn_logs: "로그 보기",
@@ -489,6 +540,8 @@
       tog_autostart_desc: "Iniciar automáticamente en segundo plano (Predeterminado: Desactivado).",
       preview_title: "Vista previa en vivo",
       preview_hint: 'Ejemplo: "¿Podemos lanzar esta función mañana?"',
+      free_engine_card_notice:
+        "⚠️ <strong>Motor activo: traducción web gratuita (sin LLM)</strong> — La traducción automática clásica solo genera <strong>1 línea directa</strong> (abajo solo se aplica el interruptor de la fila de origen). Para habilitar el ajuste de maquetación por lenguaje natural, la comparación de los dos registros y la extracción de vocabulario, cambia en la pestaña Motor a <strong>1. Modelo local de Pi</strong> o <strong>3. API de LLM personalizada</strong>.",
       ai_tuner_title: "Ajuste de diseño en lenguaje natural",
       ai_tuner_desc: "Escribe una instrucción personalizada o pulsa un ajuste:",
       ai_tuner_placeholder: "ej. Una sola línea sin texto original...",
@@ -510,6 +563,10 @@
       adv_slots_summary: "Configuración avanzada de ranuras",
       btn_add_row: "+ Añadir fila",
       btn_reset_rows: "Restablecer",
+      sec_quality_title: "Calidad de escritura",
+      sec_quality_desc: "Mantiene el texto natural y sin relleno corporativo de IA.",
+      tog_killlist_title: "Escritura natural (prohibir clichés de IA)",
+      tog_killlist_desc: "Suprime clichés como delve, seamless, robust, streamline, game-changer.",
       engine_choose_title: "Opciones del motor de traducción",
       engine_choose_desc: "Selecciona cómo se impulsan las traducciones:",
       emode_pi_title: "1. Reutilizar modelo local de Pi (Recomendado · $0)",
@@ -534,6 +591,11 @@
       hk_rewrite_desc: "Traduce y reemplaza el borrador antes de enviar",
       hk_spotlight: "Ventana flotante Spotlight",
       hk_spotlight_desc: "Abre el cuadro de traducción centrado en pantalla",
+      hk_reply: "Copiloto de respuesta",
+      hk_reply_desc: "Selecciona un mensaje recibido y genera 3 respuestas listas para enviar",
+      hk_conflict_prefix: "⚠️ Ya está ocupado por el sistema u otra app:",
+      hk_conflict_tail: "Borra o cambia estas combinaciones.",
+      hk_conflict_ok: "✓ Todos los atajos globales se registraron sin conflictos.",
       btn_unbind_all_hk: "Desvincular todo",
       btn_reset_default_hk: "Restablecer valores",
       btn_logs: "Ver registros",
@@ -574,6 +636,8 @@
       tog_autostart_desc: "Démarrer automatiquement en arrière-plan (Par défaut : Désactivé).",
       preview_title: "Aperçu en direct",
       preview_hint: 'Exemple : "On peut lancer cette fonctionnalité demain ?"',
+      free_engine_card_notice:
+        "⚠️ <strong>Moteur actif : traduction web gratuite (non-LLM)</strong> — La traduction automatique classique ne produit qu'<strong>une seule ligne directe</strong> (seul le bouton « ligne source » s'applique ci-dessous). Pour l'ajustement de mise en page en langage naturel, la comparaison des deux registres et l'extraction de vocabulaire, passez dans l'onglet Moteur à <strong>1. Modèle Pi local</strong> ou <strong>3. API LLM personnalisée</strong>.",
       ai_tuner_title: "Personnalisation en langage naturel",
       ai_tuner_desc: "Saisissez une consigne ou choisissez un préréglage :",
       ai_tuner_placeholder: "ex. Une seule ligne sans texte source...",
@@ -595,6 +659,10 @@
       adv_slots_summary: "Configuration avancée des emplacements",
       btn_add_row: "+ Ajouter une ligne",
       btn_reset_rows: "Réinitialiser",
+      sec_quality_title: "Qualité d'écriture",
+      sec_quality_desc: "Garde un texte naturel, sans remplissage corporate généré par IA.",
+      tog_killlist_title: "Écriture naturelle (bannir les clichés IA)",
+      tog_killlist_desc: "Supprime les clichés du type delve, seamless, robust, streamline, game-changer.",
       engine_choose_title: "Options du moteur de traduction",
       engine_choose_desc: "Sélectionnez le moteur de traduction :",
       emode_pi_title: "1. Réutiliser le modèle local Pi (Recommandé · 0 $)",
@@ -619,6 +687,11 @@
       hk_rewrite_desc: "Traduit et remplace le texte avant l'envoi",
       hk_spotlight: "Fenêtre flottante Spotlight",
       hk_spotlight_desc: "Affiche la boîte de traduction au centre de l'écran",
+      hk_reply: "Copilote de réponse",
+      hk_reply_desc: "Sélectionnez un message reçu et générez 3 réponses prêtes à envoyer",
+      hk_conflict_prefix: "⚠️ Déjà utilisé par le système ou une autre app :",
+      hk_conflict_tail: "Effacez ou changez ces raccourcis.",
+      hk_conflict_ok: "✓ Tous les raccourcis globaux sont enregistrés sans conflit.",
       btn_unbind_all_hk: "Tout dissocier",
       btn_reset_default_hk: "Valeurs par défaut",
       btn_logs: "Voir les logs",
@@ -659,6 +732,8 @@
       tog_autostart_desc: "Automatisch im Hintergrund starten (Standard: Aus).",
       preview_title: "Live-Vorschau",
       preview_hint: 'Beispiel: "Können wir das Feature morgen live schalten?"',
+      free_engine_card_notice:
+        "⚠️ <strong>Aktive Engine: kostenlose Web-Übersetzung (kein LLM)</strong> — Klassische maschinelle Übersetzung liefert nur <strong>1 direkte Zeile</strong> (unten wirkt nur der Schalter „Quellzeile“). Für Layout-Anpassung per natürlicher Sprache, Vergleich beider Register und Vokabelextraktion wechsle im Tab „Engine“ zu <strong>1. Lokales Pi-Modell</strong> oder <strong>3. Eigene LLM-API</strong>.",
       ai_tuner_title: "Layout-Anpassung in natürlicher Sprache",
       ai_tuner_desc: "Geben Sie eine Anweisung ein oder wählen Sie eine Vorlage:",
       ai_tuner_placeholder: "z.B. Nur eine Zeile ohne Quelltext...",
@@ -680,6 +755,10 @@
       adv_slots_summary: "Erweiterte Slot-Einstellungen",
       btn_add_row: "+ Zeile hinzufügen",
       btn_reset_rows: "Zurücksetzen",
+      sec_quality_title: "Schreibqualität",
+      sec_quality_desc: "Hält den Text natürlich statt voller KI-Floskeln.",
+      tog_killlist_title: "Natürliches Schreiben (KI-Floskeln verbieten)",
+      tog_killlist_desc: "Unterdrückt Floskeln wie delve, seamless, robust, streamline, game-changer.",
       engine_choose_title: "Optionen der Übersetzungs-Engine",
       engine_choose_desc: "Wählen Sie, wie Übersetzungen betrieben werden:",
       emode_pi_title: "1. Lokales Pi-Modell teilen (Empfohlen · 0 $)",
@@ -704,6 +783,11 @@
       hk_rewrite_desc: "Entwurf vor dem Absenden direkt übersetzen und ersetzen",
       hk_spotlight: "Spotlight-Übersetzungsfenster",
       hk_spotlight_desc: "Zentrales Übersetzungsfenster aufrufen",
+      hk_reply: "Antwort-Copilot",
+      hk_reply_desc: "Empfangene Nachricht markieren und 3 sendefertige Antworten erzeugen",
+      hk_conflict_prefix: "⚠️ Bereits durch System oder andere App belegt:",
+      hk_conflict_tail: "Diese Tasten löschen oder ändern.",
+      hk_conflict_ok: "✓ Alle globalen Tastenkürzel ohne Konflikt registriert.",
       btn_unbind_all_hk: "Alle aufheben",
       btn_reset_default_hk: "Standard wiederherstellen",
       btn_logs: "Logs anzeigen",
@@ -744,6 +828,8 @@
       tog_autostart_desc: "Автозапуск в фоновом режиме (по умолчанию: выключено).",
       preview_title: "Предпросмотр",
       preview_hint: 'Пример: "Сможем выкатить эту фичу завтра?"',
+      free_engine_card_notice:
+        "⚠️ <strong>Активный движок: бесплатный веб-перевод (без LLM)</strong> — Классический машинный перевод выдаёт только <strong>1 строку перевода</strong> (ниже работает лишь переключатель «строка оригинала»). Чтобы включить настройку макета естественным языком, сравнение двух регистров и извлечение лексики, выберите на вкладке «Движок» <strong>1. Локальная модель Pi</strong> или <strong>3. Собственный LLM API</strong>.",
       ai_tuner_title: "Настройка на естественном языке",
       ai_tuner_desc: "Введите инструкцию или выберите готовый шаблон:",
       ai_tuner_placeholder: "например, Только одна строка перевода без оригинала...",
@@ -765,6 +851,10 @@
       adv_slots_summary: "Расширенная настройка слотов",
       btn_add_row: "+ Добавить строку",
       btn_reset_rows: "Сбросить",
+      sec_quality_title: "Качество текста",
+      sec_quality_desc: "Сохраняет текст естественным, без канцелярских штампов ИИ.",
+      tog_killlist_title: "Естественное письмо (запрет штампов ИИ)",
+      tog_killlist_desc: "Подавляет клише вроде delve, seamless, robust, streamline, game-changer.",
       engine_choose_title: "Варианты движка перевода",
       engine_choose_desc: "Выберите источник перевода:",
       emode_pi_title: "1. Использовать локальную модель Pi (Рекомендуется · 0 $)",
@@ -789,6 +879,11 @@
       hk_rewrite_desc: "Переводит и заменяет черновик прямо в поле перед отправкой",
       hk_spotlight: "Окно Spotlight",
       hk_spotlight_desc: "Вызов окна перевода по центру экрана",
+      hk_reply: "Помощник ответа",
+      hk_reply_desc: "Выделите полученное сообщение и получите 3 готовых ответа",
+      hk_conflict_prefix: "⚠️ Уже занято системой или другим приложением:",
+      hk_conflict_tail: "Очистите или измените эти сочетания.",
+      hk_conflict_ok: "✓ Все глобальные горячие клавиши зарегистрированы без конфликтов.",
       btn_unbind_all_hk: "Очистить все",
       btn_reset_default_hk: "Сбросить по умолчанию",
       btn_logs: "Открыть логи",
@@ -852,6 +947,10 @@
       adv_slots_summary: "Configuração avançada de slots",
       btn_add_row: "+ Adicionar Linha",
       btn_reset_rows: "Redefinir Padrão",
+      sec_quality_title: "Qualidade de escrita",
+      sec_quality_desc: "Mantém o texto natural, sem enchimento corporativo de IA.",
+      tog_killlist_title: "Escrita natural (banir clichês de IA)",
+      tog_killlist_desc: "Suprime clichês como delve, seamless, robust, streamline, game-changer.",
       engine_choose_title: "Opções do Motor de Tradução",
       engine_choose_desc: "Selecione como as traduções são processadas:",
       emode_pi_title: "1. Reutilizar Modelo Local do Pi (Recomendado · $0)",
@@ -876,6 +975,11 @@
       hk_rewrite_desc: "Traduz e substitui o rascunho diretamente antes do envio",
       hk_spotlight: "Janela Flutuante Spotlight",
       hk_spotlight_desc: "Abre a caixa de tradução centralizada na tela",
+      hk_reply: "Copiloto de resposta",
+      hk_reply_desc: "Selecione uma mensagem recebida e gere 3 respostas prontas para enviar",
+      hk_conflict_prefix: "⚠️ Já em uso pelo sistema ou outro app:",
+      hk_conflict_tail: "Limpe ou altere estas combinações.",
+      hk_conflict_ok: "✓ Todos os atalhos globais registrados sem conflitos.",
       btn_unbind_all_hk: "Desvincular Tudo",
       btn_reset_default_hk: "Restaurar Padrões",
       btn_logs: "Ver Logs",
@@ -1056,6 +1160,10 @@
   const toggleDualStyle = document.getElementById("toggle-dual-style");
   const toggleShowMeaning = document.getElementById("toggle-show-meaning");
   const toggleShowVocab = document.getElementById("toggle-show-vocab");
+  const toggleKillList = document.getElementById("toggle-killlist");
+  if (toggleKillList) {
+    toggleKillList.addEventListener("change", () => autoSaveNow());
+  }
 
   const slotCardList = document.getElementById("slot-card-list");
   const btnAddSlot = document.getElementById("btn-add-slot");
@@ -1701,6 +1809,8 @@
   const btnClearHkRewrite = document.getElementById("btn-clear-hk-rewrite");
   const inputHkSpotlight = document.getElementById("input-hk-spotlight");
   const btnClearHkSpotlight = document.getElementById("btn-clear-hk-spotlight");
+  const inputHkReply = document.getElementById("input-hk-reply");
+  const btnClearHkReply = document.getElementById("btn-clear-hk-reply");
   const shortcutConflictNotice = document.getElementById("shortcut-conflict-notice");
   const btnUnbindAllHk = document.getElementById("btn-unbind-all-hk");
   const btnResetDefaultHk = document.getElementById("btn-reset-default-hk");
@@ -1713,23 +1823,26 @@
     }
     const conflicts = [];
     if (report.toggleMode?.shortcut && !report.toggleMode?.registered) {
-      conflicts.push(`[${report.toggleMode.shortcut}] 模式切换已冲突`);
+      conflicts.push(`[${report.toggleMode.shortcut}] ${t("hk_toggle_mode")}`);
     }
     if (report.rewrite?.shortcut && !report.rewrite?.registered) {
-      conflicts.push(`[${report.rewrite.shortcut}] 预发改写已冲突`);
+      conflicts.push(`[${report.rewrite.shortcut}] ${t("hk_rewrite")}`);
     }
     if (report.spotlight?.shortcut && !report.spotlight?.registered) {
-      conflicts.push(`[${report.spotlight.shortcut}] 居中浮窗已冲突`);
+      conflicts.push(`[${report.spotlight.shortcut}] ${t("hk_spotlight")}`);
+    }
+    if (report.reply?.shortcut && !report.reply?.registered) {
+      conflicts.push(`[${report.reply.shortcut}] ${t("hk_reply")}`);
     }
 
     if (conflicts.length > 0) {
-      shortcutConflictNotice.textContent = `⚠️ 快捷键已被系统或其他应用占用：${conflicts.join("，")}。建议点击清除或更换其他按键组合。`;
+      shortcutConflictNotice.textContent = `${t("hk_conflict_prefix")} ${conflicts.join(" · ")} ${t("hk_conflict_tail")}`;
       shortcutConflictNotice.style.color = "#dc2626";
       shortcutConflictNotice.style.background = "#fef2f2";
       shortcutConflictNotice.style.border = "1px solid #fecaca";
       shortcutConflictNotice.classList.remove("hidden");
     } else {
-      shortcutConflictNotice.textContent = "✓ 全局快捷键已成功注册生效，无冲突。";
+      shortcutConflictNotice.textContent = t("hk_conflict_ok");
       shortcutConflictNotice.style.color = "#16a34a";
       shortcutConflictNotice.style.background = "#f0fdf4";
       shortcutConflictNotice.style.border = "1px solid #bbf7d0";
@@ -1764,10 +1877,16 @@
     autoSaveNow();
   });
 
+  btnClearHkReply?.addEventListener("click", () => {
+    if (inputHkReply) inputHkReply.value = "";
+    autoSaveNow();
+  });
+
   btnUnbindAllHk?.addEventListener("click", () => {
     if (inputHkToggle) inputHkToggle.value = "";
     if (inputHkRewrite) inputHkRewrite.value = "";
     if (inputHkSpotlight) inputHkSpotlight.value = "";
+    if (inputHkReply) inputHkReply.value = "";
     autoSaveNow();
   });
 
@@ -1782,10 +1901,11 @@
     if (inputHkToggle) inputHkToggle.value = "Alt+Q";
     if (inputHkRewrite) inputHkRewrite.value = "Alt+E";
     if (inputHkSpotlight) inputHkSpotlight.value = "Alt+Space";
+    if (inputHkReply) inputHkReply.value = "Alt+R";
     autoSaveNow();
   });
 
-  [inputHkToggle, inputHkRewrite, inputHkSpotlight].forEach((inp) => {
+  [inputHkToggle, inputHkRewrite, inputHkSpotlight, inputHkReply].forEach((inp) => {
     inp?.addEventListener("change", () => autoSaveNow());
   });
 
@@ -1808,7 +1928,9 @@
       hotkeyToggleMode: inputHkToggle ? inputHkToggle.value.trim() : "",
       hotkeyRewrite: inputHkRewrite ? inputHkRewrite.value.trim() : "",
       hotkeySpotlight: inputHkSpotlight ? inputHkSpotlight.value.trim() : "",
+      hotkeyReply: inputHkReply ? inputHkReply.value.trim() : "",
       autoSend: true,
+      killListEnabled: toggleKillList ? toggleKillList.checked : true,
       showCapsule: checkShowCapsule ? checkShowCapsule.checked : true,
       autoStartOnBoot: checkAutostart ? checkAutostart.checked : false,
     };
@@ -1885,6 +2007,9 @@
       if (checkAutostart) {
         checkAutostart.checked = cfg.autoStartOnBoot === true;
       }
+      if (toggleKillList) {
+        toggleKillList.checked = cfg.killListEnabled !== false;
+      }
 
       if (checkEnableShortcuts) {
         checkEnableShortcuts.checked = cfg.enableGlobalShortcuts !== false;
@@ -1896,6 +2021,7 @@
       if (inputHkToggle) inputHkToggle.value = cfg.hotkeyToggleMode || "Alt+Q";
       if (inputHkRewrite) inputHkRewrite.value = cfg.hotkeyRewrite || "Alt+E";
       if (inputHkSpotlight) inputHkSpotlight.value = cfg.hotkeySpotlight || "Alt+Space";
+      if (inputHkReply) inputHkReply.value = cfg.hotkeyReply || "Alt+R";
 
       try {
         const report = await window.lingualSettingsAPI?.getShortcutsReport?.();

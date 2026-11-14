@@ -3,7 +3,7 @@
 > **不替代你的输入法 · 回车即发即翻 · 常驻可自由拖拽微胶囊 · 剪贴板历史零污染**  
 > 你完全照旧使用最顺手的**微软拼音、微信输入法、搜狗或 Rime**，在任何软件（X/推特、Slack、Discord、必应/谷歌搜索、Notion、微信、邮件）中打字。打完敲回车（Enter），`lingual-desktop` 自动判断自然语言并按模式分流，直接发出地道外语或原文，并就地展开双轨伴学视窗。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 30/30 Pass](https://img.shields.io/badge/Tests-30%2F30%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 54/54 Pass](https://img.shields.io/badge/Tests-54%2F54%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
 
 [English](README.md) | **简体中文** | [日本語](README_ja.md)
 
@@ -18,6 +18,31 @@
 * **伴学模式 (`[LEARN]`)**：按 **`Enter`** 0ms 彻底非阻塞放行，你的中文原文秒级发出去，卡片在后台异步展开供你学习地道英文与词汇搭配；
 * **关闭模式 (`[OFF]`)**：完全静默，不拦截任何回车；
 * **换行零冲突**：仅监听单 Enter，**`Ctrl+Enter` 与 `Shift+Enter` 换行键 100% 原生保留**，绝不影响普通换行。
+
+---
+
+## 为什么是桌面层，而不是又一个终端插件
+
+`pi-lingual` 优化的是你交给 AI 智能体的提示词，它只活在一个终端里。`lingual-desktop` 解决的是另一半问题：**你发给「人」的那句话，发生在任何一个 Windows 应用里。** 形态本身决定了 CLI 插件结构上做不到的事：
+
+| 能力 | 终端插件 | lingual-desktop |
+| --- | --- | --- |
+| 能看到什么文本 | 只有智能体输入框 | 所有输入框（微信、Slack、Discord、Outlook、X、游戏） |
+| 知道对话对象 | 单一上下文 | 应用 + 窗口标题 → 语气提示 |
+| 看到「对方发来的消息」 | ✗ | ✓ 选中即捕获 → 回信助手 |
+| 发送前介入 | ✗ | ✓ 原地改写，绝不覆盖草稿 |
+| 无感常驻 | ✗ | ✓ 不抢焦点的悬浮岛 |
+
+### 回信助手 (Reply Copilot · `Alt+R`)
+
+终端里永远做不到的一条链路：**回对方刚发来的消息。**
+
+1. 在任意应用里选中收到的消息（微信 / Slack / Outlook / Discord…）。
+2. 按 `Alt+R`。
+3. 悬浮岛展开：**对方到底想要什么**（用你的母语说清）+ 三条可直接发送的回复，按「沟通动作」而不是「语气」分类 —— 答应 / 婉拒 / 追问。
+4. 按 `1`-`3` 插入，`0` 取消。
+
+回复使用对方的语言；如果对方本来就写你的母语，则切换成你正在练的那门语言。全程不覆盖已有草稿：回复框里已经有字时，只复制不粘贴。
 
 ---
 
@@ -114,7 +139,7 @@ npm run build:native
 # 编译 Electron 主进程与 Preload 脚本
 npm run build:main
 
-# 运行全量单元测试套件 (28/28 Pass)
+# 运行全量单元测试套件 (54/54 Pass)
 npm test
 ```
 

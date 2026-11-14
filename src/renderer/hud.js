@@ -22,6 +22,12 @@
   const footerStatusBadge = document.getElementById("footer-status-badge");
   const autoDismissBar = document.getElementById("auto-dismiss-bar");
 
+  const DEFAULT_CONFIRM_HINT = footerConfirmHint ? footerConfirmHint.innerHTML : "";
+  const REPLY_CONFIRM_HINT =
+    '<span class="hint-item"><kbd>1</kbd>-<kbd>3</kbd> Insert reply</span>' +
+    '<span class="hint-sep">·</span>' +
+    '<span class="hint-item"><kbd>0</kbd>/<kbd>Esc</kbd> Cancel</span>';
+
   const AUTO_DISMISS_MS = 5200;
   let dismissTimer = null;
   let dismissInterval = null;
@@ -161,6 +167,10 @@
       } else {
         footerAutoHint.classList.add("hidden");
         footerConfirmHint.classList.remove("hidden");
+        if (footerConfirmHint) {
+          footerConfirmHint.innerHTML =
+            payload.modeLabel === "Reply" ? REPLY_CONFIRM_HINT : DEFAULT_CONFIRM_HINT;
+        }
       }
     }
 
@@ -187,6 +197,19 @@
       let translationCount = 0;
 
       contentBranches.forEach((slot) => {
+        if ((slot.role === "translation" || slot.role === "custom") && slot.selectable === false) {
+          // Non-selectable insight row (Reply Copilot: "what they actually mean").
+          // Rendered as a quiet quote bar so it never competes with the numbered replies.
+          const insight = document.createElement("div");
+          insight.className = "source-quote-bar";
+          insight.innerHTML = `
+            <span class="source-pill">${escapeHtml(slot.label || "Context")}</span>
+            <span class="source-text">${escapeHtml(slot.content)}</span>
+          `;
+          cardContent.appendChild(insight);
+          return;
+        }
+
         if (slot.role === "translation" || slot.role === "custom") {
           translationCount++;
           const num = translationCount;

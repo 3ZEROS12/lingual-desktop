@@ -3,7 +3,7 @@
 > **既存の日本語入力（IME）を置き換えない · Enter キーを押すだけのシームレス翻訳 ＆ 伴走学習 · 画面上部に常駐する自由ドラッグ対応カプセル · クリップボード履歴を一切汚さない**  
 > Windows 標準の Microsoft IME、Google 日本語入力、ATOK などをそのまま使えます。普段通りにタイピングし、Enter キーを押すだけで、`lingual-desktop` が自然言語を検知して自動分流。入力欄のテキストをそのまま送信、あるいは洗練された英語に置き換えて送信し、その場に 3 秒間のデュアルレジスター伴走カードを展開します。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 30/30 Pass](https://img.shields.io/badge/Tests-30%2F30%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 54/54 Pass](https://img.shields.io/badge/Tests-54%2F54%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
 
 [English](README.md) | [简体中文](README_zh.md) | **日本語**
 
@@ -18,6 +18,31 @@ Windows デスクトップ上に常駐する軽量なコンパニオンレイヤ
 * **伴走学習モード (`[LEARN]`)**：**`Enter`** を押すと 0ms の非ブロッキングで日本語がそのまま送信され、裏で伴走カードが非同期に開いて生きた英語表現やコロケーションを学べます。
 * **オフモード (`[OFF]`)**：完全透過。フックは一切動作しません。
 * **改行ショートカットの完全保護**：単一の Enter 打鍵のみを対象とし、**`Ctrl+Enter` や `Shift+Enter` による通常の改行操作は 100% そのまま通過**します。
+
+---
+
+## なぜ「ターミナルプラグイン」ではなくデスクトップ層なのか
+
+`pi-lingual` が最適化するのは、AI エージェントに渡すプロンプトです。それは 1 つのターミナルの中で完結します。`lingual-desktop` が担うのは問題のもう半分——**「人間」に送るメッセージ**で、それは Windows のあらゆるアプリで発生します。この形態そのものが、CLI 拡張では構造的に不可能な機能を可能にします：
+
+| 能力 | ターミナル拡張 | lingual-desktop |
+| --- | --- | --- |
+| 見えるテキスト | エージェントの入力欄のみ | すべての入力欄（WeChat、Slack、Discord、Outlook、X、ゲーム） |
+| 相手の把握 | 単一コンテキスト | アプリ + ウィンドウタイトル → レジスター推定 |
+| 受信メッセージ | ✗ | ✓ 選択を取得 → 返信コパイロット |
+| 送信前の介入 | ✗ | ✓ その場で書き換え、下書きは壊さない |
+| 常駐する軽さ | ✗ | ✓ フォーカスを奪わないフローティング島 |
+
+### 返信コパイロット (Reply Copilot · `Alt+R`)
+
+ターミナルでは絶対に成立しないフロー：**相手が今送ってきたメッセージに返信する。**
+
+1. 任意のアプリで受信メッセージを選択（WeChat / Slack / Outlook / Discord…）。
+2. `Alt+R` を押す。
+3. 島が展開し、**相手が本当に求めていること**（母語で）と、そのまま送れる返信 3 案を表示。分類は「トーン」ではなく**コミュニケーションの動作**——承諾 / 丁寧な断り / 聞き返し。
+4. `1`-`3` で挿入、`0` でキャンセル。
+
+返信は相手の言語で生成されます。相手がすでに母語で書いてきた場合は、学習中の言語に切り替わります。既存の下書きは決して上書きしません（入力欄に文字があれば貼り付けずコピーのみ）。
 
 ---
 
@@ -114,7 +139,7 @@ npm run build:native
 # Electron メインプロセスおよび Preload バンドルのビルド
 npm run build:main
 
-# 全自動ユニットテストの実行 (28/28 Pass)
+# 全自動ユニットテストの実行 (54/54 Pass)
 npm test
 ```
 

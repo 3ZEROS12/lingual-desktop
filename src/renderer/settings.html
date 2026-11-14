@@ -217,8 +217,18 @@
               </div>
             </div>
 
-            <div id="shortcut-conflict-notice" class="ai-status-msg hidden" style="font-size: 11px;"></div>
+            <div class="hotkey-field-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 12px; font-weight: 600; color: var(--ink-primary);" data-i18n="hk_reply">Reply Copilot</span>
+                <span style="font-size: 11px; color: var(--ink-muted);" data-i18n="hk_reply_desc">Select a message you received, then draft 3 replies in one press</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="text" id="input-hk-reply" class="input-text" style="width: 130px; text-align: center; font-family: monospace; font-size: 12px;" placeholder="Alt+R" />
+                <button type="button" class="btn-secondary" id="btn-clear-hk-reply" style="padding: 4px 8px; font-size: 11px;" title="Unbind">Clear</button>
+              </div>
+            </div>
 
+            <div id="shortcut-conflict-notice" class="ai-status-msg hidden" style="font-size: 11px;"></div>
             <div style="display: flex; gap: 8px; margin-top: 4px;">
               <button type="button" class="btn-secondary" id="btn-unbind-all-hk" style="font-size: 11px;" data-i18n="btn_unbind_all_hk">Unbind All Hotkeys</button>
               <button type="button" class="btn-secondary" id="btn-reset-default-hk" style="font-size: 11px;" data-i18n="btn_reset_default_hk">Reset Default Keys</button>
@@ -232,7 +242,7 @@
         <!-- Notice when Free Web Translate (non-LLM) is active -->
         <div id="free-engine-card-notice" class="notice-banner hidden" style="border-color: #d97706; background: #fffbeb; color: #92400e;">
           <span data-i18n="free_engine_card_notice">
-            ⚠️ <strong>当前引擎为「公共网页基础翻译（传统机翻）」</strong>：传统机器翻译非大模型，仅能固定输出 <strong>1 行基础译文</strong>（下方仅「原文行」开关生效）。若需使用「一句话定制版式」、口语/书面双语气对照及重点词汇提取，请在「引擎」页切换为 <strong>1. 复用本地 Pi 模型</strong> 或 <strong>3. 自定义大模型 API</strong>。
+            ⚠️ <strong>Active engine: Free Web Translate (non-LLM machine translation)</strong> — it can only output <strong>one basic translation line</strong> (only the Source row toggle applies below). For Natural Language Layout Tuning, dual-tone comparison, and vocabulary extraction, switch to <strong>1. Reuse Local Pi Model</strong> or <strong>3. Custom LLM API</strong> on the Engine tab.
           </span>
         </div>
 
@@ -324,6 +334,22 @@
               </div>
             </div>
           </details>
+        </div>
+
+        <!-- 4. Writing Quality (Anti-AI-Slop Kill List) -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title" data-i18n="sec_quality_title">Writing Quality</h2>
+            <p class="card-desc" data-i18n="sec_quality_desc">Keeps generated text plain and human instead of corporate AI filler.</p>
+          </div>
+
+          <label class="toggle-item">
+            <input type="checkbox" id="toggle-killlist" checked />
+            <div class="toggle-text">
+              <strong data-i18n="tog_killlist_title">Natural writing (ban AI buzzwords)</strong>
+              <span data-i18n="tog_killlist_desc">Suppresses clichés such as delve, seamless, robust, streamline, game-changer.</span>
+            </div>
+          </label>
         </div>
       </section>
 
@@ -419,8 +445,8 @@
         <button type="button" id="btn-open-logs" class="btn-link" title="Open runtime.log in editor" data-i18n="btn_logs">View Logs</button>
       </div>
       <div class="footer-actions">
-        <button type="button" id="btn-quit-app" class="btn-secondary" style="color: #dc2626; border-color: #fca5a5;" data-i18n="btn_quit_app">彻底退出</button>
-        <button id="btn-save" class="btn-primary" data-i18n="btn_done">确定</button>
+        <button type="button" id="btn-quit-app" class="btn-secondary" style="color: #dc2626; border-color: #fca5a5;" data-i18n="btn_quit_app">Quit Lingual</button>
+        <button id="btn-save" class="btn-primary" data-i18n="btn_done">Save</button>
       </div>
     </footer>
   </div>

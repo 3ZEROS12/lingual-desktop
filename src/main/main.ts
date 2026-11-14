@@ -12,8 +12,10 @@ import {
   getActiveWindowHwnd,
   restoreFocus,
   getFocusedElementText,
+  getFocusedElementRectAsync,
   injectTextToTarget,
   setFocusedElementText,
+  captureSelectedText,
   startPassiveInputWatcher,
   stopPassiveInputWatcher,
   getLatestPassiveDraft,
@@ -22,9 +24,11 @@ import {
 } from "./win32.js";
 import {
   executeTranslation,
+  executeReplyDraft,
   shouldTriggerTranslation,
   generateSlotsFromUserIntent,
   detectLocalEndpoints,
+  type DesktopReplyResult,
 } from "./engine.js";
 import { getDefaultSlots } from "pi-lingual/core";
 import { initLogger, logger, openLogFile, readRecentLogs } from "./logger.js";
@@ -42,6 +46,11 @@ let activeTargetHwnd = "0";
 let activeBackupText = "";
 let currentTranslationResponse: any = null;
 let viewState: "idle" | "hud" | "spotlight" = "idle";
+
+// Reply Copilot state: the incoming message the user is answering, and its reply candidates.
+let replyModeActive = false;
+let replyTargetHwnd = "0";
+let currentReplyCandidates: DesktopReplyResult["candidates"] = [];
 
 const CAPSULE_WIDTH = 144;
 const CAPSULE_HEIGHT = 30;
@@ -191,6 +200,7 @@ function createHudWindow(): BrowserWindow {
 function switchToIdleView(): void {
   if (!hudWindow) return;
   viewState = "idle";
+  replyModeActive = false;
   hudWindow.setFocusable(false);
   hudWindow.hide();
   hudWindow.webContents.send("lingual:view-state", "idle");
@@ -371,6 +381,7 @@ async function runDesktopTranslationFlow(
 ): Promise<void> {
   if (currentMode === "off" && !options?.preSendReplace) return;
 
+  replyModeActive = false;
   const text = (evt.text || "").trim();
   if (!text || isDesktopNoiseInput(text)) return;
 
@@ -504,11 +515,124 @@ async function handlePassiveSubmit(evt: PassiveSubmitEvent): Promise<void> {
   await runDesktopTranslationFlow(evt, { preSendReplace: false });
 }
 
+// ============================================================================
+// Reply Copilot (回信) — desktop-only surface
+//
+// The terminal extension can only see what you type into one agent. This flow sees the
+// message someone else just sent you, in ANY Windows app: select it, press the reply
+// hotkey, and get "what they actually want" plus three send-ready replies chosen by
+// communicative move (accept / decline / ask back) instead of by tone.
+// ============================================================================
+
+/**
+ * Captures the inbound message the user wants to answer, in priority order:
+ * 1. The current text selection in the foreground app (the natural gesture)
+ * 2. The system clipboard (user already copied the message)
+ * 3. The latest passive draft (the user pasted it into the reply box)
+ */
+async function captureInboundMessage(): Promise<string> {
+  const selection = await captureSelectedText(clipboard);
+  if (selection?.text?.trim()) {
+    // captureSelectedText leaves the selection on the clipboard; give the user's clipboard back.
+    try {
+      clipboard.writeText(selection.backup);
+    } catch {}
+    return selection.text.trim();
+  }
+
+  const clip = (clipboard.readText() || "").trim();
+  if (clip && !isDesktopNoiseInput(clip)) return clip;
+
+  const draft = getLatestPassiveDraft();
+  if (draft?.text?.trim()) return draft.text.trim();
+
+  return "";
+}
+
+/**
+ * Places a drafted reply into the target app without ever destroying an existing draft:
+ * UIA replacement only when the focused box is verifiably empty, otherwise clipboard-only.
+ */
+async function insertReplyIntoFocusedInput(text: string): Promise<"inserted" | "copied"> {
+  clipboard.writeText(text);
+  if (replyTargetHwnd && replyTargetHwnd !== "0") {
+    restoreFocus(replyTargetHwnd);
+  }
+  await new Promise((r) => setTimeout(r, 40));
+
+  const current = getFocusedElementText();
+  if (current !== null && !current.trim()) {
+    if (setFocusedElementText(text)) return "inserted";
+    if (replyTargetHwnd && replyTargetHwnd !== "0") {
+      await injectTextToTarget(text, replyTargetHwnd, "", clipboard);
+      return "inserted";
+    }
+  }
+
+  logger.info("reply", "Target input already has content or is not UIA-readable — reply left on clipboard.");
+  return "copied";
+}
+
+async function runReplyFlow(): Promise<void> {
+  const config = loadDesktopConfig();
+  const hwnd = getActiveWindowHwnd();
+  const lastDraft = getLatestPassiveDraft();
+
+  const inbound = await captureInboundMessage();
+  if (!inbound) {
+    logger.info("reply", "No inbound text found (no selection, clipboard or draft). Opening spotlight instead.");
+    switchToSpotlightView();
+    return;
+  }
+
+  replyTargetHwnd = hwnd;
+  replyModeActive = true;
+  currentReplyCandidates = [];
+  currentTranslationResponse = null;
+
+  const rect = await getFocusedElementRectAsync();
+  switchToHudView(false, rect);
+
+  if (hudWindow && !hudWindow.isDestroyed()) {
+    hudWindow.webContents.send("lingual:data", {
+      loading: true,
+      sourceText: inbound,
+      autoSent: false,
+      modeLabel: "Reply",
+    });
+  }
+
+  try {
+    const res = await executeReplyDraft(inbound, config, {
+      app: lastDraft?.app,
+      title: lastDraft?.title,
+    });
+    currentReplyCandidates = res.candidates;
+    currentTranslationResponse = res;
+
+    if (!hudWindow || hudWindow.isDestroyed() || !hudWindow.isVisible()) return;
+    hudWindow.webContents.send("lingual:data", {
+      ...res,
+      sourceText: inbound,
+      autoSent: false,
+      modeLabel: res.isOfflineOrFailed ? "Offline" : "Reply",
+    });
+    logger.info(
+      "reply",
+      `Reply set ready: ${res.candidates.length} candidates [${res.inboundLang} ➔ ${res.replyLang}]`
+    );
+  } catch (err: any) {
+    logger.error("reply", "Reply drafting failed:", err);
+    switchToIdleView();
+  }
+}
+
 export interface ShortcutRegistrationReport {
   enabled: boolean;
   toggleMode: { shortcut: string; registered: boolean; error?: string };
   rewrite: { shortcut: string; registered: boolean; error?: string };
   spotlight: { shortcut: string; registered: boolean; error?: string };
+  reply: { shortcut: string; registered: boolean; error?: string };
 }
 
 let lastShortcutReport: ShortcutRegistrationReport = {
@@ -516,6 +640,7 @@ let lastShortcutReport: ShortcutRegistrationReport = {
   toggleMode: { shortcut: "", registered: false },
   rewrite: { shortcut: "", registered: false },
   spotlight: { shortcut: "", registered: false },
+  reply: { shortcut: "", registered: false },
 };
 
 /**
@@ -535,6 +660,7 @@ export function registerShortcuts(config: LingualDesktopConfig): ShortcutRegistr
     toggleMode: { shortcut: "", registered: false },
     rewrite: { shortcut: "", registered: false },
     spotlight: { shortcut: "", registered: false },
+    reply: { shortcut: "", registered: false },
   };
 
   if (!report.enabled) {
@@ -630,6 +756,27 @@ export function registerShortcuts(config: LingualDesktopConfig): ShortcutRegistr
     } catch (err: any) {
       report.spotlight.error = err.message || "Registration failed";
       logger.warn("shortcuts", `Error registering hotkeySpotlight [${spotlightKey}]:`, err);
+    }
+  }
+
+  // 4. Reply Copilot [回信]: draft a reply to the message the user just received
+  const replyKey = sanitizeAccelerator(config.hotkeyReply);
+  if (replyKey) {
+    report.reply.shortcut = replyKey;
+    try {
+      const ok = globalShortcut.register(replyKey, () => {
+        void runReplyFlow();
+      });
+      report.reply.registered = ok;
+      if (!ok) {
+        report.reply.error = "Conflict: already in use by system or another tool";
+        logger.warn("shortcuts", `Failed to register hotkeyReply [${replyKey}] - already occupied`);
+      } else {
+        logger.info("shortcuts", `Successfully registered hotkeyReply: ${replyKey}`);
+      }
+    } catch (err: any) {
+      report.reply.error = err.message || "Registration failed";
+      logger.warn("shortcuts", `Error registering hotkeyReply [${replyKey}]:`, err);
     }
   }
 
@@ -875,6 +1022,20 @@ function setupIpc(): void {
   });
 
   ipcMain.on("lingual:select", async (_event, slot: number) => {
+    // Reply Copilot: 1-3 insert a drafted reply instead of translating anything.
+    if (replyModeActive) {
+      const chosen = currentReplyCandidates[slot - 1];
+      if (!chosen) {
+        switchToIdleView();
+        restoreFocus(replyTargetHwnd);
+        return;
+      }
+      const outcome = await insertReplyIntoFocusedInput(chosen.content);
+      logger.info("reply", `Reply #${slot} ${outcome}: "${chosen.content.slice(0, 40)}"`);
+      switchToIdleView();
+      return;
+    }
+
     if (!currentTranslationResponse) {
       switchToIdleView();
       restoreFocus(activeTargetHwnd);

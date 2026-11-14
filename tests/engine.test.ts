@@ -6,6 +6,7 @@ import {
   fetchZeroKeyTranslation,
   detectLocalEndpoints,
   generateSlotsFromUserIntent,
+  buildDesktopTranslationContext,
 } from "../src/main/engine.js";
 
 test("engine: executeTranslation bypasses pure CLI command via 0ms shield", async () => {
@@ -95,3 +96,42 @@ test("engine: executeTranslation correctly isolates 4 desktop modes (modify, sel
   assert.equal(resEnglishBypass.shieldBypassed, true);
 });
 
+
+test("engine: translation context injects the anti-AI-slop Kill List by default", () => {
+  const { mergedContext } = buildDesktopTranslationContext({ text: "这个功能明天能上线吗？" });
+  assert.ok(mergedContext, "kill list should always produce a context directive");
+  assert.match(mergedContext!, /KILL LIST/i);
+  assert.match(mergedContext!.toLowerCase(), /delve/);
+});
+
+test("engine: Kill List can be switched off and extended with user words", () => {
+  const off = buildDesktopTranslationContext({ text: "这个功能明天能上线吗？", killListEnabled: false });
+  assert.equal(off.mergedContext, undefined, "disabled kill list must not emit any directive");
+
+  const custom = buildDesktopTranslationContext({
+    text: "这个功能明天能上线吗？",
+    globalKillList: ["frobnicate"],
+  });
+  assert.match(custom.mergedContext!, /frobnicate/);
+  assert.match(custom.mergedContext!.toLowerCase(), /delve/);
+});
+
+test("engine: translation context layers app tone hints and code-switch rules", () => {
+  const chat = buildDesktopTranslationContext({
+    text: "这个功能明天能上线吗？",
+    app: "slack.exe",
+    title: "general - Slack",
+    killListEnabled: false,
+  });
+  assert.equal(chat.appProfile.badge, "Chat");
+  assert.match(chat.mergedContext!, /ACTIVE APPLICATION CONTEXT - Chat/);
+
+  const codeSwitch = buildDesktopTranslationContext({
+    text: "I think this 方案 还需要 review 一下",
+    killListEnabled: false,
+  });
+  assert.match(codeSwitch.mergedContext!, /MIXED-LANGUAGE CODE-SWITCH/);
+
+  const plain = buildDesktopTranslationContext({ text: "你好世界", killListEnabled: false });
+  assert.equal(plain.mergedContext, undefined);
+});

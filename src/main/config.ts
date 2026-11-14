@@ -7,9 +7,186 @@ export type CompanionMode = "original" | "english" | "select" | "modify" | "off"
 export type SlotPreset = "developer" | "social" | "japanese" | "academic" | "custom";
 export type EngineProviderMode = "pi" | "free" | "custom";
 
+/**
+ * Normalizes a language tag into one of the 9 canonical desktop language codes.
+ * Handles regional variants such as zh-CN / zh-TW / zh-Hant / pt-BR without
+ * collapsing them into the wrong script family.
+ */
+const LANG_TAG_ALIASES: Record<string, string> = {
+  "zh-cn": "zh",
+  "zh-hans": "zh",
+  "zh-sg": "zh",
+  "zh-tw": "tw",
+  "zh-hk": "tw",
+  "zh-mo": "tw",
+  "zh-hant": "tw",
+};
+
+export function normalizeDesktopLangTag(lang?: string): string {
+  const raw = (lang || "").trim().toLowerCase().replace(/_/g, "-");
+  if (!raw) return "en";
+  const alias = LANG_TAG_ALIASES[raw];
+  if (alias) return alias;
+  return raw.split("-")[0] || "en";
+}
+
+/** Single-slot direct mode labels across all 9 supported languages. */
+const DIRECT_SLOT_LABELS: Record<string, string> = {
+  en: "Direct",
+  zh: "直出",
+  tw: "直出",
+  ja: "直訳",
+  ko: "직출",
+  es: "Directo",
+  fr: "Direct",
+  de: "Direkt",
+  ru: "Прямой",
+};
+
+/** Candidate (3-tone) mode labels across all 9 supported languages. */
+const CANDIDATE_SLOT_LABELS: Record<string, { source: string; casual: string; polite: string; concise: string }> = {
+  en: { source: "Source", casual: "Casual", polite: "Polite", concise: "Concise" },
+  zh: { source: "原文", casual: "随和口语", polite: "得体礼貌", concise: "精炼干脆" },
+  tw: { source: "原文", casual: "隨和口語", polite: "得體禮貌", concise: "精煉乾脆" },
+  ja: { source: "原文", casual: "カジュアル", polite: "丁寧・敬語", concise: "簡潔・要点" },
+  ko: { source: "원문", casual: "구어·친근", polite: "정중·비즈니스", concise: "간결·핵심" },
+  es: { source: "Original", casual: "Coloquial", polite: "Cortés", concise: "Conciso" },
+  fr: { source: "Original", casual: "Courant", polite: "Poli", concise: "Concis" },
+  de: { source: "Original", casual: "Umgangssprachlich", polite: "Höflich", concise: "Prägnant" },
+  ru: { source: "Оригинал", casual: "Разговорный", polite: "Вежливый", concise: "Лаконичный" },
+};
+
+/** Modify (surgical fix) mode labels across all 9 supported languages. */
+const MODIFY_SLOT_LABELS: Record<string, { fixed: string; native: string; fixes: string }> = {
+  en: { fixed: "Fixed", native: "Native", fixes: "Takeaway" },
+  zh: { fixed: "原句修补", native: "地道表达", fixes: "收获复盘" },
+  tw: { fixed: "原句修補", native: "道地表達", fixes: "收穫複盤" },
+  ja: { fixed: "原文修正", native: "自然表現", fixes: "重要ポイント" },
+  ko: { fixed: "원문수정", native: "자연스러운표현", fixes: "핵심포인트" },
+  es: { fixed: "Corregido", native: "Nativo", fixes: "Aprendizaje" },
+  fr: { fixed: "Corrigé", native: "Naturel", fixes: "À retenir" },
+  de: { fixed: "Korrigiert", native: "Nativ", fixes: "Erkenntnis" },
+  ru: { fixed: "Исправлено", native: "Естественно", fixes: "Вывод" },
+};
+
+/** Human-readable English language names used inside generated prompt instructions. */
+const LANGUAGE_ENGLISH_NAMES: Record<string, string> = {
+  en: "English",
+  zh: "Simplified Chinese",
+  tw: "Traditional Chinese",
+  ja: "Japanese",
+  ko: "Korean",
+  es: "Spanish",
+  fr: "French",
+  de: "German",
+  ru: "Russian",
+  pt: "Portuguese",
+  it: "Italian",
+};
+
+export function getLanguageEnglishName(lang?: string): string {
+  return LANGUAGE_ENGLISH_NAMES[normalizeDesktopLangTag(lang)] || "English";
+}
+
+/**
+ * Reply Copilot intent labels (desktop-only surface).
+ * Unlike pi-lingual's tone registers (Casual / Polite / Formal), replies to a real human
+ * are chosen by communicative MOVE first: accept, decline, or ask back.
+ */
+const REPLY_INTENT_LABELS: Record<string, { inbound: string; accept: string; decline: string; ask: string }> = {
+  en: { inbound: "What they mean", accept: "Accept", decline: "Decline", ask: "Ask back" },
+  zh: { inbound: "对方在说什么", accept: "答应", decline: "婉拒", ask: "追问" },
+  tw: { inbound: "對方在說什麼", accept: "答應", decline: "婉拒", ask: "追問" },
+  ja: { inbound: "相手の意図", accept: "承諾", decline: "丁寧に断る", ask: "聞き返す" },
+  ko: { inbound: "상대 의도", accept: "수락", decline: "정중히 거절", ask: "되묻기" },
+  es: { inbound: "Qué quiere decir", accept: "Aceptar", decline: "Rechazar", ask: "Preguntar" },
+  fr: { inbound: "Ce qu'il veut dire", accept: "Accepter", decline: "Refuser", ask: "Demander" },
+  de: { inbound: "Was gemeint ist", accept: "Zusagen", decline: "Absagen", ask: "Nachfragen" },
+  ru: { inbound: "Что имеется в виду", accept: "Согласиться", decline: "Отказаться", ask: "Уточнить" },
+};
+
+/**
+ * Reply Copilot slots: 1 comprehension row + 3 reply moves.
+ * Labels are always rendered in the user's native language; the drafts are generated in
+ * `replyLang` — the language the counterpart actually wrote in.
+ */
+export function getDefaultDesktopReplySlots(nativeLang = "zh", replyLang = "en"): SlotConfig[] {
+  const nat = normalizeDesktopLangTag(nativeLang);
+  const rep = normalizeDesktopLangTag(replyLang);
+  const l = REPLY_INTENT_LABELS[nat] || REPLY_INTENT_LABELS.en;
+  const nativeName = getLanguageEnglishName(nat);
+  const replyName = getLanguageEnglishName(rep);
+
+  return [
+    {
+      id: "context_inbound",
+      label: l.inbound,
+      role: "custom",
+      showMeaning: false,
+      enabled: true,
+      instruction: `Explain in ${nativeName} what the incoming message actually asks for, in at most 2 short sentences. Translate it first if it is not already in ${nativeName}. Keep names, numbers, dates, prices and links verbatim.`,
+    },
+    {
+      id: "reply_accept",
+      label: l.accept,
+      role: "translation",
+      showMeaning: false,
+      enabled: true,
+      instruction: `Draft a ${replyName} reply that AGREES and confirms, answering every explicit question in the incoming message. 1-2 natural sentences, ready to send verbatim. No greeting, no sign-off, no placeholders.`,
+    },
+    {
+      id: "reply_decline",
+      label: l.decline,
+      role: "translation",
+      showMeaning: false,
+      enabled: true,
+      instruction: `Draft a ${replyName} reply that DECLINES or defers politely while keeping the relationship intact, offering a concrete alternative when one is natural. 1-2 sentences, ready to send verbatim. No greeting, no sign-off.`,
+    },
+    {
+      id: "reply_ask",
+      label: l.ask,
+      role: "translation",
+      showMeaning: false,
+      enabled: true,
+      instruction: `Draft a ${replyName} reply that ASKS BACK for the one detail that is actually blocking a decision. Exactly one clear question, 1-2 sentences, ready to send verbatim. No greeting, no sign-off.`,
+    },
+  ];
+}
+
+/**
+ * Label for the incoming-message row in Reply Copilot, rendered in the user's native language.
+ */
+const REPLY_SOURCE_LABELS: Record<string, string> = {
+  en: "Incoming",
+  zh: "来信",
+  tw: "來信",
+  ja: "受信",
+  ko: "받은 메시지",
+  es: "Recibido",
+  fr: "Reçu",
+  de: "Eingang",
+  ru: "Входящее",
+};
+
+export function getReplySourceLabel(nativeLang = "zh"): string {
+  return REPLY_SOURCE_LABELS[normalizeDesktopLangTag(nativeLang)] || REPLY_SOURCE_LABELS.en;
+}
+
+/** Cognitive explanation language directives for Modify mode takeaways. */
+const EXPLAIN_LANG_DESC: Record<string, string> = {  en: "Explain the intuition/rule briefly in simple, clear English.",
+  zh: "Explain the intuition/rule briefly in Chinese (中文).",
+  tw: "Explain the intuition/rule briefly in Traditional Chinese (繁體中文).",
+  ja: "Explain the intuition/rule briefly in Japanese (日本語).",
+  ko: "Explain the intuition/rule briefly in Korean (한국어).",
+  es: "Explain the intuition/rule briefly in Spanish (Español).",
+  fr: "Explain the intuition/rule briefly in French (Français).",
+  de: "Explain the intuition/rule briefly in German (Deutsch).",
+  ru: "Explain the intuition/rule briefly in Russian (Русский).",
+};
+
 export function getDefaultDesktopDirectSlots(sourceLang = "en"): SlotConfig[] {
-  const norm = (sourceLang || "en").toLowerCase().split("-")[0];
-  const label = norm === "zh" ? "直出" : norm === "tw" ? "直出" : norm === "ja" ? "直訳" : norm === "ko" ? "직출" : "Direct";
+  const norm = normalizeDesktopLangTag(sourceLang);
+  const label = DIRECT_SLOT_LABELS[norm] || DIRECT_SLOT_LABELS.en;
   return [
     {
       id: "direct",
@@ -24,15 +201,8 @@ export function getDefaultDesktopDirectSlots(sourceLang = "en"): SlotConfig[] {
 }
 
 export function getDefaultDesktopCandidateSlots(sourceLang = "en"): SlotConfig[] {
-  const norm = (sourceLang || "en").toLowerCase().split("-")[0];
-  const labels: Record<string, { source: string; casual: string; polite: string; concise: string }> = {
-    en: { source: "Source", casual: "Casual", polite: "Polite", concise: "Concise" },
-    zh: { source: "原文", casual: "随和口语", polite: "得体礼貌", concise: "精炼干脆" },
-    tw: { source: "原文", casual: "隨和口語", polite: "得體禮貌", concise: "精煉乾脆" },
-    ja: { source: "原文", casual: "カジュアル", polite: "丁寧・敬語", concise: "簡潔・要点" },
-    ko: { source: "원문", casual: "구어·친근", polite: "정중·비즈니스", concise: "간결·핵심" },
-  };
-  const l = labels[norm] || labels.en;
+  const norm = normalizeDesktopLangTag(sourceLang);
+  const l = CANDIDATE_SLOT_LABELS[norm] || CANDIDATE_SLOT_LABELS.en;
   return [
     {
       id: "source",
@@ -68,25 +238,10 @@ export function getDefaultDesktopCandidateSlots(sourceLang = "en"): SlotConfig[]
 }
 
 export function getDefaultDesktopModifySlots(sourceLang = "en", explainLang?: string): SlotConfig[] {
-  const norm = (sourceLang || "en").toLowerCase().split("-")[0];
-  const expNorm = (explainLang || norm).toLowerCase().split("-")[0];
-  const labels: Record<string, { fixed: string; native: string; fixes: string }> = {
-    en: { fixed: "Fixed", native: "Native", fixes: "Takeaway" },
-    zh: { fixed: "原句修补", native: "地道表达", fixes: "收获复盘" },
-    tw: { fixed: "原句修補", native: "道地表達", fixes: "收穫複盤" },
-    ja: { fixed: "原文修正", native: "自然表現", fixes: "重要ポイント" },
-    ko: { fixed: "원문수정", native: "자연스러운표현", fixes: "핵심포인트" },
-  };
-  const l = labels[norm] || labels.en;
-
-  const explainLangDesc =
-    expNorm === "zh"
-      ? "Explain the intuition/rule briefly in Chinese (中文)."
-      : expNorm === "ja"
-        ? "Explain the intuition/rule briefly in Japanese (日本語)."
-        : expNorm === "ko"
-          ? "Explain the intuition/rule briefly in Korean (한국어)."
-          : "Explain the intuition/rule briefly in simple, clear English.";
+  const norm = normalizeDesktopLangTag(sourceLang);
+  const expNorm = normalizeDesktopLangTag(explainLang || sourceLang);
+  const l = MODIFY_SLOT_LABELS[norm] || MODIFY_SLOT_LABELS.en;
+  const explainLangDesc = EXPLAIN_LANG_DESC[expNorm] || EXPLAIN_LANG_DESC.en;
 
   return [
     {
@@ -133,14 +288,21 @@ export interface LingualDesktopConfig {
   candidateSlots?: SlotConfig[];
   promptSlots?: SlotConfig[];
   modifySlots?: SlotConfig[];
+  /** Reply Copilot slot overrides. Left undefined so defaults regenerate per inbound language. */
+  replySlots?: SlotConfig[];
   autoSend: boolean;
   showCapsule: boolean;
+  /** Suppresses AI-slop clichés ("delve", "seamless", "robust"...) via pi-lingual's Kill List directive. */
+  killListEnabled?: boolean;
+  /** User-extended forbidden word list; merged with pi-lingual's DEFAULT_KILL_LIST. */
+  globalKillList?: string[];
   enableGlobalShortcuts: boolean;
   autoStartOnBoot?: boolean;
   hotkeyToggleMode: string;
   hotkeySubmit: string;
   hotkeyRewrite: string;
   hotkeySpotlight: string;
+  hotkeyReply: string;
   capsulePos?: { x: number; y: number } | null;
   piModelInfo?: { endpoint: string; model: string; apiKey?: string } | null;
 }
@@ -162,12 +324,15 @@ export const DEFAULT_DESKTOP_CONFIG: LingualDesktopConfig = {
   modifySlots: getDefaultDesktopModifySlots("en"),
   autoSend: true,
   showCapsule: true,
+  killListEnabled: true,
+  globalKillList: [],
   enableGlobalShortcuts: true,
   autoStartOnBoot: false,
   hotkeyToggleMode: "Alt+Q",
   hotkeySubmit: "Enter",
   hotkeyRewrite: "Alt+E",
   hotkeySpotlight: "Alt+Space",
+  hotkeyReply: "Alt+R",
   capsulePos: null,
 };
 
@@ -444,6 +609,11 @@ export function loadDesktopConfig(): LingualDesktopConfig {
     uiLang: effectiveUiLang,
     engineProvider,
     hotkeySubmit: safeHotkeySubmit,
+    hotkeyReply:
+      typeof desktopRaw.hotkeyReply === "string" && desktopRaw.hotkeyReply.trim()
+        ? desktopRaw.hotkeyReply.trim()
+        : DEFAULT_DESKTOP_CONFIG.hotkeyReply,
+    replySlots: isValidSlotArray(desktopRaw.replySlots) ? desktopRaw.replySlots : undefined,
     endpoint: resolvedEndpoint,
     apiKey: resolvedApiKey,
     model: resolvedModel,
@@ -453,6 +623,12 @@ export function loadDesktopConfig(): LingualDesktopConfig {
     slotPreset: effectiveSlotPreset,
     slots: effectiveSlots,
     autoStartOnBoot: desktopRaw.autoStartOnBoot === true,
+    killListEnabled: desktopRaw.killListEnabled !== false,
+    globalKillList: Array.isArray(desktopRaw.globalKillList)
+      ? desktopRaw.globalKillList
+          .filter((w): w is string => typeof w === "string" && w.trim().length > 0)
+          .map((w) => w.trim())
+      : [],
     directSlots: effectiveDirectSlots,
     candidateSlots: effectiveCandidateSlots,
     promptSlots: effectiveCandidateSlots,

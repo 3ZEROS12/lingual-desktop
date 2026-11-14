@@ -3,7 +3,7 @@
 > **The zero-friction desktop writing companion that lives alongside your existing IME.**  
 > Type naturally with your preferred input method (Microsoft Pinyin, WeChat IME, Sogou, Rime) in any Windows app (X/Twitter, Slack, Discord, Chrome, Notion, WeChat, Email). Upon pressing Enter, `lingual-desktop` automatically detects natural language, translates via your chosen engine, and delivers authentic spoken flow or technical precision—while keeping you in complete flow state.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 30/30 Pass](https://img.shields.io/badge/Tests-30%2F30%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Tests: 54/54 Pass](https://img.shields.io/badge/Tests-54%2F54%20Pass-brightgreen)](tests/engine.test.ts) [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue)](https://microsoft.com)
 
 **English** | [简体中文](README_zh.md) | [日本語](README_ja.md)
 
@@ -18,6 +18,31 @@ It is an **ambient, system-wide companion layer** running as a lightweight Windo
 * **Learn Mode (`[LEARN]`)**: Simply press `Enter`. 0ms non-blocking pass-through. Your original text sends instantly, while the dual-register card pops up in the background for micro-learning.
 * **Off Mode (`[OFF]`)**: Fully transparent. Zero hooks active.
 * **Zero Newline Conflict**: `Ctrl+Enter` and `Shift+Enter` are **never intercepted**, preserving normal chat multiline and search newlines across all applications.
+
+---
+
+## Why a desktop layer, not another terminal plugin
+
+`pi-lingual` optimizes the prompt you hand to an AI agent inside one terminal. `lingual-desktop` owns the other half of the problem: **the message you send to a human, in any Windows app.** The form factor itself unlocks things a CLI extension structurally cannot do:
+
+| Capability | Terminal plugin | lingual-desktop |
+| --- | --- | --- |
+| Text it can see | only the agent prompt box | every input box (WeChat, Slack, Discord, Outlook, X, games) |
+| Audience awareness | one context | app + window title → register hints |
+| The inbound message | ✗ | ✓ selection capture → Reply Copilot |
+| Intervene before send | ✗ | ✓ in-place rewrite that never clobbers a draft |
+| Ambient presence | ✗ | ✓ non-focusable floating island |
+
+### Reply Copilot (`Alt+R`)
+
+The flow that cannot exist in a terminal: **answering what someone just sent you.**
+
+1. Select the incoming message in any app (WeChat, Slack, Outlook, Discord…).
+2. Press `Alt+R`.
+3. The island expands with *what they actually want* (in your own language) plus three send-ready replies chosen by **communicative move** — accept / decline / ask back — rather than by tone.
+4. Press `1`-`3` to insert, `0` to cancel.
+
+Replies are written in the sender's language. If they already wrote your native language, replies switch to the language you are practising. Nothing gets overwritten: if the reply box already holds a draft, the answer is copied instead of pasted.
 
 ---
 
@@ -114,7 +139,7 @@ npm run build:native
 # Compile Electron main process and preload bundle
 npm run build:main
 
-# Run full physical unit test suite (28/28 Pass)
+# Run full physical unit test suite (54/54 Pass)
 npm test
 ```
 

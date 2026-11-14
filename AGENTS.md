@@ -1,60 +1,20 @@
-# SYSTEM CONTEXT & OPERATIONAL PROFILE: LINGUAL-DESKTOP
+# LINGUAL-DESKTOP AGENTS FIRMWARE
 
-## 1. Domain & Runtime Environment (RFC 2119)
-- **Package / Target**: `lingual-desktop` (v0.2.18)
-- **Primary Domain**: Universal Windows dual-register writing companion & Dynamic Island HUD (`pi-lingual/core` bridge).
-- **Runtime & Toolchain**: Electron / Node.js `>=20` / TypeScript Strict / Win32 C# UIA & Low-Level Keyboard Hooks (`WH_KEYBOARD_LL`).
-- **Main Entry**: `dist/main/main.js` (authored in `src/main/main.ts`).
-- **Configuration Path**: `~/.lingual/config.json`.
+## 1. Package Metadata & Paths
+- **Package**: `lingual-desktop` | **Entry**: `dist/main/main.js` (`src/main/main.ts`)
+- **Native Helpers**: `bin/uia_helper.exe` and `bin/win32_helper.exe`
+- **Config**: `~/.lingual/config.json`
 
----
+## 2. Package Invariants
+- **Driver-Level Keyboard Hook**: Native helper uses `SetWindowsHookEx(WH_KEYBOARD_LL)` with 0.00ms pass-through (`CallNextHookEx`); never hijack Enter globally (`globalShortcut.register("Enter")`).
+- **Dynamic Island Capsule HUD**: Centered top-screen floating capsule; transitions between compact and expanded states use pure CSS; position persists in `~/.lingual/config.json` across drags.
+- **Resilient 3.5s Draft Snapshots**: Poll active input controls via Win32 UIA every 30–60ms; fall back to cached 3.5s snapshot when target apps (Slack, WeChat, Discord) clear input on Enter.
+- **Sleep Resume & Supervisor Self-Healing**: Monitor helpers via 5s supervisor heartbeat (18s timeout); auto-restart native watchers on `powerMonitor.on("resume")` with exponential backoff.
+- **Reply Copilot (`Alt+R`)**: `executeReplyDraft` turns the selected inbound message into one native-language comprehension line plus three sendable replies classified by communication move (accept / decline / ask), never by tone. Replies use the sender's language; when the sender already writes the user's native language, switch to the language being practised. Never overwrite an existing draft: with non-empty input, copy instead of paste (`Alt+1/2/3` insert, `0` dismiss).
+- **`pi-lingual/core` Bridge & UI Parity**: Consumes `pi-lingual` translation engine, slot topologies, and prompts; `mode === "off"` detaches passive watcher for 0% CPU.
+- **Universal English Baseline & 10-Language Parity**: Source, logs, and default config stay English; `src/renderer/settings.js` carries every `data-i18n` key in all 10 UI languages (en, zh, zh-TW, ja, ko, es, fr, de, ru, pt) with zero untranslated residues.
+- **Multi-Probe Test Isolation**: `tests/**/*.test.ts` must detect the test runtime (`NODE_TEST_CONTEXT`, `process.execArgv`) and never read or mutate the real host config `~/.lingual/config.json`.
 
-## 2. Core Operational Invariants (Strict RFC 2119)
-
-### Invariant 1: Driver-Level Low-Level Keyboard Hook (`WH_KEYBOARD_LL`)
-- Native Windows helper (`bin/uia_helper.exe`) MUST utilize low-level keyboard hook (`SetWindowsHookEx(WH_KEYBOARD_LL, ...)`) with zero-latency pass-through (`CallNextHookEx`).
-- **Strict Prohibition**: NEVER hijack or block the Enter key globally (`globalShortcut.register("Enter")`), which breaks host typing across external applications.
-- Pass-through latency MUST remain 0.00ms so native typing rhythm is never degraded.
-
-### Invariant 2: Dynamic Island Capsule HUD
-- The floating capsule window resides centered at the top of the active display by default, maintaining a stable, drift-free anchor.
-- Smooth transitions between compact idle capsule and expanded HUD window MUST use pure CSS transitions without jarring window resizing.
-- Support seamless user drag-and-drop repositioning with permanent position persistence in `~/.lingual/config.json`.
-
-### Invariant 3: Resilient Draft Snapshots & Cache Fallback
-- Maintain high-frequency background input snapshots (30–60ms) of active input controls via Win32 UIA.
-- When target applications (Slack, WeChat, Discord) clear the input box upon Enter, the engine MUST seamlessly fall back to the cached 3.5s draft snapshot to guarantee zero missing prompts.
-
-### Invariant 4: Sleep Resume & Process Supervisor Self-Healing
-- Background helper processes (`bin/uia_helper.exe`, `bin/win32_helper.exe`) MUST be monitored via a 5-second supervisor heartbeat (18s timeout).
-- Upon system sleep resume (`powerMonitor.on("resume")`), the main process MUST automatically restart the native watcher and re-hook low-level listeners without requiring an application restart.
-- Use exponential backoff restart guards to prevent runaway crash loops.
-
-### Invariant 5: Universal English Baseline & Symmetric Polyglot Parity (Invariant 18)
-- All generic code comments, log messages, and default configuration schemas MUST default strictly to Universal English.
-- The Settings UI (`src/renderer/settings.html`) MUST provide 100% symmetric i18n support across all 9 supported languages (English, Japanese, Chinese, Traditional Chinese, Korean, Spanish, French, German, Russian) with zero untranslated foreign residues.
-
-### Invariant 6: Core Engine Handshake (`pi-lingual` Bridge)
-- `lingual-desktop` consumes `pi-lingual`'s core translation engine, slot topologies, and system prompts via `pi-lingual/core`.
-- Maintain exact mode parity: `original` (companion), `english` (direct), `select` (candidates), `modify` (live-flow), and `off`.
-- When `mode === "off"`, the background passive watcher MUST be detached to consume 0% background CPU.
-
-### Invariant 7: Multi-Probe Test Isolation Sandbox
-- Test suites (`tests/**/*.test.ts`) MUST automatically detect test execution environments (`NODE_TEST_CONTEXT`, `process.execArgv`, npm lifecycle events) and strictly avoid touching the user's real host configuration files (`~/.lingual/config.json`).
-
----
-
-## 3. Physical Verification & Build Commands
-
-- **Build Main & Native Bundles**:
-  ```bash
-  npm run build
-  # compiles native C# binaries and dual-bundles main (ESM) + preload (CJS) via tsup
-  ```
-
-- **Run Physical Test Suite**:
-  ```bash
-  npm test
-  # or from workspace root: node .scripts/fleet.mjs test lingual-desktop
-  ```
-  *Executes 28 test suites verifying config, logger, engine, shortcuts, and win32 hooks (100% green).*
+## 3. Verification Commands
+- `npm run build` (compiles native C# binaries and dual-bundles main/preload via tsup)
+- `npm test` (or `node ../.scripts/fleet.mjs test lingual-desktop`)

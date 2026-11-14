@@ -1,5 +1,8 @@
 import {
   translateCore,
+  compileKillListInstruction,
+  DEFAULT_KILL_LIST,
+  detectScriptLanguage,
   type LingualRequest,
   type LingualResponse,
   type CustomSlotsConfig,
@@ -12,6 +15,10 @@ import {
   getDefaultDesktopDirectSlots,
   getDefaultDesktopCandidateSlots,
   getDefaultDesktopModifySlots,
+  getDefaultDesktopReplySlots,
+  getReplySourceLabel,
+  getLanguageEnglishName,
+  normalizeDesktopLangTag,
   type LingualDesktopConfig,
   type CompanionMode,
 } from "./config.js";
@@ -244,6 +251,66 @@ export function createHttpCompleter(config: LingualDesktopConfig) {
 }
 
 /**
+ * Builds the anti-AI-slop directive.
+ * Upstream treats `globalKillList` as a REPLACEMENT of DEFAULT_KILL_LIST, so user words are
+ * merged explicitly here — otherwise adding one custom word would silently drop every
+ * built-in term.
+ */
+export function buildKillListDirective(enabled?: boolean, userWords?: string[]): string {
+  if (enabled === false) return "";
+  const words = Array.isArray(userWords) ? userWords.map((w) => String(w).trim()).filter(Boolean) : [];
+  const effectiveKillList =
+    words.length > 0 ? Array.from(new Set([...DEFAULT_KILL_LIST, ...words])) : undefined;
+  const directive = compileKillListInstruction(undefined, effectiveKillList);
+  return directive && directive.trim() ? directive.trim() : "";
+}
+
+/**
+ * Assembles the extra context directives handed to pi-lingual's core prompt builder:
+ * 1. Explicit conversation/thread context (e.g. quoted message being replied to)
+ * 2. App-aware tone hints (Slack vs Gmail vs GitHub)
+ * 3. Mixed-language code-switch splicing rule
+ * 4. Anti-AI-slop Kill List (parity with pi-lingual's DEFAULT_KILL_LIST)
+ *
+ * Kept pure so prompt composition can be asserted without any network round-trip.
+ */
+export function buildDesktopTranslationContext(opts: {
+  text: string;
+  context?: string;
+  app?: string;
+  title?: string;
+  killListEnabled?: boolean;
+  globalKillList?: string[];
+}): { mergedContext: string | undefined; appProfile: ReturnType<typeof classifyDesktopAppContext> } {
+  const appProfile = classifyDesktopAppContext(opts.app, opts.title);
+  const isCodeSwitch = hasMixedCodeSwitch(opts.text);
+  const contextParts: string[] = [];
+
+  if (opts.context && opts.context.trim()) {
+    contextParts.push(opts.context.trim());
+  }
+  if (appProfile.toneHint) {
+    contextParts.push(`[ACTIVE APPLICATION CONTEXT - ${appProfile.badge}]: ${appProfile.toneHint}`);
+  }
+  if (isCodeSwitch) {
+    contextParts.push(
+      `[MIXED-LANGUAGE CODE-SWITCH SPLICING RULE]: The user wrote a sentence mixing target-language words and native-language fragments. Strictly preserve the user's already-written target-language clauses and word choices verbatim, and seamlessly translate/splice ONLY the native-language fragments so the whole sentence reads like natural, cohesive native prose.`
+    );
+  }
+  if (opts.killListEnabled !== false) {
+    const killListDirective = buildKillListDirective(opts.killListEnabled, opts.globalKillList);
+    if (killListDirective) {
+      contextParts.push(killListDirective);
+    }
+  }
+
+  return {
+    mergedContext: contextParts.length > 0 ? contextParts.join("\n") : undefined,
+    appProfile,
+  };
+}
+
+/**
  * Dispatches a translation request using the desktop configuration and pi-lingual core engine
  * Accurately tracks offline/network failure to prevent auto-sending un-translated raw text!
  */
@@ -274,22 +341,15 @@ export async function executeTranslation(
 
   const effectiveSlots = slots || (Array.isArray(modeDefaultSlots) ? modeDefaultSlots : undefined);
 
-  // App-Aware Context & Mixed Code-Switch Splicing
-  const appProfile = classifyDesktopAppContext(appMeta?.app, appMeta?.title);
-  const isCodeSwitch = hasMixedCodeSwitch(text);
-  const contextParts: string[] = [];
-  if (context && context.trim()) {
-    contextParts.push(context.trim());
-  }
-  if (appProfile.toneHint) {
-    contextParts.push(`[ACTIVE APPLICATION CONTEXT - ${appProfile.badge}]: ${appProfile.toneHint}`);
-  }
-  if (isCodeSwitch) {
-    contextParts.push(
-      `[MIXED-LANGUAGE CODE-SWITCH SPLICING RULE]: The user wrote a sentence mixing target-language words and native-language fragments. Strictly preserve the user's already-written target-language clauses and word choices verbatim, and seamlessly translate/splice ONLY the native-language fragments so the whole sentence reads like natural, cohesive native prose.`
-    );
-  }
-  const mergedContext = contextParts.length > 0 ? contextParts.join("\n") : undefined;
+  // App-Aware Context, Mixed Code-Switch Splicing & Anti-AI-Slop Kill List
+  const { mergedContext, appProfile } = buildDesktopTranslationContext({
+    text,
+    context,
+    app: appMeta?.app,
+    title: appMeta?.title,
+    killListEnabled: config.killListEnabled,
+    globalKillList: config.globalKillList,
+  });
 
   const req: LingualRequest = {
     text,
@@ -357,6 +417,202 @@ export async function executeTranslation(
     ...res,
     appBadge: appProfile.badge,
     isOfflineOrFailed: isLlmFailed,
+  };
+}
+
+// ============================================================================
+// Reply Copilot — a desktop-only surface that pi-lingual cannot have.
+//
+// pi-lingual optimizes the prompt you hand to a machine inside one terminal.
+// Reply Copilot handles the message a HUMAN just sent you, in any Windows app:
+// you select it, press one hotkey, and get (a) what it actually means in your own
+// language and (b) three ready-to-send replies chosen by communicative MOVE
+// (accept / decline / ask back) rather than by tone.
+// ============================================================================
+
+export interface ReplyCandidate {
+  id: string;
+  label: string;
+  content: string;
+}
+
+export interface ReplyPlan {
+  nativeLang: string;
+  inboundLang: string;
+  replyLang: string;
+  slots: SlotConfig[];
+  context: string;
+}
+
+export interface DesktopReplyResult {
+  inbound: string;
+  nativeLang: string;
+  inboundLang: string;
+  replyLang: string;
+  comprehension: string;
+  candidates: ReplyCandidate[];
+  /** HUD-ready slot payload: incoming row + non-selectable insight row + numbered replies. */
+  slots: Array<{
+    id: string;
+    label: string;
+    role: "source" | "translation" | "custom" | "vocab";
+    content: string;
+    selectable?: boolean;
+  }>;
+  isOfflineOrFailed: boolean;
+  isZeroKeyFallback?: boolean;
+  appBadge?: string;
+}
+
+/**
+ * Decides who wrote what: the reply language follows the sender's language, unless the
+ * sender already wrote in the user's native language — then we reply in the language the
+ * user is practising.
+ */
+export function planReply(inboundText: string, config: LingualDesktopConfig): ReplyPlan {
+  const nativeLang = normalizeDesktopLangTag(config.sourceLang);
+  const detected = detectScriptLanguage(inboundText);
+  const inboundLang = normalizeDesktopLangTag(detected || config.targetLang || "en");
+  const replyLang =
+    inboundLang === nativeLang ? normalizeDesktopLangTag(config.targetLang || "en") : inboundLang;
+
+  const slots =
+    Array.isArray(config.replySlots) && config.replySlots.length > 0
+      ? config.replySlots
+      : getDefaultDesktopReplySlots(nativeLang, replyLang);
+
+  const comprehensionSlot = slots.find((s) => s.id === "context_inbound") || slots[0];
+  const nativeName = getLanguageEnglishName(nativeLang);
+  const replyName = getLanguageEnglishName(replyLang);
+
+  const context = [
+    `[REPLY CO-PILOT — INBOUND MESSAGE]:`,
+    `The user received the message below from another person and must answer it.`,
+    `- The "${comprehensionSlot.id}" slot explains, in ${nativeName}, what the sender actually wants.`,
+    `- Every "reply_*" slot is an ALTERNATIVE reply draft written in ${replyName}, ready to send verbatim.`,
+    `- Never translate the reply drafts into another language, and never merge two replies into one.`,
+  ].join("\n");
+
+  return { nativeLang, inboundLang, replyLang, slots, context };
+}
+
+/**
+ * Drafts a reply set for an incoming message.
+ * `deps.completer` lets tests drive the pipeline without touching the network.
+ */
+export async function executeReplyDraft(
+  inboundText: string,
+  configOverride?: Partial<LingualDesktopConfig>,
+  appMeta?: { app?: string; title?: string },
+  deps?: {
+    completer?: (prompt: string, systemPrompt: string, signal?: AbortSignal) => Promise<string | null>;
+  }
+): Promise<DesktopReplyResult> {
+  const config = { ...loadDesktopConfig(), ...configOverride };
+  const inbound = (inboundText || "").trim();
+  const plan = planReply(inbound, config);
+
+  if (!inbound) {
+    return {
+      inbound: "",
+      nativeLang: plan.nativeLang,
+      inboundLang: plan.inboundLang,
+      replyLang: plan.replyLang,
+      comprehension: "",
+      candidates: [],
+      slots: [],
+      isOfflineOrFailed: true,
+    };
+  }
+
+  const http = deps?.completer ? null : createHttpCompleter(config);
+  const completer = deps?.completer || http!.completer;
+  const didFail = () => (http ? http.didFail() : false);
+
+  const appProfile = classifyDesktopAppContext(appMeta?.app, appMeta?.title);
+  const contextParts = [plan.context];
+  if (appProfile.toneHint) {
+    contextParts.push(`[ACTIVE APPLICATION CONTEXT - ${appProfile.badge}]: ${appProfile.toneHint}`);
+  }
+  const killListDirective = buildKillListDirective(config.killListEnabled, config.globalKillList);
+  if (killListDirective) contextParts.push(killListDirective);
+
+  const req: LingualRequest = {
+    text: inbound,
+    sourceLang: plan.inboundLang,
+    targetLang: plan.replyLang,
+    context: contextParts.join("\n"),
+    tone: appProfile.category === "social" ? "social" : appProfile.category === "code" ? "tech" : "general",
+    isLongInput: isDynamicLongInput(inbound, plan.inboundLang),
+    slots: plan.slots,
+  };
+
+  logger.info(
+    "engine:reply",
+    `Drafting replies for ${inbound.length} chars [${plan.inboundLang} ➔ ${plan.replyLang}, native=${plan.nativeLang}]`
+  );
+
+  // Reply drafts deliberately bypass the shared LRU cache: cached responses carry no slot
+  // payload, and a "reply" should be regenerated for the current moment rather than replayed.
+  const res = await translateCore(req, {
+    completer,
+    cache: { get: () => undefined, set: () => undefined } as any,
+  });
+
+  const slotResults = Array.isArray(res.slots) ? res.slots : [];
+  let comprehension = (slotResults.find((s) => s.id === "context_inbound")?.content || "").trim();
+  const candidates: ReplyCandidate[] = slotResults
+    .filter((s) => s.id.startsWith("reply_") && s.content && s.content.trim())
+    .map((s) => ({ id: s.id, label: s.label, content: s.content.trim() }));
+
+  const failed = res.shieldBypassed ? false : didFail() || candidates.length === 0;
+
+  if (failed) {
+    logger.warn("engine:reply", "LLM reply drafting failed. Attempting zero-key comprehension fallback...");
+    if (plan.inboundLang !== plan.nativeLang) {
+      const fallback = await fetchZeroKeyTranslation(inbound, plan.inboundLang, plan.nativeLang);
+      if (fallback) comprehension = fallback;
+    }
+  }
+
+  const comprehensionSlot = plan.slots.find((s) => s.id === "context_inbound") || plan.slots[0];
+  const payloadSlots: DesktopReplyResult["slots"] = [
+    {
+      id: "inbound",
+      label: getReplySourceLabel(plan.nativeLang),
+      role: "source",
+      content: inbound,
+    },
+  ];
+  if (comprehension) {
+    payloadSlots.push({
+      id: "context_inbound",
+      label: comprehensionSlot?.label || getReplySourceLabel(plan.nativeLang),
+      role: "custom",
+      content: comprehension,
+      selectable: false,
+    });
+  }
+  for (const candidate of candidates) {
+    payloadSlots.push({
+      id: candidate.id,
+      label: candidate.label,
+      role: "translation",
+      content: candidate.content,
+    });
+  }
+
+  return {
+    inbound,
+    nativeLang: plan.nativeLang,
+    inboundLang: plan.inboundLang,
+    replyLang: plan.replyLang,
+    comprehension,
+    candidates,
+    slots: payloadSlots,
+    isOfflineOrFailed: failed,
+    isZeroKeyFallback: failed && Boolean(comprehension),
+    appBadge: appProfile.badge,
   };
 }
 

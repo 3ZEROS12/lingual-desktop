@@ -294,6 +294,40 @@ test("shortcuts: settings UI exposes hotkey configuration with complete 10-langu
   assert.equal(unbindMatches.length, 10, "All 10 languages in settings.js must define btn_unbind_all_hk");
 });
 
+test("i18n: every settings.html data-i18n key is translated in all 10 UI languages", () => {
+  const settingsHtml = fs.readFileSync("src/renderer/settings.html", "utf8");
+  const settingsJs = fs.readFileSync("src/renderer/settings.js", "utf8");
+
+  const start = settingsJs.indexOf("const UI_I18N = {");
+  assert.ok(start > -1, "settings.js must declare UI_I18N");
+  let depth = 0;
+  let end = -1;
+  for (let i = settingsJs.indexOf("{", start); i < settingsJs.length; i++) {
+    const ch = settingsJs[i];
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        end = i + 1;
+        break;
+      }
+    }
+  }
+  assert.ok(end > start, "UI_I18N literal must be brace-balanced");
+
+  const dict = settingsJs.slice(start, end);
+  const langs = [...dict.matchAll(/^ {4}"?([a-zA-Z-]+)"?: \{$/gm)].map((m) => m[1]);
+  assert.equal(langs.length, 10, `UI_I18N must define 10 languages, found ${langs.length}: ${langs.join(", ")}`);
+
+  const keys = [...new Set([...settingsHtml.matchAll(/data-i18n="([^"]+)"/g)].map((m) => m[1]))];
+  assert.ok(keys.length > 20, `settings.html should expose data-i18n keys, found ${keys.length}`);
+
+  const incomplete = keys.filter(
+    (key) => (dict.match(new RegExp(`^ {6}${key}:`, "gm")) || []).length !== langs.length
+  );
+  assert.deepEqual(incomplete, [], `i18n keys missing from some language blocks: ${incomplete.join(", ")}`);
+});
+
 test("pi-lingual v0.6.0 handshake: 4-way slot schemas, promptSlots aliasing & model sync", () => {
   const configPath = getConfigPath();
   const originalExists = fs.existsSync(configPath);
